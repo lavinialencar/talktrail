@@ -1,0 +1,17 @@
+Talktrail: complemento da pasta ao vivo
+=========================================
+
+O que é: um programinha local que salva cada reunião em Documentos/Talktrail,
+em tempo real, uma subpasta por mês. Tudo fica no seu computador.
+
+Como instalar (uma vez só):
+  Mac:      abra "instalar-mac.command" (botão direito > Abrir, na primeira vez)
+  Windows:  abra "instalar-windows.bat" (se o Windows avisar, "Mais informações" > "Executar assim mesmo")
+  Linux:    rode "bash instalar-linux.sh"
+
+Precisa do Python 3; o instalador avisa e abre a página de download se faltar.
+
+Pra desinstalar: apague a pasta "Talktrail" de
+  Mac:      ~/Library/Application Support   e   ~/Library/LaunchAgents/com.talktrail.server.plist
+  Windows:  %LOCALAPPDATA%   e o atalho Talktrail.vbs da pasta Inicializar
+  Linux:    ~/.local/share/talktrail   e   ~/.config/autostart/talktrail.desktop

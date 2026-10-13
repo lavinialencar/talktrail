@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Painel (demo com Chrome simulado)</title>
+<style>html,body{margin:0;height:100%}</style>
+<script>
+// Simula o ambiente da extensão pra ver o painel num navegador comum.
+// Uso: servidor estático na pasta talktrail, abrir /test/panel-demo.html?tema=claro|escuro&aba=notas
+const q = new URLSearchParams(location.search);
+const estado = {
+  fase: q.get('fase') || 'gravando', titulo: 'Planejamento do trimestre', projeto: 'Produto', tags: ['Produto', 'revisão'], segundos: 83,
+  notes: '# Decisões\nprazo conta da assinatura\n- [x] enviar a proposta\n- [ ] marcar a próxima reunião\n\n**Importante:** reunião de 30 a 45 min\n[01:23] perguntar do *prazo* e do `orçamento`\n> frase de alguém',
+  cola: '- [ ] Quem decide o prazo?\n- [ ] Quais acessos precisam?\n- [x] Confirmar 50-50',
+  linhas: [
+    { speaker: 'Eu', t: 3, text: 'Então, Ana, a ideia hoje é fechar quem a gente vai ouvir e em que ordem. Eu preciso de uns trinta minutos com cada pessoa.' },
+    { speaker: 'Ana', t: 21, text: 'Beleza. Eu te mando os contatos hoje ainda. O Carlos não participa das entrevistas.' },
+  ],
+  marcas: [{ t: 40, texto: 'Ana: Eu te mando os contatos hoje ainda.' }],
+  esconderLegendas: false, legendas: q.get('legenda') !== 'off', legendasMotivo: q.get('motivo') || (q.get('legenda') === 'off' ? 'desligadas' : ''), modoSalvar: q.get('salvar') || 'extensao', salvoEm: Date.now() - 20000, id: 'demo', info: q.get('info') || '', erro: null, salvoEm: Date.now(),
+};
+const mem = {};
+window.chrome = {
+  commands: { getAll: () => Promise.resolve([{ name: 'marcar-momento', shortcut: '⌥⇧M' }, { name: 'transcrever-ou-parar', shortcut: '⌥⇧T' }, { name: 'alternar-painel', shortcut: '⌥⇧P' }]) },
+  runtime: { onMessage: { addListener() {} }, sendMessage: () => Promise.resolve(), getURL: (p) => '/extension/' + p, getManifest: () => ({ version: '1.4.0' }) },
+  tabs: {
+    query: () => Promise.resolve([{ id: 1 }]),
+    sendMessage: (id, m) => Promise.resolve(m && m.cmd === 'diagnostico'
+      ? { ...estado, modoSalvar: 'extensao', diag: { naSala: true, naChamada: true, gravando: true, legendas: { ligadas: q.get('legenda') !== 'off', botao: true, desabilitado: false }, regiao: true, ultimaFalaHa: 12, linhas: 8, salvoHa: 4 } }
+      : estado),
+    create: (o) => console.log('abrir', o.url),
+  },
+  storage: { onChanged: { addListener() {} }, local: { get: (k) => Promise.resolve({ tagsSalvas: [',,,l', 'Produto', 'Design', 'revisão', 'andamento', 'Ana'] }), set: () => Promise.resolve() } },
+};
+document.documentElement.style.colorScheme = q.get('tema') === 'claro' ? 'light' : 'dark';
+fetch('../extension/panel.html').then((r) => r.text()).then((h) => {
+  document.open();
+  const v = '?v=' + Date.now(); // sem cache: a demo sempre mostra o código atual
+  document.write(h.replace('<head>', '<head><base href="../extension/">').replace('panel.css', 'panel.css' + v).replace('panel.js', 'panel.js' + v).replace('vendor/editor.js', 'vendor/editor.js' + v));
+  document.close();
+  if (q.get('aba')) setTimeout(() => document.querySelector('[data-aba="' + q.get('aba') + '"]').click(), 300);
+});
+</script>

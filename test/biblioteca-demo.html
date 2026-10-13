@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Biblioteca (demo com Chrome simulado)</title>
+<script>
+// Simula o armazenamento da extensão pra ver a biblioteca num navegador comum.
+const q = new URLSearchParams(location.search);
+document.documentElement.style.colorScheme = q.get('tema') === 'claro' ? 'light' : 'dark';
+const mem = {
+  'reuniao:a': { id: 'a', payload: { id: 'a', startedAt: '2026-10-11T19:00:00-03:00', endedAt: '2026-10-11T19:42:00-03:00', titulo: 'Planejamento do trimestre', tags: ['Produto', 'revisão'], notes: '- decidir o prazo', transcript: [{ t: 3, speaker: 'Ana', text: 'Então a ideia hoje é fechar quem a gente vai ouvir e em que ordem.' }] } },
+  'reuniao:b': { id: 'b', payload: { id: 'b', startedAt: '2026-10-10T10:30:00-03:00', endedAt: '2026-10-10T10:48:00-03:00', titulo: 'Daily 🚀', tags: [], transcript: [{ t: 1, speaker: 'Eu', text: 'Ontem terminei a revisão e hoje começo o teste.' }] } },
+  'reuniao:c': { id: 'c', payload: { id: 'c', startedAt: '2026-10-09T15:00:00-03:00', titulo: '週次ミーティング', tags: ['Design'], transcript: [] } },
+};
+window.chrome = {
+  storage: { onChanged: { addListener() {} }, local: { get: () => Promise.resolve(mem), remove: (k) => { delete mem[k]; return Promise.resolve(); } } },
+  downloads: { download: (o) => console.log('baixar', o.filename) },
+};
+fetch('../extension/biblioteca.html').then((r) => r.text()).then((h) => {
+  const v = '?v=' + Date.now();
+  document.open();
+  document.write(h.replace('<head>', '<head><base href="../extension/">').replace('panel.css', 'panel.css' + v).replace('biblioteca.css', 'biblioteca.css' + v).replace('biblioteca.js', 'biblioteca.js' + v));
+  document.close();
+});
+</script>

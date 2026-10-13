@@ -1,0 +1,10 @@
+node_modules
+REQUISITOS.md
+.DS_Store
+__pycache__
+*.pyc
+dist
+design/icones/
+design/logo-v*/
+store/out/grafite/
+store/painel/rev-*

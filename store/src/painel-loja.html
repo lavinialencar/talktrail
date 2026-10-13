@@ -1,0 +1,46 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Painel (demo com Chrome simulado)</title>
+<style>html,body{margin:0;height:100%}</style>
+<script>
+// Simula o ambiente da extensão pra ver o painel num navegador comum.
+// Uso: servidor estático na pasta talktrail, abrir /test/panel-demo.html?tema=claro|escuro&aba=notas
+const q = new URLSearchParams(location.search);
+const estado = {
+  fase: 'gravando', titulo: 'Revisão do projeto Aurora', projeto: '', tags: ['Produto', 'Aurora'], segundos: 138,
+  notes: '# Decisões\n- prazo final: **28 de novembro**\n- [x] enviar a proposta revisada\n- [x] confirmar o orçamento\n- [ ] marcar a próxima reunião\n\n**Atenção:** a entrega do protótipo depende do acesso ao ambiente.',
+  cola: '# Pauta\n- [x] Status do protótipo\n- [ ] Quem decide o prazo?\n- [ ] Quais acessos faltam?\n- [ ] Próximos passos',
+  linhas: [
+    { speaker: 'Eu', t: 12, text: 'Vamos começar pelo protótipo. A Ana já testou com o cliente?' },
+    { speaker: 'Ana', t: 31, text: 'Testei na terça. Gostaram do fluxo, mas pediram para simplificar a tela de cadastro.' },
+    { speaker: 'Carlos', t: 58, text: 'Dá para cortar dois campos sem perder nada. Eu ajusto hoje.' },
+    { speaker: 'Eu', t: 84, text: 'Ótimo. E o acesso ao ambiente de teste, saiu?' },
+    { speaker: 'Ana', t: 103, text: 'Ainda não. Eu cobro o time deles hoje e te aviso.' },
+    { speaker: 'Carlos', t: 127, text: 'Se sair até sexta, a gente fecha o protótipo na segunda.' },
+  ],
+  marcas: [{ t: 84, texto: 'Eu: E o acesso ao ambiente de teste, saiu?' }, { t: 127, texto: 'Carlos: Se sair até sexta, a gente fecha o protótipo na segunda.' }],
+  esconderLegendas: false, legendas: q.get('legenda') !== 'off', legendasMotivo: q.get('motivo') || (q.get('legenda') === 'off' ? 'desligadas' : ''), modoSalvar: q.get('salvar') || 'extensao', salvoEm: Date.now() - 8000, id: 'demo', info: q.get('info') || '', erro: null, salvoEm: Date.now(),
+};
+const mem = {};
+window.chrome = {
+  commands: { getAll: () => Promise.resolve([{ name: 'marcar-momento', shortcut: '⌥⇧M' }, { name: 'transcrever-ou-parar', shortcut: '⌥⇧T' }, { name: 'alternar-painel', shortcut: '⌥⇧P' }]) },
+  runtime: { onMessage: { addListener() {} }, sendMessage: () => Promise.resolve(), getURL: (p) => '/extension/' + p, getManifest: () => ({ version: '1.4.0' }) },
+  tabs: {
+    query: () => Promise.resolve([{ id: 1 }]),
+    sendMessage: (id, m) => Promise.resolve(m && m.cmd === 'diagnostico'
+      ? { ...estado, modoSalvar: 'extensao', diag: { naSala: true, naChamada: true, gravando: true, legendas: { ligadas: q.get('legenda') !== 'off', botao: true, desabilitado: false }, regiao: true, ultimaFalaHa: 12, linhas: 8, salvoHa: 4 } }
+      : estado),
+    create: (o) => console.log('abrir', o.url),
+  },
+  storage: { onChanged: { addListener() {} }, local: { get: (k) => Promise.resolve({ tagsSalvas: [',,,l', 'Produto', 'Design', 'revisão', 'andamento', 'Ana'] }), set: () => Promise.resolve() } },
+};
+document.documentElement.style.colorScheme = q.get('tema') === 'claro' ? 'light' : 'dark';
+fetch('../../extension/panel.html').then((r) => r.text()).then((h) => {
+  document.open();
+  const v = '?v=' + Date.now(); // sem cache: a demo sempre mostra o código atual
+  document.write(h.replace('<head>', '<head><base href="../../extension/">').replace('panel.css', 'panel.css' + v).replace('panel.js', 'panel.js' + v).replace('vendor/editor.js', 'vendor/editor.js' + v));
+  document.close();
+  if (q.get('aba')) setTimeout(() => document.querySelector('[data-aba="' + q.get('aba') + '"]').click(), 300);
+  if (q.get('aj')) setTimeout(() => document.getElementById('engrenagem').click(), 500);
+});
+</script>

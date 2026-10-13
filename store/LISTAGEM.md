@@ -1,0 +1,103 @@
+# Talktrail: texto da listagem na Chrome Web Store
+
+Rascunho para colar no painel do desenvolvedor. Nada foi enviado nem publicado.
+
+## Nome
+
+Talktrail
+
+## Descrição curta (limite 132 caracteres)
+
+**Português:** Transcrição do Google Meet salva no seu computador, em Markdown. Sem conta, sem nuvem, sem telemetria.
+
+**English:** Google Meet transcripts saved on your computer as Markdown. No account, no cloud, no telemetry.
+
+## Categoria
+
+Produtividade (Productivity)
+
+## Descrição longa (português)
+
+Talktrail transforma as legendas do Google Meet em um arquivo de texto no seu computador.
+
+O que ele faz
+• Oferece transcrever quando você entra na chamada e liga as legendas sozinho.
+• Mostra o texto ao vivo num painel ao lado da chamada, com quem falou e quando.
+• Notas e pauta no mesmo painel. A pauta fica guardada por tag e volta na próxima reunião.
+• Marcadores de momento por atalho de teclado.
+• Salva cada reunião como um arquivo .md, com título, tags, data, duração e participantes.
+
+Privacidade
+Tudo fica no seu computador. Não tem conta, não tem nuvem e não tem telemetria. A extensão lê as legendas que o próprio Meet já mostra e guarda o texto aqui, na pasta que você escolher.
+
+Bom saber
+• As legendas precisam estar ligadas. A extensão liga sozinha quando o organizador permite.
+• Avise as pessoas da reunião que você está transcrevendo.
+• Talktrail não é afiliado ao Google. Google Meet é marca do Google LLC.
+
+## Long description (English)
+
+Talktrail turns Google Meet captions into a text file on your computer.
+
+What it does
+• Offers to transcribe when you join a call and turns captions on for you.
+• Shows the live text in a side panel next to the call, with who spoke and when.
+• Notes and agenda in the same panel. The agenda is saved by tag and comes back next meeting.
+• Keyboard shortcut to mark moments.
+• Saves each meeting as a .md file with title, tags, date, duration and participants.
+
+Privacy
+Everything stays on your computer. No account, no cloud, no telemetry. The extension reads the captions Meet already shows and stores the text locally, in the folder you choose.
+
+Good to know
+• Captions must be on. The extension turns them on when the organizer allows it.
+• Let the people in the meeting know you are transcribing.
+• Talktrail is not affiliated with Google. Google Meet is a trademark of Google LLC.
+
+> Observação: o painel da extensão ainda está só em português. A descrição em inglês só deve ir pra loja depois da interface em inglês (i18n), senão a pessoa instala e encontra tudo em português.
+
+## Propósito único (single purpose)
+
+Transcrever reuniões do Google Meet a partir das legendas da própria chamada e salvar o texto localmente.
+
+## Justificativa das permissões
+
+| Permissão | Para que serve |
+|---|---|
+| `sidePanel` | Mostrar o painel com o texto ao vivo, as notas e a pauta ao lado da chamada. |
+| `storage` e `unlimitedStorage` | Guardar a biblioteca de reuniões, as notas e os ajustes no próprio navegador. Reuniões longas passam do limite padrão. |
+| `downloads` | Salvar o arquivo .md da reunião em Downloads (modo simples). |
+| `alarms` | Rotina de limpeza das reuniões antigas, só se a pessoa ativou. |
+| `host: https://meet.google.com/*` | Ler as legendas da chamada e mostrar o aviso e o botão flutuante. |
+| `host: http://127.0.0.1:8787/*` | Falar com o servidor local opcional (pasta ao vivo). Nada sai da máquina. |
+
+## Pendências antes de enviar
+
+Feito em 13/10/2026 (versão 1.13.0):
+- [x] Instalador fora do pacote: `python3 tools/empacotar.py` gera `dist/talktrail-1.13.0.zip` sem `complemento/`, sem scripts executáveis e sem a recarga de desenvolvimento.
+- [x] Recarga de desenvolvimento isolada em `dev-hot.js`, só carregada quando o `version_name` tem "dev"; o pacote não leva.
+- [x] Permissão `tabs` removida (o host do Meet já dá acesso à URL das abas do Meet).
+- [x] Política de privacidade em `PRIVACIDADE.md` (português e inglês), `LICENSE` (MIT) e `AVISOS-DE-TERCEIROS.md`.
+- [x] Arte revisada pelo impeccable (sem eyebrow, sem caixa-alta mono, texto de apoio a 12 px, sombra do aviso neutra).
+
+Falta:
+1. Preencher `URL_COMPLEMENTO` em `extension/panel.js` com a página de releases do GitHub (enquanto vazio, o botão de instalar some no pacote da loja).
+2. Publicar `PRIVACIDADE.md` numa URL pública (o README do GitHub serve) e colar na loja.
+3. Interface em inglês antes da listagem em inglês.
+4. E-mail de suporte (constante `EMAIL_SUPORTE` em `extension/panel.js` e em `PRIVACIDADE.md`) e link do Buy Me a Coffee.
+5. Ela buscar "Talktrail" na loja e nas bases de marca (WIPO, INPI).
+
+## Arte (pasta `out/marfim/`, recomendada; `out/grafite/` é a alternativa)
+
+O teal fica só no logo e nos detalhes, nunca como fundo (pedido dela).
+
+| Arquivo | Uso na loja |
+|---|---|
+| `icone-loja-128.png` | Ícone da loja, 128×128 (arte em 96 com respiro). |
+| `tile-440x280-pt.png` / `-en.png` | Tile promocional pequeno, 440×280. |
+| `marquee-1400x560-pt.png` / `-en.png` | Marquee, 1400×560 (opcional). |
+| `captura-1` a `captura-4` | Capturas, 1280×800 (até 5). Painel real em dados fictícios. |
+
+As versões `-en` só trocam o texto da arte; o painel dentro delas segue em português até a interface ser traduzida.
+
+Para regerar: servidor estático na raiz do repositório (`python3 -m http.server 8799`) e `python3 store/gerar.py marfim` (ou `grafite`).

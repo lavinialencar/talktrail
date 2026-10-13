@@ -1,0 +1,14 @@
+{
+  "name": "talktrail-editor",
+  "private": true,
+  "description": "Editor markdown ao vivo dos campos Notas e Cola. npm run build gera ../extension/vendor/editor.js",
+  "scripts": { "build": "esbuild src/editor.js --bundle --minify --format=iife --global-name=MBEditor --outfile=../extension/vendor/editor.js" },
+  "dependencies": {
+    "@codemirror/commands": "^6.6.0",
+    "@codemirror/lang-markdown": "^6.2.5",
+    "@codemirror/language": "^6.10.2",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.28.0"
+  },
+  "devDependencies": { "esbuild": "^0.21.5" }
+}

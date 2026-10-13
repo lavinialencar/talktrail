@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Talktrail",
+  "version": "1.13.0",
+  "version_name": "1.13.0-dev",
+  "description": "Transcrição e notas do Google Meet, salvas só no seu computador, em Markdown.",
+  "permissions": ["sidePanel", "storage", "unlimitedStorage", "alarms", "downloads"],
+  "host_permissions": ["https://meet.google.com/*", "http://127.0.0.1:8787/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["vendor/gsap.min.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "side_panel": { "default_path": "panel.html" },
+  "commands": {
+    "marcar-momento": {
+      "suggested_key": { "default": "Ctrl+Shift+K", "mac": "Alt+Shift+M" },
+      "description": "Marcar momento na reunião"
+    },
+    "alternar-painel": {
+      "suggested_key": { "default": "Ctrl+Shift+P", "mac": "Alt+Shift+P" },
+      "description": "Abrir ou fechar o painel do Talktrail"
+    },
+    "transcrever-ou-parar": {
+      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Alt+Shift+T" },
+      "description": "Começar ou parar a transcrição"
+    }
+  },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "Talktrail",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  }
+}

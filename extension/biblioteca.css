@@ -1,0 +1,38 @@
+/* Biblioteca: mesma linguagem do painel (tokens, cartões, acento). */
+body { overflow-y: auto; }
+.bib { display: block; flex: none; background: transparent; max-width: 780px; margin: 0 auto; padding: 32px 20px 80px; }
+.bib header { margin-bottom: 20px; }
+.bib h1 { margin: 0 0 4px; font-size: 22px; }
+.bib .sub { margin: 0 0 16px; color: var(--mudo); }
+.reunioes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.reuniao { background: var(--card); border: 1px solid var(--linha2); border-radius: 12px; padding: 16px 18px; }
+.reuniao h2 { margin: 0; font-size: 16px; font-weight: 600; overflow-wrap: anywhere; }
+.reuniao .meta { display: flex; gap: 8px; align-items: center; margin-top: 4px; color: var(--fraco); font-size: 12px; font-variant-numeric: tabular-nums; }
+.reuniao .meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--controle); }
+.reuniao .trecho { margin: 10px 0 0; color: var(--mudo); font-size: 13px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.reuniao .trecho b { color: var(--texto); font-weight: 600; margin-right: 4px; }
+.reuniao .chips { margin-top: 10px; }
+.reuniao .acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--linha); }
+
+/* botões com hierarquia: principal no acento, secundários neutros, apagar sempre vermelho e afastado */
+.btn { font: inherit; font-weight: 500; cursor: pointer; padding: 7px 12px; border-radius: var(--raio); border: 1px solid var(--linha2); background: transparent; color: var(--texto); transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.btn:hover { border-color: var(--controle); background: color-mix(in srgb, var(--texto) 6%, transparent); }
+.btn.primario { background: var(--acento); color: var(--acento-t); border-color: var(--acento); font-weight: 600; }
+.btn.primario:hover { background: var(--acento-h); border-color: var(--acento-h); }
+.btn.perigo { margin-left: auto; color: var(--rec); border-color: color-mix(in srgb, var(--rec) 45%, var(--linha2)); }
+.btn.perigo:hover { background: color-mix(in srgb, var(--rec) 12%, transparent); border-color: var(--rec); }
+.btn.perigo.confirma { background: var(--rec); color: #fff; border-color: var(--rec); font-weight: 600; }
+
+/* prévia com toques de leitura: título de seção, hora, nome de quem falou */
+.previa { margin: 14px 0 0; padding: 4px 14px 12px; max-height: 420px; overflow: auto; background: var(--campo); border: 1px solid var(--linha); border-radius: var(--raio); font-size: 13px; line-height: 1.6; }
+.previa h3 { margin: 16px 0 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--acento); }
+.previa .fala { margin: 8px 0; overflow-wrap: anywhere; }
+.previa .fala .hora { color: var(--marca); font-variant-numeric: tabular-nums; font-size: 12px; margin-right: 6px; }
+.previa .fala .quem { font-weight: 600; margin-right: 4px; }
+.previa p { margin: 6px 0; color: var(--mudo); overflow-wrap: anywhere; }
+.previa ul { list-style: none; margin: 4px 0; padding: 0; }
+.previa li { margin: 3px 0; overflow-wrap: anywhere; }
+.previa li::before { content: "•"; color: var(--fraco); margin-right: 8px; }
+.previa .vazio { color: var(--fraco); font-style: italic; }
+#busca { margin-top: 4px; }

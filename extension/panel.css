@@ -1,0 +1,302 @@
+@font-face { font-family: "Inter"; font-weight: 400; src: url("vendor/fonts/inter-400.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 500; src: url("vendor/fonts/inter-500.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 600; src: url("vendor/fonts/inter-600.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 700; src: url("vendor/fonts/inter-700.woff2") format("woff2"); }
+
+/* Talktrail, painel. Neutro, em camadas (fundo, cartão, campo), segue o tema do navegador. */
+/* Talktrail, painel. Um sistema só:
+   - dois níveis de superfície: base (o painel) e cartão (o que agrupa), campos dentro do cartão;
+   - um acento (verde-água) pro que é ação e foco; vermelho só pra gravação e erro; âmbar só pra "momento";
+   - um raio (10 px), uma borda, escala de espaço 4/8/12/16. Segue o tema do navegador. */
+:root {
+  --fundo: #f5f5f7; --card: #ffffff; --campo: #f5f5f7; --linha: #e4e4ea; --linha2: #d4d4dc;
+  --texto: #09090b; --mudo: #52525b; --fraco: #6a6a72; --controle: #85858e;
+  --acento: #0f766e; --acento-t: #ffffff; --acento-h: #115e59;
+  --btn: #18181b; --btn-t: #fafafa; --btn-h: #3f3f46;
+  --rec: #dc2626; --marca: #b45309; --foco: #0f766e; --raio: 10px;
+  --alerta-bg: #fef2f2; --alerta-bd: #fecaca; --alerta-t: #b91c1c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #131313; --card: #1f1f1f; --campo: #131313; --linha: #2d2d2d; --linha2: #3b3b3b; /* #131313 é o fundo da chamada do Meet */
+    --texto: #fafafa; --mudo: #a3a3a3; --fraco: #969696; --controle: #7a7a7a;
+    --acento: #2dd4bf; --acento-t: #04201d; --acento-h: #5eead4;
+    --btn: #fafafa; --btn-t: #09090b; --btn-h: #d4d4d8;
+    --rec: #ef4444; --marca: #fbbf24; --foco: #2dd4bf;
+    --alerta-bg: #2a1214; --alerta-bd: #5b1d22; --alerta-t: #fca5a5;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; } /* sem isso, uma regra de display apaga o atributo hidden */
+/* a página nunca rola nem estica (o efeito elástico do Mac puxava o painel inteiro); só as listas rolam por dentro */
+html, body { height: 100%; margin: 0; overflow: clip; overscroll-behavior: none; }
+body { background: var(--fundo); color: var(--texto); font: 13px/1.5 "Inter", -apple-system, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.app { display: flex; flex-direction: column; height: 100%; }
+.tempo, .hora, .salvo { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+button:focus-visible, .chip:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* topo */
+.topo { padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+.linharec { display: flex; gap: 8px; }
+.eng { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--raio); cursor: pointer; background: transparent; color: var(--mudo); border: 1px solid var(--linha2); transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.eng:hover { color: var(--texto); border-color: var(--controle); background: var(--card); }
+.eng[aria-expanded="true"] { background: var(--card); color: var(--acento); border-color: var(--acento); }
+.rec {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+  flex: 1; height: 44px; border-radius: var(--raio); cursor: pointer;
+  background: var(--acento); color: var(--acento-t); border: 1px solid var(--acento); font-weight: 600;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.rec:hover { background: var(--acento-h); border-color: var(--acento-h); }
+.rec .pt { position: relative; width: 9px; height: 9px; border-radius: 50%; background: var(--acento-t); flex: none; transition: border-radius .2s ease; }
+.rec .onda { position: absolute; inset: 0; border-radius: 50%; background: var(--rec); opacity: 0; }
+.rec.on { background: var(--card); color: var(--texto); border-color: var(--linha2); }
+.rec.on .pt { background: var(--rec); }
+.rec.on .pt { border-radius: 2px; }
+.rec.on:hover { background: color-mix(in srgb, var(--rec) 14%, var(--card)); border-color: var(--rec); }
+.rec .tempo { color: var(--mudo); font-weight: 500; }
+.sub { color: var(--fraco); font-size: 12px; }
+
+.cartao { background: var(--card); border: 1px solid var(--linha); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.rot { font-size: 11px; font-weight: 600; letter-spacing: .02em; color: var(--fraco); }
+.rot:not(:first-child) { margin-top: 6px; }
+.caixa {
+  width: 100%; background: var(--campo); color: var(--texto);
+  border: 1px solid var(--linha2); border-radius: var(--raio); padding: 9px 12px;
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.3; outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.caixa:hover { border-color: var(--controle); }
+.caixa:focus { border-color: var(--acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 22%, transparent); }
+.caixa::placeholder { color: var(--fraco); font-weight: 400; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chips:empty { display: none; }
+.chip {
+  --c: var(--fraco);
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+  border: 1px solid var(--linha2); background: var(--campo); color: var(--mudo);
+  border-radius: 999px; padding: 3px 4px 3px 8px; font-size: 12px;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.chip:hover { border-color: var(--c); color: var(--texto); }
+.chip.on { background: color-mix(in srgb, var(--c) 18%, var(--campo)); border-color: var(--c); color: var(--texto); font-weight: 500; }
+.chip .cor { width: 12px; height: 12px; border-radius: 50%; background: var(--c); flex: none; cursor: pointer; box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 28%, transparent); transition: box-shadow .15s ease, transform .1s ease; }
+.chip .cor:hover { transform: scale(1.2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 45%, transparent); }
+.dicacor { margin: 0; font-size: 12px; color: var(--fraco); display: flex; align-items: center; gap: 4px; }
+.dicacor .bolinha { width: 9px; height: 9px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #eab308 50%, #3b82f6); display: inline-block; }
+.chip .x { position: relative; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; color: var(--fraco); font-size: 14px; line-height: 1; }
+.chip .x:hover { color: var(--texto); background: rgba(127,127,127,.28); }
+.chip .x::before, .chip .cor::before { content: ""; position: absolute; inset: -6px; }
+.chip .cor { position: relative; }
+.tagsrow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 22px; }
+.tagsrow .chips { margin-top: 0; }
+.tagmais { background: transparent; border: 1px dashed var(--controle); padding: 3px 10px; color: var(--mudo); font-size: 12px; cursor: pointer; border-radius: 999px; transition: color .15s ease, background .15s ease, border-color .15s ease, transform .1s ease; }
+.tagmais:hover { color: var(--texto); border-style: solid; border-color: var(--foco); background: var(--campo); }
+.tagmais:active { transform: scale(.96); }
+.tagsger { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--linha); margin-top: 2px; }
+.tagsger[hidden] { display: none; }
+.paleta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 6px 4px 2px; }
+.paleta[hidden] { display: none; }
+.paleta .rotcor { flex: 0 0 100%; font-size: 12px; color: var(--fraco); }
+.paleta .rotcor b { font-weight: 600; color: var(--texto); display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.paleta button { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; background: var(--c); background-clip: content-box; padding: 4px; cursor: pointer; transition: transform .1s ease, border-color .1s ease; }
+.paleta button:hover { transform: scale(1.18); }
+.paleta button.sel { border-color: var(--texto); }
+
+.opc { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 2px 2px 0; }
+.opct { display: flex; flex-direction: column; }
+.opct span { color: var(--texto); font-size: 12.5px; font-weight: 500; }
+.opct small { color: var(--fraco); font-size: 12px; }
+.opc input { position: absolute; opacity: 0; pointer-events: none; }
+.sw { flex: none; width: 36px; height: 20px; border-radius: 999px; background: var(--controle); position: relative; transition: background .12s ease; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.35); transition: transform .12s ease; }
+.opc input:checked + .sw { background: var(--acento); }
+.opc input:checked + .sw::after { transform: translateX(16px); background: #fff; }
+.opc input:focus-visible + .sw { outline: 2px solid var(--foco); outline-offset: 2px; }
+
+.aviso {
+  margin: 14px 14px 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+  background: #dc2626; color: #fff; border-radius: 12px; font-size: 12.5px;
+  box-shadow: 0 6px 18px -8px rgba(0, 0, 0, .55);
+}
+.aviso[hidden] { display: none; }
+.aviso-t { display: flex; flex-direction: column; gap: 2px; }
+.aviso-t strong { font-size: 14px; font-weight: 700; }
+.aviso-t span { opacity: .95; }
+.ligar { align-self: flex-start; cursor: pointer; border: 0; background: #fff; color: #b91c1c; border-radius: 8px; padding: 7px 12px; font-weight: 700; transition: transform .1s ease, background .15s ease; }
+.ligar:hover { background: #fee2e2; }
+.ligar:active { transform: scale(.97); }
+
+/* abas e conteúdo */
+.abas { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--linha); }
+.abas button { background: none; border: 0; color: var(--fraco); padding: 10px 10px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s ease; }
+.abas button:hover { color: var(--texto); }
+.abas button.on { color: var(--texto); border-bottom-color: var(--acento); }
+.abas i { font-style: normal; color: var(--marca); }
+
+main { flex: 1; min-height: 0; display: flex; background: transparent; }
+section { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px; }
+section[hidden] { display: none; }
+.mb-editor { height: calc(100% - 56px); display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--linha2); border-radius: 12px; overflow: hidden; transition: border-color .15s ease, box-shadow .15s ease; }
+.mb-corpo { flex: 1; min-height: 0; }
+.mb-barra { display: flex; gap: 2px; padding: 6px 8px; border-bottom: 1px solid var(--linha); background: transparent; }
+.mb-bt { width: 30px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--mudo); font-size: 14px; cursor: pointer; transition: background .12s ease, color .12s ease; }
+.mb-bt i { font-family: Georgia, serif; font-size: 15px; }
+.mb-sep { width: 1px; margin: 5px 6px; background: var(--linha2); }
+.mb-bt:hover { background: var(--linha); color: var(--texto); }
+
+.mb-editor:focus-within { border-color: var(--acento); box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 18%, transparent); }
+.mb-editor .cm-editor { height: 100%; background: transparent; color: var(--texto); font: inherit; }
+.mb-editor .cm-editor.cm-focused { outline: none; }
+.mb-editor .cm-scroller { font: inherit; line-height: 1.65; padding: 10px 6px; overflow: auto; }
+.mb-editor .cm-content { padding: 2px 8px; caret-color: var(--acento); }
+.mb-editor .cm-line { padding: 0; }
+.mb-editor .cm-placeholder { color: var(--fraco); display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
+.mb-editor .cm-cursor { border-left-color: var(--acento); }
+.mb-editor .cm-selectionBackground, .mb-editor .cm-focused .cm-selectionBackground { background: color-mix(in srgb, var(--texto) 18%, transparent) !important; }
+.mb-h { font-weight: 650; line-height: 1.4; margin-top: 4px; }
+.mb-h1, .mb-h2, .mb-h3 { font-size: 16px; }
+.mb-b { font-weight: 700; }
+.mb-i { font-style: italic; }
+.mb-s { text-decoration: line-through; color: var(--fraco); }
+.mb-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; background: var(--linha); border-radius: 4px; padding: 1px 4px; }
+.mb-bolinha { display: inline-block; width: 14px; color: var(--fraco); }
+.mb-caixa { display: inline-block; vertical-align: -2px; width: 15px; height: 15px; margin-right: 8px; border: 1.5px solid var(--foco); border-radius: 4px; cursor: pointer; position: relative; transition: background .12s ease, border-color .12s ease; }
+.mb-caixa:hover { border-color: var(--texto); }
+.mb-caixa::before { content: ""; position: absolute; inset: -5px; }
+.mb-caixa.on { background: var(--acento); border-color: var(--acento); }
+.mb-caixa.on::after { content: ""; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid var(--acento-t); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.mb-feito { color: var(--fraco); text-decoration: line-through; }
+.mb-cita { border-left: 3px solid var(--linha2); padding-left: 10px !important; color: var(--mudo); }
+.mb-hora { color: var(--marca); font-variant-numeric: tabular-nums; font-weight: 500; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; background: var(--linha); border-radius: 4px; padding: 0 4px; }
+.dica { color: var(--fraco); font-size: 12px; margin: 8px 0 0; }
+#marcadores .dica { margin: 0 0 16px; }
+
+ol, ul { list-style: none; margin: 0; padding: 0; }
+.linha-fala { padding: 10px 0 12px; border-bottom: 1px solid var(--linha); }
+.linha-fala:last-child { border-bottom: 0; }
+#linhas { background: var(--card); border: 1px solid var(--linha2); border-radius: 12px; padding: 2px 14px; }
+#linhas:empty { display: none; }
+.linha-fala .cab { display: flex; gap: 8px; align-items: baseline; }
+.linha-fala .quem { font-weight: 600; font-size: 12px; }
+.linha-fala.eu .quem { color: var(--mudo); }
+.hora { color: var(--fraco); font-size: 11px; }
+.fala { color: var(--texto); margin-top: 2px; }
+.marca { padding: 10px 12px; border: 1px solid var(--linha2); border-radius: var(--raio); margin-bottom: 8px; background: var(--card); }
+.marca .hora { color: var(--marca); }
+
+footer { display: flex; align-items: center; gap: 8px; padding: 12px 14px 14px; border-top: 1px solid var(--linha); background: transparent; }
+.sec {
+  flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  background: var(--card); border: 1px solid var(--linha2); border-radius: var(--raio); padding: 8px 12px; font-weight: 500;
+  transition: border-color .15s ease, background .15s ease;
+}
+.sec:hover { border-color: var(--controle); background: var(--card); }
+#marcar .flag { color: var(--marca); flex: none; }
+#marcar { background: var(--card); border-color: var(--linha2); padding: 8px 10px; gap: 6px; }
+#marcar:hover { border-color: var(--marca); }
+.salvo { margin-left: auto; color: var(--fraco); font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.salvo .abrir { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 7px; border: 1px solid color-mix(in srgb, var(--acento) 40%, var(--linha2)); background: color-mix(in srgb, var(--acento) 8%, transparent); color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; }
+.salvo .abrir:hover { background: color-mix(in srgb, var(--acento) 16%, transparent); }
+
+/* ajustes: um cartão por assunto, com título, pra dar pra bater o olho */
+.ajustes { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 2px 16px 20px; flex-direction: column; gap: 12px; }
+.app.ajustando .ajustes { display: flex; }
+.app.ajustando .abas, .app.ajustando main, .app.ajustando footer, .app.ajustando .cartao, .app.ajustando .sub { display: none; }
+.ajustes h2 { margin: 4px 2px 0; font-size: 16px; }
+.aj { display: flex; flex-direction: column; gap: 8px; padding: 14px; background: var(--card); border: 1px solid var(--linha); border-radius: 12px; }
+.aj h3 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--mudo); }
+.ajrot { font-size: 12.5px; font-weight: 600; }
+.ajdica { margin: 0; font-size: 12px; color: var(--fraco); }
+.ajdica code, .pasta { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+.pasta { display: block; padding: 8px 10px; background: var(--campo); border: 1px solid var(--linha2); border-radius: 8px; word-break: break-all; color: var(--mudo); }
+.ajlinha { display: flex; gap: 8px; flex-wrap: wrap; }
+.ajbotoes { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.ajbotoes .sec { width: 100%; justify-content: flex-start; padding: 10px 12px; white-space: normal; text-align: left; }
+.ajbotoes .sec svg { flex: none; color: var(--mudo); }
+.ajbotoes.duas { flex-direction: row; flex-wrap: wrap; gap: 12px; }
+.ajbotoes.duas .sec { flex: 1 1 150px; width: auto; justify-content: center; white-space: nowrap; text-align: center; padding: 9px 8px; }
+textarea.caixa { overflow: hidden; }
+select.caixa { appearance: auto; }
+textarea.caixa { resize: vertical; font-weight: 400; }
+
+/* "Algo não funcionou?": mesma cor de acento das ações, bem suave, pra se destacar sem alarmar */
+.ajajuda { background: color-mix(in srgb, var(--acento) 9%, var(--card)); border-color: color-mix(in srgb, var(--acento) 38%, var(--linha)); }
+.ajajuda h3 { color: var(--acento); }
+.ajajuda .sec { border-color: color-mix(in srgb, var(--acento) 45%, var(--linha2)); }
+.ajajuda .sec:hover { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, var(--card)); }
+
+/* aviso neutro (informação, não erro) */
+.aviso.neutro { background: var(--campo); color: var(--texto); border: 1px solid var(--controle); box-shadow: none; }
+.aviso.neutro .ligar { border-color: var(--controle); background: transparent; color: var(--texto); }
+.aviso.neutro .ligar:hover { background: var(--linha); }
+
+/* diagnóstico */
+.diag { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.diag[hidden] { display: none; }
+.diag li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; padding: 8px 10px; background: var(--campo); border: 1px solid var(--linha2); border-radius: 8px; font-size: 12.5px; }
+.diag .ponto { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; background: var(--fraco); }
+.diag .ok .ponto { background: #16a34a; --pulso: 22, 163, 74; animation: pulsar 2.4s ease-out infinite; }
+.diag .falha .ponto { background: var(--rec); --pulso: 220, 38, 38; animation: pulsar 1.2s ease-out infinite; }
+.diag .atencao .ponto { background: var(--marca); --pulso: 217, 119, 6; animation: pulsar 1.8s ease-out infinite; }
+@keyframes pulsar { 0% { box-shadow: 0 0 0 0 rgba(var(--pulso), .55); } 70%, 100% { box-shadow: 0 0 0 7px rgba(var(--pulso), 0); } }
+@media (prefers-reduced-motion: reduce) { .diag .ponto { animation: none !important; } }
+.diag b { font-weight: 600; }
+.diag small { display: block; color: var(--mudo); font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }
+.diag li > span:last-child { min-width: 0; }
+.diagresumo { margin: 0; font-weight: 600; font-size: 13px; }
+
+/* descrição de "pra quê serve" no topo das abas de escrita */
+#notas:not([hidden]), #cola:not([hidden]) { display: flex; flex-direction: column; }
+.topodica { margin: 0 0 10px; color: var(--mudo); font-size: 12.5px; line-height: 1.45; }
+#notas .mb-editor, #cola .mb-editor { flex: 1; height: auto; min-height: 120px; }
+
+/* selo beta, mais de uma opção por cartão, "mais opções", atalho */
+.beta { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--mudo); border: 1px solid var(--linha2); vertical-align: 1px; }
+.aj .ajrot:not(:first-of-type) { margin-top: 6px; }
+.aj .opc + .ajrot, .aj .caixa + .ajrot { margin-top: 8px; }
+.avancado { border-top: 1px solid var(--linha); margin-top: 4px; padding-top: 4px; }
+.avancado summary { cursor: pointer; padding: 8px 0; font-size: 12.5px; font-weight: 600; color: var(--mudo); list-style: none; display: flex; align-items: center; gap: 6px; }
+.avancado summary::-webkit-details-marker { display: none; }
+.avancado summary::before { content: ""; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); transition: transform .15s ease; }
+.avancado[open] summary::before { transform: rotate(45deg); }
+.avancado[open] { display: flex; flex-direction: column; gap: 0; }
+.avancado > .opc, .avancado > .grupo { padding: 14px 0; border-top: 1px solid var(--linha); }
+.avancado .grupo { display: flex; flex-direction: column; gap: 8px; }
+.avancado summary { margin-bottom: 2px; }
+.avancado summary:hover { color: var(--texto); }
+.atalho { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding: 4px 0; }
+.atalho-nome { font-weight: 500; flex: 0 1 auto; }
+.atalho kbd { flex: none; margin-left: auto; }
+.lider { flex: 1; min-width: 12px; border-bottom: 2px dotted color-mix(in srgb, var(--fraco) 60%, transparent); transform: translateY(4px); }
+kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px; border-radius: 6px; background: var(--campo); border: 1px solid var(--linha2); border-bottom-width: 2px; color: var(--texto); }
+
+/* Painel de largura média (uns 410 px): o rodapé com três coisas fica apertado, então já empilha em duas linhas. */
+@media (max-width: 440px) {
+  footer { flex-direction: column; align-items: stretch; gap: 8px; }
+  #marcar { justify-content: center; }
+  .salvo { margin-left: 0; flex-wrap: wrap; justify-content: space-between; row-gap: 6px; }
+}
+
+/* Painel estreito: a pessoa pode deixar a barra lateral bem fina. Em vez de cortar, empilha e deixa rolar. */
+@media (max-width: 340px) {
+  footer { flex-direction: column; align-items: stretch; gap: 8px; }
+  #marcar { justify-content: center; }
+  .salvo { margin-left: 0; white-space: normal; flex-wrap: wrap; justify-content: space-between; row-gap: 6px; }
+  .abas { overflow-x: auto; scrollbar-width: none; padding: 0 8px; gap: 0; }
+  .abas::-webkit-scrollbar { display: none; }
+  .abas button { padding: 10px 8px; white-space: nowrap; flex: none; }
+  .lider { display: none; }
+  .ajbotoes.duas { flex-direction: column; }
+  .aj { padding: 12px; }
+  .ajustes { padding-left: 10px; padding-right: 10px; }
+  body { font-size: 12.5px; }
+}
+
+@media (max-width: 280px) {
+  .abas button { padding: 10px 5px; font-size: 12px; }
+}

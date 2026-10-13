@@ -1,0 +1,431 @@
+// Ajustes da engrenagem: oferta (perguntar / sozinho / nada), palavras bloqueadas e aviso no chat.
+const { JSDOM } = require('jsdom');
+const fs = require('fs');
+const c = require('../extension/content.js');
+const src = fs.readFileSync(__dirname + '/../extension/content.js', 'utf8');
+
+let ok = 0, ruim = 0;
+const t = (nome, cond, extra = '') => { cond ? ok++ : ruim++; console.log((cond ? '  ok  ' : ' FALHOU') + ' ' + nome + (extra ? '  ' + extra : '')); };
+
+async function cena({ ajustes = {}, titulo = 'x', chat = true, participantes = [], modo = 'pasta' }) {
+  const html = `<!doctype html><title>${titulo}</title><body><button aria-label="Sair da chamada">sair</button>` +
+    (chat ? '<button id="chatbtn" aria-label="Bate-papo com todos">chat</button><div id="painel"></div>' : '') +
+    participantes.map((n, i) => `<div data-participant-id="p${i}">${n}</div>`).join('') + '</body>';
+  const dom = new JSDOM(html, { url: 'https://meet.google.com/abc-defg-hij', runScripts: 'outside-only', pretendToBeVisual: true });
+  const w = dom.window;
+  Object.defineProperty(w.HTMLElement.prototype, 'innerText', { get() { return this.textContent; } });
+  let agora = 1_000_000;
+  const ints = [], touts = [], msgs = [], enviadas = [];
+  let ouvinte = null;
+  w.Date.now = () => agora;
+  w.setInterval = (f, ms) => { ints.push({ f, ms }); return ints.length; };
+  w.clearInterval = (id) => { if (ints[id - 1]) ints[id - 1].morto = true; };
+  w.clearTimeout = () => {};
+  w.setTimeout = (f, ms) => { touts.push({ f, em: agora + ms }); return touts.length; };
+  w.chrome = {
+    runtime: { id: 'x', onMessage: { addListener: (f) => (ouvinte = f) }, sendMessage: (m) => { msgs.push(m); return Promise.resolve({ ok: true, status: 200, modo, data: {} }); } },
+    storage: { local: { get: () => Promise.resolve({ ajustes }), set: () => Promise.resolve() }, onChanged: { addListener() {} } },
+  };
+  // o chat do Meet de mentira: o botão abre um campo e um botão de enviar
+  if (chat) {
+    w.document.getElementById('chatbtn').addEventListener('click', () => {
+      if (w.document.querySelector('textarea')) return;
+      const ta = w.document.createElement('textarea');
+      ta.setAttribute('aria-label', 'Enviar uma mensagem para todos');
+      const bt = w.document.createElement('button');
+      bt.setAttribute('aria-label', 'Enviar mensagem');
+      bt.addEventListener('click', () => { enviadas.push(ta.value); ta.value = ''; });
+      w.document.getElementById('painel').append(ta, bt);
+    });
+  }
+  w.eval(src);
+  const tick = async (ms) => {
+    for (let r = ms; r > 0; r -= 500) {
+      agora += Math.min(500, r);
+      ints.forEach((i) => { if (!i.morto && Math.floor(agora / 500) % Math.max(1, i.ms / 500) === 0) i.f(); });
+      touts.filter((x) => x.em <= agora && !x.feito).forEach((x) => { x.feito = true; x.f(); });
+      await new Promise((r2) => setImmediate(r2));
+    }
+  };
+  await tick(2500);
+  const h = w.document.getElementById('talktrail-host');
+  const card = h && h.shadowRoot.querySelector('.card');
+  const estado = () => { const s = msgs.filter((m) => m.type === 'state').pop(); return s && s.state; };
+  return { card, estado, tick, enviadas, msgs, doc: w.document, raiz: () => w.document.getElementById('talktrail-host').shadowRoot, ouvinte: () => ouvinte };
+}
+
+(async () => {
+  console.log('Ao entrar numa chamada');
+  let r = await cena({});
+  t('padrão: mostra o aviso "Transcrever esta reunião?"', !!r.card && r.card.textContent.includes('Transcrever esta reunião?'));
+  r = await cena({ ajustes: { oferta: 'auto' } });
+  await r.tick(2000);
+  const h = r.doc.getElementById('talktrail-host');
+  const card = h && h.shadowRoot.querySelector('.card');
+  t('"Transcrever sozinho": começa sem clicar', r.estado() && r.estado().fase === 'gravando', `fase=${r.estado() && r.estado().fase}`);
+  t('...e mostra "Transcrevendo esta reunião" com botão Parar', !!card && card.textContent.includes('Transcrevendo esta reunião') && !!card.querySelector('[data-a="p"]'));
+  await r.tick(8000);
+  const h2 = r.doc.getElementById('talktrail-host');
+  t('...e some sozinho depois de alguns segundos', !h2.shadowRoot.querySelector('.card'));
+  r = await cena({ ajustes: { oferta: 'nada' } });
+  await r.tick(2000);
+  t('"Não fazer nada": sem aviso e sem gravar', !r.card && (!r.estado() || r.estado().fase !== 'gravando'));
+  t('"Não fazer nada": o painel continua disponível', r.msgs.some((m) => m.type === 'em-chamada'));
+
+  console.log('Palavras bloqueadas');
+  r = await cena({ ajustes: { palavras: ['RH', 'demissão'] }, titulo: 'Conversa de Demissao do João - Meet' });
+  t('título com palavra bloqueada (sem acento, outra caixa): não oferece', !r.card);
+  t('...e o painel explica o motivo', r.estado() && /demissão/.test(r.estado().erro || ''), r.estado() && r.estado().erro);
+  r = await cena({ ajustes: { palavras: ['RH'], oferta: 'auto' }, titulo: 'Daily - Meet' });
+  await r.tick(2000);
+  t('título sem a palavra grava normal', r.estado() && r.estado().fase === 'gravando');
+  t('palavraBloqueada: acento e caixa', c.palavraBloqueada('Reunião de DEMISSÃO', ['demissao']) === 'demissao');
+  t('palavraBloqueada: palavra de 1 letra não vale', c.palavraBloqueada('a b c', ['a']) === '');
+  t('palavraBloqueada: lista vazia', c.palavraBloqueada('qualquer', []) === '');
+  t('palavraBloqueada: outro alfabeto', c.palavraBloqueada('Совещание по зарплате', ['зарплат']) === 'зарплат');
+
+  console.log('Pessoas bloqueadas (participantes)');
+  r = await cena({ ajustes: { palavras: ['Marta'] }, titulo: 'Reunião de 12/10 às 06h00' });
+  const hh = r.doc.getElementById('talktrail-host');
+  t('sem a pessoa na chamada: oferece normal', !!hh.shadowRoot.querySelector('.card'));
+  r = await cena({ ajustes: { palavras: ['Marta'] }, titulo: 'x', participantes: ['Dra. Marta (terapeuta)'] });
+  const hp = r.doc.getElementById('talktrail-host');
+  t('pessoa bloqueada entre os participantes: não oferece', !(hp && hp.shadowRoot.querySelector('.card')));
+  t('...e explica o motivo', /Marta/.test((r.estado() && r.estado().erro) || ''), r.estado() && r.estado().erro);
+  r = await cena({ ajustes: { palavras: ['Marta'], oferta: 'auto' }, titulo: 'x', participantes: ['Marta'] });
+  await r.tick(2000);
+  t('gravar sozinho também respeita a pessoa bloqueada', !r.estado() || r.estado().fase !== 'gravando');
+  r = await cena({ ajustes: { palavras: ['Marta'] } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(3000);
+  const tile = r.doc.createElement('div'); tile.setAttribute('data-participant-id', 'p2'); tile.textContent = 'Marta Souza';
+  r.doc.body.append(tile);
+  await r.tick(4000);
+  t('pessoa bloqueada entra no meio: para de gravar', r.estado().fase !== 'gravando', 'fase=' + r.estado().fase);
+  t('...e o painel diz por quê', /Parei de transcrever/.test(r.estado().erro || ''), r.estado().erro);
+
+  console.log('Avisar no chat');
+  r = await cena({ ajustes: { avisoChat: 'sempre', textoChat: 'Estou gravando, ok?' } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(4000);
+  t('manda a mensagem pelo chat', r.enviadas.length === 1 && r.enviadas[0] === 'Estou gravando, ok?', JSON.stringify(r.enviadas));
+  t('estado diz "enviado"', r.estado().avisoChat === 'enviado');
+  r = await cena({ ajustes: { avisoChat: 'sempre' }, chat: false });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(6000);
+  t('sem chat na tela: não quebra e avisa que falhou', r.estado().avisoChat === 'falhou' && r.estado().fase === 'gravando');
+  r = await cena({ ajustes: { avisoChat: 'nunca' } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(3000);
+  t('"nunca": não manda nada', r.enviadas.length === 0);
+  r = await cena({ ajustes: { avisoChat: true, textoChat: 'valor antigo' } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(4000);
+  t('valor antigo (true) vira "sempre"', r.enviadas.length === 1);
+  r = await cena({ ajustes: { avisoChat: 'perguntar', textoChat: 'Gravando!' } });
+  t('"perguntar": o aviso ganha o botão "Transcrever e avisar"', !!r.card.querySelector('[data-a="ga"]'));
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(3000);
+  t('"perguntar" + clicar só em Gravar: não manda', r.enviadas.length === 0);
+  r = await cena({ ajustes: { avisoChat: 'perguntar', textoChat: 'Gravando!' } });
+  r.card.querySelector('[data-a="ga"]').click();
+  await r.tick(4000);
+  t('"perguntar" + Transcrever e avisar: manda', r.enviadas.length === 1 && r.enviadas[0] === 'Gravando!');
+  r = await cena({ ajustes: { avisoChat: 'perguntar', oferta: 'auto', textoChat: 'Gravando!' } });
+  await r.tick(4000);
+  t('gravar sozinho + "perguntar": avisa (não há a quem perguntar)', r.enviadas.length === 1);
+
+  console.log('Salvar o chat');
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const doc = r.doc;
+  const grupo = doc.createElement('div'); grupo.setAttribute('data-sender-name', 'Ana');
+  const m1 = doc.createElement('div'); m1.setAttribute('data-message-id', 'm1'); m1.textContent = 'segue o link https://exemplo.com';
+  const m2 = doc.createElement('div'); m2.setAttribute('data-message-id', 'm2'); m2.textContent = '## tentando quebrar a estrutura';
+  grupo.append(m1, m2); doc.body.append(grupo);
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const save = r.msgs.filter((m) => m.type === 'save').pop();
+  t('lê o chat e manda no arquivo', save && Array.isArray(save.payload.chat) && save.payload.chat.length === 2, JSON.stringify(save && save.payload.chat));
+  t('não repete a mesma mensagem', save && new Set(save.payload.chat.map((x) => x.text)).size === 2);
+  t('guarda quem escreveu', save && save.payload.chat[0] && save.payload.chat[0].speaker === 'Ana');
+  t('com o nome achado, não manda estrutura da tela', save && save.payload.chatEstrutura === undefined);
+  r = await cena({ ajustes: { salvarChat: false } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const g2 = r.doc.createElement('div'); g2.setAttribute('data-message-id', 'x1'); g2.textContent = 'oi'; r.doc.body.append(g2);
+  await r.tick(2000);
+  const s2 = r.msgs.filter((m) => m.type === 'save').pop();
+  t('desligado: não lê o chat', s2 && s2.payload.chat.length === 0);
+
+  console.log('Chat sem lixo da interface');
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const g3 = r.doc.createElement('div'); g3.setAttribute('data-sender-name', 'Ana');
+  const a1 = r.doc.createElement('div'); a1.setAttribute('data-message-id', 'k1');
+  a1.innerHTML = 'segue o link<button aria-label="Fixar mensagem"><i>keep</i> Fixar mensagem</button>';
+  const a2 = r.doc.createElement('div'); a2.setAttribute('data-message-id', 'k2'); // a mesma mensagem, desenhada de novo
+  a2.innerHTML = 'segue o link keep Fixar mensagem';
+  g3.append(a1, a2); r.doc.body.append(g3);
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const s3 = r.msgs.filter((m) => m.type === 'save').pop().payload;
+  t('tira "keep" e "Fixar mensagem"', s3.chat.length >= 1 && s3.chat.every((m) => !/keep|fixar/i.test(m.text)), JSON.stringify(s3.chat));
+  t('não repete a mesma mensagem', s3.chat.length === 1, String(s3.chat.length));
+
+  console.log('Chat: nome de quem mandou fora do bloco da mensagem');
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const sec = r.doc.createElement('section');
+  sec.innerHTML = '<div data-sender-name="Bia"></div><div><div data-message-id="z1">bom dia</div></div>';
+  r.doc.body.append(sec);
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const s4 = r.msgs.filter((m) => m.type === 'save').pop().payload;
+  t('acha o nome no vizinho do mesmo grupo', s4.chat.length === 1 && s4.chat[0].speaker === 'Bia', JSON.stringify(s4.chat));
+
+  console.log('Chat: nome no cabeçalho (estrutura real do Meet)');
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const real = r.doc.createElement('div');
+  real.innerHTML = '<div class="eTSJmf"><div class="eWHPEf"><div class="aops0b">' +
+    '<div class="HNucUd">Você <span>08:13</span></div><div class="beTDc"><div class="RLrADb" data-message-id="r1">oi pessoal</div><div class="RLrADb" data-message-id="r2">segunda mensagem</div></div>' +
+    '</div><div class="aops0b"><div class="HNucUd">Ana 08:14</div><div class="beTDc"><div class="RLrADb" data-message-id="r3">olá</div></div></div></div></div>';
+  r.doc.body.append(real);
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const sReal = r.msgs.filter((m) => m.type === 'save').pop().payload;
+  const quem = (txt) => (sReal.chat.find((c) => c.text === txt) || {}).speaker;
+  t('mensagem minha: "Eu" (e não "Chat")', quem('oi pessoal') === 'Eu', JSON.stringify(sReal.chat));
+  t('segunda mensagem do mesmo grupo: também "Eu"', quem('segunda mensagem') === 'Eu');
+  t('mensagem da Ana: "Ana" (sem a hora)', quem('olá') === 'Ana');
+  t('achou o nome: não manda a estrutura da tela', sReal.chatEstrutura === undefined);
+
+  console.log('Chat: estrutura da tela quando o nome não é achado');
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const solta = r.doc.createElement('div');
+  solta.innerHTML = '<div class="cab" data-timestamp="1"></div><div data-message-id="q1" jsname="x">texto segredo da mensagem</div>';
+  r.doc.body.append(solta);
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const s5 = r.msgs.filter((m) => m.type === 'save').pop().payload;
+  t('sem nome: manda a forma da tela (sem o texto)', typeof s5.chatEstrutura === 'string' && /data-message-id/.test(s5.chatEstrutura) && !/segredo/.test(s5.chatEstrutura), s5.chatEstrutura);
+
+  console.log('Aviso de salvo: Mostrar na pasta');
+  r = await cena({ modo: 'pasta' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  let bm = r.raiz().querySelector('[data-a="m"]');
+  t('salvou na pasta: o botão aparece', !!bm && !bm.hidden && /Mostrar na pasta/.test(bm.textContent));
+  const idSessao = r.msgs.filter((m) => m.type === 'save').pop().payload.id;
+  bm.click();
+  await r.tick(500);
+  const pedido = r.msgs.filter((m) => m.type === 'mostrar').pop();
+  t('clicar pede pro fundo mostrar o arquivo dessa reunião', !!pedido && pedido.id === idSessao, JSON.stringify(pedido));
+  t('e o aviso some na hora', r.raiz().querySelectorAll('.card').length === 0);
+  r = await cena({ modo: 'extensao' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  bm = r.raiz().querySelector('[data-a="m"]');
+  t('só na biblioteca da extensão (sem arquivo): o botão não aparece', !bm || bm.hidden);
+
+  console.log('Extensão atualizada com a aba aberta');
+  r = await cena({});
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.msgs.length = 0;
+  r.doc.defaultView.chrome.runtime.id = undefined; // o Chrome corta a ligação quando a extensão é atualizada
+  r.doc.defaultView.chrome.runtime.sendMessage = () => { throw new Error('Extension context invalidated.'); };
+  await r.tick(1500);
+  const orfao = r.raiz().querySelector('.card');
+  t('mostra o aviso "A extensão foi atualizada"', !!orfao && /A extensão foi atualizada/.test(orfao.textContent), orfao && orfao.textContent.slice(0, 60));
+  t('com o botão pra recarregar a aba', !!r.raiz().querySelector('[data-a="r"]'));
+  r.raiz().querySelector('.fechar').click();
+  await r.tick(3000);
+  t('fechar o aviso o tira e ele não volta sozinho', r.raiz().querySelectorAll('.card').length === 0);
+
+  console.log('Fala corrigida pelo Meet (palavras a mais na frente)');
+  const fund = r.doc.defaultView.fundir;
+  t('"Ai como eu sou?" + "dias Ai como eu sou?" é a mesma fala', fund('Ai como eu sou?', 'dias Ai como eu sou?') === 'dias Ai como eu sou?');
+  t('fala nova bem maior que contém a anterior NÃO funde', fund('Ok, entendi bem', 'Então, ok, entendi bem mas e o prazo da entrega? Ainda não está claro pra mim quando sai.') === null);
+  t('falas diferentes não fundem', fund('Bom dia a todos vocês', 'Vamos começar pela pauta de hoje') === null);
+
+  console.log('Replay de um trecho longo (monólogo)');
+  const limpar = r.doc.defaultView.limparRepeticoes;
+  const frase = (n) => `Esta é a frase número ${n} do monólogo com palavras diferentes ${n * 7} e ${n * 13}.`;
+  const orig = Array.from({ length: 150 }, (_, i) => frase(i));
+  const comReplay = [...orig.slice(0, 120), ...orig.slice(20, 110), ...orig.slice(120)].join(' ');
+  const limpo = limpar(comReplay);
+  t('replay de 90 frases (fora da janela de 80) sai inteiro', limpo === orig.join(' '), `${limpo.split(/(?<=[.])\s+/).length} frases`);
+  const repetidaLonge = [...orig.slice(0, 100), orig[3], ...orig.slice(100)].join(' ');
+  t('uma frase igual isolada, mesmo longe, fica', limpar(repetidaLonge).split(/(?<=[.])\s+/).length === 151);
+  t('duas frases seguidas repetidas (não é replay) ficam', limpar([...orig.slice(0, 100), orig[10], orig[11], ...orig.slice(100)].join(' ')).split(/(?<=[.])\s+/).length === 152);
+
+  console.log('Título, repetição colada, tela cheia e mensagem pendente');
+  const wdoc = r.doc.defaultView;
+  t('título "Meet" vira a data e a hora', /^Reunião de \d\d\/\d\d às \d\dh\d\d$/.test(wdoc.tituloPadrao('Meet')), wdoc.tituloPadrao('Meet'));
+  t('título "Google Meet" também', /^Reunião de/.test(wdoc.tituloPadrao('Google Meet')));
+  t('título com nome de verdade fica', wdoc.tituloPadrao('Meet - Planejamento do trimestre') === 'Planejamento do trimestre');
+  const colada = 'Tá apareceu o aviso bem grande na hora lá no topo que eu falei que era para ser bem vermelho, gostei disso e agora vou desativar a transcrição e deixar a extensão aberta, bora ver se Tá apareceu o aviso bem grande na hora lá no topo que eu falei que era para ser bem vermelho, gostei disso e agora vou desativar a transcrição.';
+  const semCopia = wdoc.limparRepeticoes(colada);
+  t('repetição colada na mesma frase sai', semCopia.length < colada.length * 0.65 && (semCopia.match(/apareceu o aviso/g) || []).length === 1, semCopia);
+  t('frase normal sem repetição não muda', wdoc.limparRepeticoes('Hoje a gente fecha a pauta e depois conversa sobre o prazo, o orçamento e as pessoas envolvidas no projeto inteiro.') === 'Hoje a gente fecha a pauta e depois conversa sobre o prazo, o orçamento e as pessoas envolvidas no projeto inteiro.');
+  const fsEl = r.doc.createElement('div');
+  r.doc.body.append(fsEl);
+  Object.defineProperty(r.doc, 'fullscreenElement', { value: fsEl, configurable: true });
+  r.doc.dispatchEvent(new wdoc.Event('fullscreenchange'));
+  t('em tela cheia, o aviso e o botão vão pra dentro do elemento em tela cheia', fsEl.contains(r.doc.getElementById('talktrail-host')));
+  Object.defineProperty(r.doc, 'fullscreenElement', { value: null, configurable: true });
+  r.doc.dispatchEvent(new wdoc.Event('fullscreenchange'));
+  t('saindo da tela cheia, volta pro lugar', r.doc.getElementById('talktrail-host').parentNode === r.doc.documentElement);
+  r = await cena({ ajustes: { salvarChat: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  const pend = r.doc.createElement('div');
+  pend.innerHTML = '<div class="aops0b"><div class="HNucUd"></div><div class="beTDc"><div class="RLrADb" data-message-id="p1" data-pending="">minha mensagem</div></div></div>';
+  r.doc.body.append(pend);
+  await r.tick(1500);
+  const aindaPendente = r.msgs.filter((m) => m.type === 'save').pop();
+  t('mensagem ainda sendo enviada espera confirmar', !aindaPendente || !aindaPendente.payload.chat.some((c) => c.text === 'minha mensagem'));
+  pend.querySelector('[data-message-id]').removeAttribute('data-pending');
+  pend.querySelector('.HNucUd').textContent = '';
+  await r.tick(2500);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1000);
+  const sP = r.msgs.filter((m) => m.type === 'save').pop().payload;
+  t('depois de enviada, sai como "Eu" mesmo sem cabeçalho com nome', sP.chat.some((c) => c.text === 'minha mensagem' && c.speaker === 'Eu'), JSON.stringify(sP.chat));
+
+  console.log('Tela cheia transcrevendo abre o painel');
+  r = await cena({});
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.msgs.length = 0;
+  const fsx = r.doc.createElement('div');
+  r.doc.body.append(fsx);
+  Object.defineProperty(r.doc, 'fullscreenElement', { value: fsx, configurable: true });
+  r.doc.dispatchEvent(new r.doc.defaultView.Event('fullscreenchange'));
+  await r.tick(300);
+  t('entrar em tela cheia transcrevendo pede pra abrir o painel', r.msgs.filter((m) => m.type === 'open-panel').length === 1);
+  r = await cena({ ajustes: { painelNaTelaCheia: false } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.msgs.length = 0;
+  const fsy = r.doc.createElement('div');
+  r.doc.body.append(fsy);
+  Object.defineProperty(r.doc, 'fullscreenElement', { value: fsy, configurable: true });
+  r.doc.dispatchEvent(new r.doc.defaultView.Event('fullscreenchange'));
+  await r.tick(300);
+  t('com a opção desligada, não abre', r.msgs.filter((m) => m.type === 'open-panel').length === 0);
+  r = await cena({});
+  const fsz = r.doc.createElement('div');
+  r.doc.body.append(fsz);
+  Object.defineProperty(r.doc, 'fullscreenElement', { value: fsz, configurable: true });
+  r.msgs.length = 0;
+  r.doc.dispatchEvent(new r.doc.defaultView.Event('fullscreenchange'));
+  await r.tick(300);
+  t('sem estar transcrevendo, tela cheia não abre painel', r.msgs.filter((m) => m.type === 'open-panel').length === 0);
+
+  console.log('Fechar aviso com o X');
+  r = await cena({});
+  let xis = r.raiz().querySelector('.fechar');
+  t('o aviso de oferta tem X', !!xis);
+  xis.click();
+  await r.tick(500);
+  t('clicar no X tira o aviso da tela', r.raiz().querySelectorAll('.card').length === 0);
+  t('...sem começar a transcrever (nada foi salvo)', !r.msgs.some((m) => m.type === 'save'));
+  r = await cena({ modo: 'pasta' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  xis = r.raiz().querySelector('.fechar');
+  t('o aviso de salvo tem X', !!xis && r.raiz().querySelectorAll('.card').length === 1);
+  xis.click();
+  await r.tick(500);
+  t('clicar no X fecha o aviso de salvo', r.raiz().querySelectorAll('.card').length === 0);
+  r = await cena({ modo: 'pasta' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  r.ouvinte()({ type: 'cmd', cmd: 'start' }, {}, () => {});
+  await r.tick(1500);
+  t('parou e ligou de novo com o aviso na tela: o aviso velho não fica', r.raiz().querySelectorAll('.card').length === 0);
+
+  console.log('Botão redondo no canto');
+  r = await cena({});
+  let fab = r.raiz().querySelector('.fab');
+  t('na chamada: o botão aparece', !!fab && !fab.hidden);
+  fab.click();
+  await r.tick(1500);
+  t('clicar começa a transcrever', r.estado().fase === 'gravando');
+  t('e vira "parar" (vermelho)', fab.classList.contains('rec') && /Parar/.test(fab.title));
+  t('e já pede pra abrir o painel (opção ligada por padrão)', r.msgs.filter((m) => m.type === 'open-panel').length === 1);
+  fab.click();
+  await r.tick(1500);
+  t('clicar de novo para', r.estado().fase !== 'gravando' && !fab.classList.contains('rec'));
+  t('e o painel não é fechado (continua na chamada)', !r.msgs.some((m) => m.type === 'fim'));
+  r = await cena({ ajustes: { botaoFlutuante: false } });
+  t('desligado nos Ajustes: não aparece', r.raiz().querySelector('.fab').hidden === true);
+
+  console.log('Oferta única de escolher uma pasta (sem servidor)');
+  r = await cena({ modo: 'downloads' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  let pfb = r.raiz().querySelector('[data-a="pf"]');
+  t('primeira reunião que caiu em Downloads: oferece "Salvar numa pasta minha"', !!pfb && !pfb.hidden && /pasta minha/.test(pfb.textContent));
+  t('e avisa o fundo que já ofereceu (uma vez só)', r.msgs.filter((m) => m.type === 'pasta-oferecida').length === 1);
+  pfb.click();
+  await r.tick(500);
+  t('clicar abre a janelinha de escolher a pasta', r.msgs.filter((m) => m.type === 'escolher-pasta-navegador').length === 1);
+  r = await cena({ modo: 'downloads', ajustes: { pastaOferecida: true } });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  pfb = r.raiz().querySelector('[data-a="pf"]');
+  t('já ofereceu antes: não oferece de novo', !pfb || pfb.hidden);
+  r = await cena({ modo: 'pasta' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(1500);
+  pfb = r.raiz().querySelector('[data-a="pf"]');
+  t('com a pasta ao vivo funcionando, nem oferece', !pfb || pfb.hidden);
+
+  console.log('Aviso de salvo: tempo na tela');
+  r = await cena({ modo: 'pasta' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(9000);
+  t('com "Mostrar na pasta": ainda está na tela depois de 9 s', r.raiz().querySelectorAll('.card').length === 1);
+  await r.tick(14000);
+  t('...e some sozinho depois de uns 20 s', r.raiz().querySelectorAll('.card').length === 0);
+  r = await cena({ modo: 'extensao' });
+  r.card.querySelector('[data-a="g"]').click();
+  await r.tick(2000);
+  r.ouvinte()({ type: 'cmd', cmd: 'stop' }, {}, () => {});
+  await r.tick(9000);
+  t('sem arquivo (nada pra apertar): some em uns 6 s', r.raiz().querySelectorAll('.card').length === 0);
+
+  console.log(`\n${ok} ok, ${ruim} falharam`);
+  process.exit(ruim ? 1 : 0);
+})();

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Talktrail</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div class="app">
+    <div id="aviso" class="aviso" role="alert" hidden>
+      <div class="aviso-t">
+        <strong id="avisoTit">Atenção</strong>
+        <span id="avisoTxt"></span>
+      </div>
+      <button id="ligar" class="ligar" hidden>Ligar legendas agora</button>
+    </div>
+
+    <header class="topo">
+      <div class="linharec">
+        <button id="rec" class="rec" title="Transcrever">
+          <span class="pt"><i class="onda"></i></span>
+          <span id="estado" class="acao">Transcrever</span>
+          <span id="tempo" class="tempo"></span>
+        </button>
+        <button id="engrenagem" class="eng" type="button" title="Ajustes" aria-label="Ajustes" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+      <div id="sub" class="sub" hidden></div>
+
+      <div class="cartao">
+        <label class="rot" for="titulo">Nome da reunião</label>
+        <input id="titulo" class="caixa" placeholder="Ex.: Kickoff do Raio-X" maxlength="200" autocomplete="off" spellcheck="false">
+        <div class="tagsrow">
+          <div id="tagsSel" class="chips"></div>
+          <button id="tagMais" class="tagmais" type="button" aria-expanded="false">+ Tag</button>
+        </div>
+        <div id="tagsGerencia" class="tagsger" hidden>
+          <input id="tag" class="caixa" placeholder="Nova tag, tecle Enter" maxlength="60" autocomplete="off" spellcheck="false">
+          <p class="dicacor">Clique na <span class="bolinha"></span> da tag pra escolher a cor.</p>
+          <div id="chips" class="chips"></div>
+          <div id="paleta" class="paleta" hidden></div>
+        </div>
+      </div>
+
+    </header>
+
+    <section id="ajustes" class="ajustes" hidden aria-label="Ajustes">
+      <h2>Ajustes</h2>
+
+      <div class="aj">
+        <h3>Transcrição</h3>
+        <label class="ajrot" for="ajOferta">Ao entrar numa chamada</label>
+        <select id="ajOferta" class="caixa">
+          <option value="perguntar">Perguntar se quero transcrever</option>
+          <option value="auto">Transcrever sozinho</option>
+          <option value="nada">Não fazer nada (uso o painel)</option>
+        </select>
+        <p class="ajdica">"Transcrever sozinho" começa na hora que você entra. Combine com o aviso no chat, abaixo.</p>
+        <label class="opc">
+          <span class="opct"><span>Botão redondo no canto do Meet</span><small>Um círculo pequeno, só durante a chamada. Um clique começa ou para a transcrição, e fica vermelho enquanto transcreve.</small></span>
+          <input type="checkbox" id="ajFab"><span class="sw"></span>
+        </label>
+        <label class="opc">
+          <span class="opct"><span>O botão redondo também abre o painel</span><small>Desligado, ele só começa e para a transcrição. O painel abre pelo ícone da extensão.</small></span>
+          <input type="checkbox" id="ajFabPainel"><span class="sw"></span>
+        </label>
+        <label class="opc">
+          <span class="opct"><span>Abrir o painel ao entrar em tela cheia</span><small>Só enquanto transcreve. Se não quiser, feche no X do painel.</small></span>
+          <input type="checkbox" id="ajTelaCheia"><span class="sw"></span>
+        </label>
+        <label class="opc">
+          <span class="opct"><span>Esconder a faixa de legendas do Meet</span><small>A transcrição continua. O espaço da faixa fica vazio, porque é do Meet.</small></span>
+          <input type="checkbox" id="esconder"><span class="sw"></span>
+        </label>
+      </div>
+
+      <div class="aj">
+        <h3>Privacidade e avisos</h3>
+        <label class="ajrot" for="ajPalavras">Nunca transcrever quando estas pessoas ou palavras estiverem na reunião</label>
+        <textarea id="ajPalavras" class="caixa" rows="1" placeholder="Ex.: nome de uma pessoa, RH (separe por vírgula)" maxlength="300" autocomplete="off" spellcheck="false"></textarea>
+        <p class="ajdica">Vale pro nome da reunião e pra quem entra na chamada. Se alguém da lista aparecer, a transcrição não começa (ou para).</p>
+        <label class="ajrot" for="ajChat">Avisar no chat do Meet que estou transcrevendo <span class="beta">beta</span></label>
+        <select id="ajChat" class="caixa">
+          <option value="nunca">Nunca avisar no chat</option>
+          <option value="perguntar">Perguntar toda vez (botão no aviso)</option>
+          <option value="sempre">Sempre, ao começar a transcrever</option>
+        </select>
+        <textarea id="ajChatTxt" class="caixa" rows="3" maxlength="300" hidden aria-label="Texto do aviso no chat"></textarea>
+      </div>
+
+      <div class="aj">
+        <h3>Arquivos</h3>
+        <code id="ajPasta" class="pasta">…</code>
+        <p id="ajInstalarDica" class="ajdica" hidden></p>
+        <p id="ajPastaDica" class="ajdica">Uma subpasta por mês (<code>AAAA-MM</code>), um arquivo por reunião: <code>AAAA-MM-DD_HHhMM_nome.md</code>.</p>
+        <div class="ajbotoes">
+          <button id="ajBiblioteca" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2.5h7.5A1.5 1.5 0 0 1 12 4v9.5H4.5A1.5 1.5 0 0 1 3 12z"/><path d="M3 12a1.5 1.5 0 0 1 1.5-1.5H12"/></svg><span>Abrir a biblioteca</span></button>
+          <button id="ajAbrir" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1 1 0 0 1 1-1h3.2l1.4 1.5h5.9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg><span>Escolher a pasta ao vivo…</span></button>
+          <button id="ajInstalar" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v7.5M4.5 7 8 10.5 11.5 7M3 13h10"/></svg><span>Instalar o complemento (pasta em Documentos)</span></button>
+          <button id="ajCopiar" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"/></svg><span>Copiar o caminho</span></button>
+        </div>
+        <details class="avancado">
+          <summary>Mais opções</summary>
+          <label class="opc">
+            <span class="opct"><span>Baixar o arquivo ao terminar</span><small>Sem a pasta ao vivo, o arquivo cai em Downloads/Talktrail. Desligado, a reunião fica só na biblioteca.</small></span>
+            <input type="checkbox" id="ajBaixar"><span class="sw"></span>
+          </label>
+          <label class="opc">
+            <span class="opct"><span>Salvar o chat do Meet no arquivo <span class="beta">beta</span></span><small>Guarda as mensagens vistas com o painel de chat aberto.</small></span>
+            <input type="checkbox" id="ajSalvarChat"><span class="sw"></span>
+          </label>
+          <div class="grupo">
+          <label class="ajrot" for="ajApagar">Apagar reuniões antigas da biblioteca</label>
+          <select id="ajApagar" class="caixa">
+            <option value="nunca">Nunca</option>
+            <option value="1">Depois de 1 dia</option>
+            <option value="3">Depois de 3 dias</option>
+            <option value="7">Depois de 7 dias</option>
+            <option value="15">Depois de 15 dias</option>
+            <option value="30">Depois de 30 dias</option>
+            <option value="90">Depois de 90 dias</option>
+          </select>
+          <p class="ajdica">Só a biblioteca da extensão. Arquivos já baixados ou na pasta ao vivo não são apagados.</p>
+          </div>
+        </details>
+      </div>
+
+      <div class="aj">
+        <h3>Atalhos</h3>
+        <div class="atalho">
+          <span class="atalho-nome">Abrir ou fechar o painel</span><span class="lider"></span>
+          <kbd id="ajAtalhoPainel">…</kbd>
+        </div>
+        <div class="atalho">
+          <span class="atalho-nome">Transcrever ou parar</span><span class="lider"></span>
+          <kbd id="ajAtalhoRec">…</kbd>
+        </div>
+        <div class="atalho">
+          <span class="atalho-nome">Marcar momento</span><span class="lider"></span>
+          <kbd id="ajAtalho">…</kbd>
+        </div>
+        <p class="ajdica">Funcionam sem tirar a mão do teclado, com a aba do Meet aberta.</p>
+        <button id="ajAtalhoMudar" class="sec" type="button">Mudar os atalhos</button>
+      </div>
+
+      <div class="aj">
+        <h3>Por que não está transcrevendo?</h3>
+        <p id="diagResumo" class="diagresumo">Verificando...</p>
+        <ul id="diagLista" class="diag"></ul>
+      </div>
+
+      <div class="aj ajajuda">
+        <h3>Algo não funcionou?</h3>
+        <p class="ajdica">Abre um e-mail já preenchido, pra você só contar o que aconteceu. Vão junto só a versão, o sistema e o resultado do diagnóstico acima. Nada da reunião: nem o nome, nem o texto.</p>
+        <div class="ajbotoes duas">
+          <button id="ajRelatar" class="sec" type="button">Relatar um problema</button>
+          <button id="ajRelatorioCopiar" class="sec" type="button">Copiar o relatório</button>
+        </div>
+        <p id="ajSuporteEmail" class="ajdica" hidden></p>
+      </div>
+    </section>
+
+    <nav class="abas" id="abas">
+      <button data-aba="texto" class="on">Texto</button>
+      <button data-aba="notas" id="abaNotas">Notas</button>
+      <button data-aba="cola" id="abaCola">Pauta</button>
+      <button data-aba="marcadores">Marcadores <i id="nM"></i></button>
+    </nav>
+
+    <main>
+      <section id="texto">
+        <ol id="linhas"></ol>
+        <p id="vazio" class="dica">Entre numa reunião do Meet e clique em Transcrever. O que for dito aparece aqui, na hora.</p>
+      </section>
+      <section id="notas" hidden>
+        <p class="topodica">Decisões e ideias que aparecem durante a reunião.</p>
+        <div id="notasTxt" class="mb-editor"></div>
+        <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço. <kbd class="tmod">Cmd</kbd> + Enter marca o momento e põe a hora.</p>
+      </section>
+      <section id="cola" hidden>
+        <p class="topodica">O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Fica guardada pela primeira tag e volta na próxima reunião dela.</p>
+        <div id="colaTxt" class="mb-editor"></div>
+        <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço.</p>
+      </section>
+      <section id="marcadores" hidden>
+        <p class="dica">Um marcador guarda um ponto importante da reunião, com a hora e a frase de quando você marcou.</p>
+        <ul id="listaMarcas"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <button id="marcar" class="sec"><svg class="flag" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 2.5h8a.5.5 0 0 1 .5.5v10.2a.3.3 0 0 1-.5.2L8 10.3 4 13.4a.3.3 0 0 1-.5-.2V3a.5.5 0 0 1 .5-.5Z" fill="currentColor"/></svg>Marcar momento</button>
+      <div id="salvo" class="salvo"></div>
+    </footer>
+  </div>
+  <script src="vendor/gsap.min.js"></script>
+  <script src="vendor/editor.js"></script>
+  <script src="pasta.js"></script>
+  <script src="zip.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

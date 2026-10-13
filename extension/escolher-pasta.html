@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Escolher a pasta do Talktrail</title>
+<style>
+  :root { --fundo: #f5f5f7; --texto: #09090b; --mudo: #52525b; --acento: #0f766e; --acento-t: #fff; --card: #fff; --linha: #d4d4dc; }
+  @media (prefers-color-scheme: dark) { :root { --fundo: #131313; --texto: #fafafa; --mudo: #a3a3a3; --acento: #2dd4bf; --acento-t: #04201d; --card: #1f1f1f; --linha: #3b3b3b; } }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--fundo); color: var(--texto); font: 14px/1.5 Inter, -apple-system, system-ui, sans-serif; display: grid; place-items: center; }
+  main { width: min(400px, calc(100% - 40px)); background: var(--card); border: 1px solid var(--linha); border-radius: 14px; padding: 22px; }
+  h1 { margin: 0 0 8px; font-size: 18px; }
+  p { margin: 0 0 12px; color: var(--mudo); }
+  ol { margin: 0 0 16px; padding-left: 20px; color: var(--mudo); }
+  button { font: inherit; font-weight: 600; width: 100%; padding: 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--acento); color: var(--acento-t); }
+  button:focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+  #status { margin: 12px 0 0; min-height: 1.5em; color: var(--texto); font-weight: 600; }
+</style>
+<body>
+  <main>
+    <h1>Onde salvar suas reuniões?</h1>
+    <p>O Talktrail grava o texto de cada reunião numa pasta sua, ao vivo.</p>
+    <ol>
+      <li>Clique em <b>Escolher uma pasta</b>. A janela abre em Documentos.</li>
+      <li>Crie uma pasta chamada <b>Talktrail</b> (botão "Nova pasta").</li>
+      <li>Clique em <b>Abrir</b>.</li>
+    </ol>
+    <button id="escolher" type="button">Escolher uma pasta…</button>
+    <p id="status" role="status"></p>
+  </main>
+  <script src="pasta.js"></script>
+  <script src="escolher-pasta.js"></script>
+</body>
+</html>
