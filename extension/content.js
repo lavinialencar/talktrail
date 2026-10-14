@@ -265,6 +265,95 @@ function iniciar() {
     });
   }
 
+  // ---------- Pauta por reunião ----------
+  // id = "AAAA-MM-DD|título normalizado". A agenda da tela inicial do Meet dá título e horário (o código da sala só
+  // aparece depois do clique), e a aba da sala se chama "Meet: <título>", então título + dia casa a pauta com a sala.
+  const normTitulo = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const dia = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const codigoDaSala = () => { const m = location.pathname.match(/^\/([a-z]{3}-[a-z]{4}-[a-z]{3})(\/|$)/); return m ? m[1] : ''; };
+  const tituloDoMeet = () => {
+    const t = String(document.title || '').replace(/^Meet\s*[:\-–]\s*/i, '').replace(/\s*[-–]\s*Google Meet$/i, '').trim();
+    return /^(meet|google meet|reuni[ãa]o)?$/i.test(t) || /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(t) ? '' : t;
+  };
+  const idPauta = (titulo, data) => (normTitulo(titulo) ? `${data || dia(new Date())}|${normTitulo(titulo)}` : '');
+  let pautaId = '';
+  let chavePauta = '';
+
+  async function lerPautas() {
+    const v = await chrome.storage.local.get(['pautas']);
+    return (v && v.pautas) || {};
+  }
+
+  // entrou na sala (ou o título do Meet carregou): acha a pauta desta reunião e traz pro painel
+  async function ligarPautaDaSala() {
+    const cod = codigoDaSala();
+    if (!cod) { pautaId = ''; return; }
+    const titulo = tituloDoMeet();
+    const todas = await lerPautas();
+    let id = idPauta(titulo || cod);
+    if (!todas[id]) {
+      const porCodigo = Object.keys(todas).filter((k) => todas[k].codigo === cod).sort((a, b) => (todas[b].atualizada || 0) - (todas[a].atualizada || 0))[0];
+      if (porCodigo) id = porCodigo;
+    }
+    pautaId = id;
+    const e = todas[id];
+    if (e) {
+      if (!S.cola && e.texto) S.cola = e.texto;
+      if (!S.titulo && e.titulo) S.titulo = e.titulo;
+      if (e.codigo !== cod) {
+        e.codigo = cod;
+        chrome.storage.local.set({ pautas: todas });
+      }
+      push();
+    }
+  }
+
+  async function guardarPauta(texto) {
+    const cod = codigoDaSala();
+    const id = pautaId || idPauta(tituloDoMeet() || cod);
+    if (!id) return;
+    const todas = await lerPautas();
+    if (!todas[id] && !texto) return;
+    const e = todas[id] || { titulo: tituloDoMeet() || S.titulo || cod, data: id.split('|')[0], hora: '', codigo: cod, criada: Date.now() };
+    e.texto = texto;
+    e.atualizada = Date.now();
+    if (cod) e.codigo = cod;
+    todas[id] = e;
+    pautaId = id;
+    await chrome.storage.local.set({ pautas: todas });
+  }
+
+  // tela inicial do Meet: lê as reuniões do dia que está aberto (título e hora) e guarda pro painel listar
+  const RE_HORA = /(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/;
+  let ultimaAgenda = '';
+  async function lerAgendaDaHome() {
+    const m = location.pathname.match(/^\/home(?:\/(\d{4})\/(\d{2})\/(\d{2}))?\/?$/);
+    if (!m) return;
+    const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
+    const achados = [];
+    document.querySelectorAll('button[aria-label], [role="button"][aria-label]').forEach((el) => {
+      const h = (el.textContent || '').match(RE_HORA);
+      const t = (el.getAttribute('aria-label') || '').trim();
+      if (h && t && t.length < 200 && !achados.some((x) => x.titulo === t)) achados.push({ titulo: t, data, hora: h[1] });
+    });
+    const chave = data + JSON.stringify(achados);
+    if (!achados.length || chave === ultimaAgenda) return; // dia vazio ou página ainda carregando: não apaga o que já se sabe
+    ultimaAgenda = chave;
+    const v = await chrome.storage.local.get(['agendaMeet']);
+    const hoje = dia(new Date());
+    const resto = (Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []).filter((x) => x.data !== data && x.data >= hoje);
+    await chrome.storage.local.set({ agendaMeet: [...resto, ...achados].slice(-150) });
+  }
+
+  setInterval(() => {
+    const chave = codigoDaSala() + '|' + tituloDoMeet();
+    if (chave !== chavePauta) {
+      chavePauta = chave;
+      ligarPautaDaSala().catch(() => {});
+    }
+    lerAgendaDaHome().catch(() => {});
+  }, 1500);
+
   const seg = () => (S.inicio ? (Date.now() - S.inicio) / 1000 : 0);
 
   function linhasAoVivo() {
@@ -305,6 +394,8 @@ function iniciar() {
       info: S.infoAte > Date.now() ? S.info : '',
       modoSalvar: S.modoSalvar,
       esconderLegendas: S.esconderLegendas,
+      pautaId,
+      sala: codigoDaSala(),
     };
   }
 
@@ -820,6 +911,7 @@ function iniciar() {
     if (m.cmd === 'cola') {
       S.cola = String(m.text || '');
       chrome.storage.local.set({ ['cola:' + (S.projeto || '_')]: S.cola });
+      guardarPauta(S.cola).catch(() => {});
       salvarPausado();
     }
     if (m.cmd === 'ligar') ligarLegendas(true);

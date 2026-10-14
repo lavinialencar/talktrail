@@ -243,9 +243,161 @@ const edCola = MBEditor.create($('colaTxt'), {
   placeholder: 'O que você quer tratar',
   onChange: (v) => {
     clearTimeout(tCola);
-    tCola = setTimeout(() => cmd('cola', { text: v }), 300);
+    tCola = setTimeout(() => (alvoExterno() ? salvarPautaAlvo(v) : cmd('cola', { text: v })), 300);
   },
 });
+
+// ---------- Pauta por reunião ----------
+// pautas: { "AAAA-MM-DD|título normalizado": { titulo, data, hora, codigo, texto, criada, atualizada } }
+// agendaMeet: reuniões lidas da tela inicial do Meet (título, dia e hora). Tudo local, no navegador.
+const normT = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+const diaISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const COD_SALA = /([a-z]{3}-[a-z]{4}-[a-z]{3})/i;
+let pautas = {};
+let agendaMeet = [];
+let alvo = ''; // id escolhido na lista; vazio = a reunião em que o painel está (ou a pauta por tag)
+let confirmaApagar = '';
+let pautaPintada = '';
+
+const alvoExterno = () => !!alvo && alvo !== ((ultimo && ultimo.pautaId) || '');
+function rotuloQuando(data, hora) {
+  const hoje = diaISO();
+  const amanha = diaISO(new Date(Date.now() + 86400000));
+  const d = data === hoje ? 'hoje' : data === amanha ? 'amanhã'
+    : new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+  return hora ? `${d} · ${hora}` : d;
+}
+function linhasDePautas() {
+  const por = new Map();
+  for (const a of agendaMeet) por.set(`${a.data}|${normT(a.titulo)}`, { id: `${a.data}|${normT(a.titulo)}`, titulo: a.titulo, data: a.data, hora: a.hora || '', texto: '', salva: false });
+  for (const [id, e] of Object.entries(pautas)) por.set(id, { ...(por.get(id) || {}), id, titulo: e.titulo, data: e.data, hora: e.hora || (por.get(id) || {}).hora || '', texto: e.texto || '', salva: true });
+  return [...por.values()].sort((a, b) => (a.data + (a.hora || '99')).localeCompare(b.data + (b.hora || '99')));
+}
+function itemDePauta(l) {
+  const li = document.createElement('li');
+  li.className = 'pauta-item' + (l.id === (alvo || (ultimo && ultimo.pautaId)) ? ' on' : '');
+  const abrir = document.createElement('button');
+  abrir.type = 'button';
+  abrir.className = 'abrir';
+  const tit = document.createElement('span');
+  tit.className = 'tit';
+  tit.textContent = l.titulo;
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  meta.textContent = rotuloQuando(l.data, l.hora);
+  if (l.texto) {
+    const tem = document.createElement('span');
+    tem.className = 'tem';
+    tem.textContent = 'com pauta';
+    meta.append(tem);
+  }
+  abrir.append(tit, meta);
+  abrir.onclick = () => escolherPauta(l.id);
+  li.append(abrir);
+  if (l.salva) {
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'apagar' + (confirmaApagar === l.id ? ' confirma' : '');
+    x.textContent = confirmaApagar === l.id ? 'Apagar?' : '×';
+    x.setAttribute('aria-label', `Apagar a pauta de ${l.titulo}`);
+    x.onclick = () => {
+      if (confirmaApagar !== l.id) {
+        confirmaApagar = l.id;
+        pintarPautas();
+        setTimeout(() => { if (confirmaApagar === l.id) { confirmaApagar = ''; pintarPautas(); } }, 3000);
+        return;
+      }
+      confirmaApagar = '';
+      delete pautas[l.id];
+      if (alvo === l.id) alvo = '';
+      chrome.storage.local.set({ pautas });
+      pintarPautas();
+      rotularPauta();
+      if (!edCola.hasFocus()) edCola.setValue(alvoExterno() ? '' : (ultimo && ultimo.cola) || '');
+    };
+    li.append(x);
+  }
+  return li;
+}
+function pintarPautas() {
+  const hoje = diaISO();
+  const todas = linhasDePautas();
+  const futuras = todas.filter((l) => l.data >= hoje);
+  const passadas = todas.filter((l) => l.data < hoje && l.texto).reverse();
+  $('pautasLista').replaceChildren(...futuras.map(itemDePauta));
+  $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
+  $('pautasAnteriores').hidden = !passadas.length;
+  $('pautasVazio').hidden = futuras.length > 0;
+  $('pautasN').textContent = futuras.length ? String(futuras.length) : '';
+}
+function rotularPauta() {
+  const externo = alvoExterno();
+  const e = externo ? pautas[alvo] || linhasDePautas().find((l) => l.id === alvo) : null;
+  const noAtual = ultimo && ultimo.pautaId;
+  $('pautaRot').textContent = externo ? `Pauta: ${e ? e.titulo : ''}` : noAtual ? 'Pauta desta reunião' : 'Pauta';
+  $('pautaVoltar').hidden = !externo;
+  $('pautaVoltar').textContent = ultimo && ultimo.sala ? 'Voltar pra reunião atual' : 'Voltar';
+  $('pautaDica').innerHTML = externo
+    ? 'Escreva o que quer tratar. Quando você entrar nessa reunião no Meet, a pauta aparece sozinha.'
+    : 'O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Sem uma reunião escolhida, fica guardada pela primeira tag.';
+}
+function escolherPauta(id) {
+  alvo = id === ((ultimo && ultimo.pautaId) || '') ? '' : id;
+  pintarPautas();
+  rotularPauta();
+  edCola.setValue(alvoExterno() ? (pautas[alvo] && pautas[alvo].texto) || '' : (ultimo && ultimo.cola) || '');
+}
+function salvarPautaAlvo(texto) {
+  if (!alvoExterno()) return;
+  const base = pautas[alvo] || (() => {
+    const l = linhasDePautas().find((x) => x.id === alvo) || {};
+    return { titulo: l.titulo || '', data: l.data || alvo.split('|')[0], hora: l.hora || '', codigo: '', criada: Date.now() };
+  })();
+  if (!texto && !pautas[alvo]) return;
+  pautas[alvo] = { ...base, texto, atualizada: Date.now() };
+  chrome.storage.local.set({ pautas });
+  pintarPautas(); // o selo "com pauta" aparece na hora
+}
+async function carregarPautas() {
+  const v = await chrome.storage.local.get(['pautas', 'agendaMeet']);
+  pautas = (v && v.pautas) || {};
+  agendaMeet = Array.isArray(v && v.agendaMeet) ? v.agendaMeet : [];
+  pintarPautas();
+  rotularPauta();
+}
+chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet) carregarPautas(); });
+$('pautasBotao').onclick = () => {
+  const aberto = $('pautasPainel').hidden;
+  $('pautasPainel').hidden = !aberto;
+  $('pautasBotao').setAttribute('aria-expanded', String(aberto));
+};
+$('pautaVoltar').onclick = () => {
+  alvo = '';
+  pintarPautas();
+  rotularPauta();
+  edCola.setValue((ultimo && ultimo.cola) || '');
+};
+$('pautaQuando').value = diaISO();
+$('pautaForm').onsubmit = (ev) => {
+  ev.preventDefault();
+  const link = $('pautaLink').value.trim();
+  const cod = (link.match(COD_SALA) || [])[1] || '';
+  const titulo = $('pautaTitulo').value.trim() || cod;
+  if (!titulo) {
+    $('pautaTitulo').focus();
+    return;
+  }
+  const data = $('pautaQuando').value || diaISO();
+  const id = `${data}|${normT(titulo)}`;
+  if (!pautas[id]) pautas[id] = { titulo, data, hora: '', codigo: cod.toLowerCase(), texto: '', criada: Date.now(), atualizada: Date.now() };
+  else if (cod) pautas[id].codigo = cod.toLowerCase();
+  chrome.storage.local.set({ pautas });
+  $('pautaTitulo').value = '';
+  $('pautaLink').value = '';
+  $('pautaNovo').open = false;
+  escolherPauta(id);
+};
+carregarPautas();
 let travaEsconder = 0; // o interruptor responde na hora; o eco do estado não pode desfazer o clique
 // vírgula e ponto e vírgula separam tags; pontuação nas pontas não faz parte do nome
 const limparTag = (s) => String(s).replace(/^[\s,;.#]+|[\s,;]+$/g, '');
@@ -422,7 +574,13 @@ function aplicar(s) {
 
   if (document.activeElement !== $('titulo')) $('titulo').value = s.titulo || '';
   if (!edNotas.hasFocus()) edNotas.setValue(s.notes || '');
-  if (!edCola.hasFocus()) edCola.setValue(s.cola || '');
+  if (!edCola.hasFocus() && !alvoExterno()) edCola.setValue(s.cola || '');
+  if (alvo && alvo === (s.pautaId || '')) alvo = ''; // entrou na reunião que estava aberta: passa a ser a atual
+  if ((s.pautaId || '') !== pautaPintada) { // a lista só se redesenha quando a reunião atual muda, não a cada fala
+    pautaPintada = s.pautaId || '';
+    pintarPautas();
+    rotularPauta();
+  }
   chips(s.tags || []);
 
   const ul = $('linhas');

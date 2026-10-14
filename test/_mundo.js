@@ -4,7 +4,8 @@ const fs = require('fs');
 const vm = require('vm');
 const contentSrc = fs.readFileSync(__dirname + '/../extension/content.js', 'utf8');
 
-async function mundo({ ajustes = {} } = {}) {
+async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
+  const loja = { ajustes, ...lojaInicial }; // armazenamento do script da página (chrome.storage.local da aba)
   // ---- fundo da extensão (service worker)
   const mem = {};
   const painel = { habilitado: null, desabilitacoes: 0, aberturas: 0, portas: new Set() };
@@ -59,7 +60,15 @@ async function mundo({ ajustes = {} } = {}) {
     runtime: { id: 'x',
       onMessage: { addListener: (f) => (ouveConteudo = f) },
       sendMessage: (m) => { msgsParaBg.push(m); return new Promise((res) => { const r = ouveBg(m, { tab: { id: 7 } }, res); if (r !== true) res(undefined); }); } },
-    storage: { local: { get: () => Promise.resolve({ ajustes }), set: () => Promise.resolve() }, onChanged: { addListener() {} } },
+    storage: { local: {
+      get: (k) => {
+        const ks = k == null ? Object.keys(loja) : [].concat(k);
+        const o = {};
+        ks.forEach((x) => { if (x in loja) o[x] = JSON.parse(JSON.stringify(loja[x])); });
+        return Promise.resolve(o);
+      },
+      set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); },
+    }, onChanged: { addListener() {} } },
   };
   w.eval(contentSrc);
   const tick = async (ms) => {
@@ -96,7 +105,7 @@ async function mundo({ ajustes = {} } = {}) {
     const r = w.document.querySelector('[role="region"]');
     r.innerHTML = `<div><div>${quem}\n${txt}</div><div></div></div>`; // bloco: primeira linha o falante, o resto a fala (o segundo bloco vazio é como no Meet)
   };
-  return { tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
+  return { loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
 }
 
 module.exports = { mundo };

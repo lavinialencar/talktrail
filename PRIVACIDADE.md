@@ -11,6 +11,7 @@ O Talktrail não coleta, não envia e não vende nenhum dado seu. Tudo o que ele
 - **As legendas do Google Meet**, que o próprio Meet mostra na tela, só nas abas `meet.google.com`.
 - O **chat da reunião**, se você ativar essa opção nos Ajustes.
 - O **nome da reunião**, para nomear o arquivo.
+- Na **tela inicial do Meet**, o **título e o horário** das reuniões do dia que está aberto, para você escrever a pauta de cada uma antes. Isso fica só no seu navegador e nunca sai dele.
 
 ## Onde o texto fica
 
@@ -59,7 +60,7 @@ Questions: talktrail@lavinialencar.com.br.
 
 **Talktrail does not collect, send or sell any of your data. Everything happens on your computer.**
 
-- **Reads:** the captions Google Meet shows on screen (only on `meet.google.com`), the meeting chat if you turn that option on, and the meeting name.
+- **Reads:** the captions Google Meet shows on screen (only on `meet.google.com`), the meeting chat if you turn that option on, the meeting name, and the title and time of the meetings listed on the Meet home page (kept only in your browser, to let you write an agenda for each one).
 - **Stores:** the text in the extension's own library inside your browser, and as a `.md` file in Downloads or the folder you choose. The optional local companion only listens on `127.0.0.1`.
 - **Does not:** have accounts, send text or metadata to any server, use analytics, telemetry or ads, record audio or video, or load remote code.
 - **Permissions:** `sidePanel` (the side panel), `storage` and `unlimitedStorage` (library and settings), `downloads` (saving the file), `alarms` (cleanup of old meetings, only if enabled), `meet.google.com` (reading captions) and `127.0.0.1:8787` (the optional local companion).

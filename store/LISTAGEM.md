@@ -27,7 +27,7 @@ Talktrail transforma as legendas do Google Meet em um arquivo de texto no seu co
 O que ele faz
 • Oferece transcrever quando você entra na chamada e liga as legendas sozinho.
 • Mostra o texto ao vivo num painel ao lado da chamada, com quem falou e quando.
-• Notas e pauta no mesmo painel. A pauta fica guardada por tag e volta na próxima reunião.
+• Notas e pauta no mesmo painel. A pauta de cada reunião fica guardada e carrega sozinha quando você entra nela. As próximas reuniões aparecem na lista, vindas da tela inicial do Meet.
 • Marcadores de momento por atalho de teclado.
 • Salva cada reunião como um arquivo .md, com título, tags, data, duração e participantes.
 
@@ -46,7 +46,7 @@ Talktrail turns Google Meet captions into a text file on your computer.
 What it does
 • Offers to transcribe when you join a call and turns captions on for you.
 • Shows the live text in a side panel next to the call, with who spoke and when.
-• Notes and agenda in the same panel. The agenda is saved by tag and comes back next meeting.
+• Notes and agenda in the same panel. Each meeting's agenda is saved and loads by itself when you join. Upcoming meetings show up in a list, read from the Meet home page.
 • Keyboard shortcut to mark moments.
 • Saves each meeting as a .md file with title, tags, date, duration and participants.
 

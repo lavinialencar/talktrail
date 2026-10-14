@@ -300,3 +300,28 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 @media (max-width: 280px) {
   .abas button { padding: 10px 5px; font-size: 12px; }
 }
+
+/* pauta por reunião */
+.pautas { margin: 0 0 12px; }
+.pautas-botao { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pautas-n { color: var(--mudo); font-variant-numeric: tabular-nums; }
+.pautas-lista { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pauta-item { display: flex; align-items: stretch; gap: 6px; }
+.pauta-item .abrir { flex: 1; min-width: 0; text-align: left; padding: 9px 12px; border: 1px solid var(--linha2); border-radius: var(--raio); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.pauta-item .abrir:hover { border-color: var(--controle); }
+.pauta-item.on .abrir { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento) inset; }
+.pauta-item .tit { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pauta-item .meta { color: var(--mudo); font-size: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+.pauta-item .tem { color: var(--acento); font-weight: 600; }
+.pauta-item .apagar { flex: none; padding: 0 10px; border: 1px solid var(--linha2); border-radius: var(--raio); background: transparent; color: var(--mudo); font: inherit; cursor: pointer; }
+.pauta-item .apagar:hover, .pauta-item .apagar.confirma { color: var(--rec); border-color: var(--rec); }
+.pautas-ant { margin-top: 10px; }
+.pautas-ant summary { cursor: pointer; color: var(--mudo); font-size: 12px; }
+.pautas-novo { margin-top: 12px; }
+.pautas-novo summary { cursor: pointer; color: var(--texto); font-weight: 600; font-size: 12px; padding: 4px 0; }
+.pautas-form { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.pautas-linha { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr); gap: 8px; }
+@media (max-width: 340px) { .pautas-linha { grid-template-columns: 1fr; } }
+.pauta-alvo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0 6px; }
+.pauta-alvo .rot { margin: 0; font-weight: 600; color: var(--texto); }
+.peq { padding: 4px 10px; font-size: 12px; }
