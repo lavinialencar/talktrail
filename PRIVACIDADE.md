@@ -49,11 +49,13 @@ O Talktrail não é afiliado ao Google. Google Meet é marca do Google LLC.
 
 ## Contato
 
-Dúvidas sobre privacidade: *(e-mail de suporte, a preencher antes da publicação)*.
+Dúvidas sobre privacidade: talktrail@lavinialencar.com.br.
 
 ---
 
 # Privacy policy (English)
+
+Questions: talktrail@lavinialencar.com.br.
 
 **Talktrail does not collect, send or sell any of your data. Everything happens on your computer.**
 

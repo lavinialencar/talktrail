@@ -12,6 +12,10 @@ Talktrail
 
 **English:** Google Meet transcripts saved on your computer as Markdown. No account, no cloud, no telemetry.
 
+## E-mail de suporte
+
+talktrail@lavinialencar.com.br
+
 ## Categoria
 
 Produtividade (Productivity)
@@ -84,7 +88,7 @@ Falta:
 1. Preencher `URL_COMPLEMENTO` em `extension/panel.js` com a página de releases do GitHub (enquanto vazio, o botão de instalar some no pacote da loja).
 2. Publicar `PRIVACIDADE.md` numa URL pública (o README do GitHub serve) e colar na loja.
 3. Interface em inglês antes da listagem em inglês.
-4. E-mail de suporte (constante `EMAIL_SUPORTE` em `extension/panel.js` e em `PRIVACIDADE.md`) e link do Buy Me a Coffee.
+4. Link do Buy Me a Coffee. (E-mail de suporte feito em 14/10/2026: talktrail@lavinialencar.com.br, encaminha para o e-mail work pela Cloudflare Email Routing.)
 5. Ela buscar "Talktrail" na loja e nas bases de marca (WIPO, INPI).
 
 ## Arte (pasta `out/marfim/`, recomendada; `out/grafite/` é a alternativa)

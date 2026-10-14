@@ -15,7 +15,7 @@ chrome.storage.onChanged.addListener((c) => {
   }
 });
 // E-mail que recebe os relatos de problema. Vazio = o e-mail abre sem destinatário (a pessoa escolhe ou usa "Copiar o relatório").
-const EMAIL_SUPORTE = '';
+const EMAIL_SUPORTE = 'talktrail@lavinialencar.com.br';
 let servidorOk = true; // avisa ANTES de gravar se o servidor local não está de pé
 let pastaServidor = '';
 async function checarServidor() {
