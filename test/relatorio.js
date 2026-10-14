@@ -39,7 +39,8 @@ const t = (nome, cond, extra = '') => { cond ? ok++ : ruim++; console.log((cond 
   console.log('Relatar um problema');
   w.document.getElementById('ajRelatar').click();
   await new Promise((r) => setTimeout(r, 100));
-  t('abre o e-mail (mailto) com assunto e versão', abertos.length === 1 && abertos[0].startsWith('mailto:?subject=') && decodeURIComponent(abertos[0]).includes('v9.9.9'), abertos[0] && abertos[0].slice(0, 80));
+  const EMAIL = (fs.readFileSync(require('path').join(__dirname, '../extension/panel.js'), 'utf8').match(/const EMAIL_SUPORTE = '([^']*)'/) || [])[1] || '';
+  t('abre o e-mail (mailto) com assunto e versão', abertos.length === 1 && abertos[0].startsWith('mailto:' + EMAIL + '?subject=') && decodeURIComponent(abertos[0]).includes('v9.9.9'), abertos[0] && abertos[0].slice(0, 80));
   const corpo = decodeURIComponent((abertos[0] || '').split('&body=')[1] || '');
   t('traz versão, navegador e sistema', /Talktrail 9\.9\.9/.test(corpo) && /Chrome 130/.test(corpo) && /Sistema: Windows/.test(corpo), corpo.slice(corpo.indexOf('Dados'), corpo.indexOf('Dados') + 230).replace(/\r?\n/g, ' / '));
   t('traz o diagnóstico e onde salva', /Diagnóstico:/.test(corpo) && /Onde salva: na pasta/.test(corpo) && /ok: Reunião do Meet/.test(corpo));
@@ -53,7 +54,8 @@ const t = (nome, cond, extra = '') => { cond ? ok++ : ruim++; console.log((cond 
   await new Promise((r) => setTimeout(r, 100));
   t('copia o mesmo texto, com assunto', copiados.length === 1 && /^Assunto: Talktrail: problema/.test(copiados[0]) && !/secret/i.test(copiados[0]));
   t('o botão mostra "Copiado"', w.document.getElementById('ajRelatorioCopiar').textContent === 'Copiado');
-  t('e o endereço aparece só quando houver um definido', w.document.getElementById('ajSuporteEmail').hidden === true);
+  const caixa = w.document.getElementById('ajSuporteEmail');
+  t('o endereço aparece só quando houver um definido', EMAIL ? (caixa.hidden === false && caixa.textContent.includes(EMAIL)) : caixa.hidden === true);
 
   console.log(`\n${ok} ok, ${ruim} falharam`);
   process.exit(ruim ? 1 : 0);
