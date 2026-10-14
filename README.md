@@ -1,4 +1,4 @@
-<p align="center"><img src="extension/icons/icon-128.png" width="112" alt="Talktrail"></p>
+<p align="center"><img src="docs/banner.png" alt="Talktrail: transcrição do Google Meet, só no seu computador" width="100%"></p>
 
 # Talktrail
 
