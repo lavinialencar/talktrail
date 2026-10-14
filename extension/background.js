@@ -7,30 +7,28 @@ const SERVER = 'http://127.0.0.1:8787';
 const MEET = /^https:\/\/meet\.google\.com\//;
 let gravandoAgora = false;
 
-// o painel só existe em aba do Meet: fora dela fica desligado (e some sozinho)
-async function ajustar(tabId, url) {
+// o painel abre em qualquer aba: no Meet mostra a reunião; fora dele, as reuniões de hoje e a pauta de cada uma
+async function ajustar(tabId) {
   try {
-    const meet = MEET.test(url || '');
-    await chrome.sidePanel.setOptions({ tabId, path: 'panel.html', enabled: meet });
-    if (meet) await chrome.action.enable(tabId);
-    else await chrome.action.disable(tabId); // ícone apagado fora do Meet
+    await chrome.sidePanel.setOptions({ tabId, path: 'panel.html', enabled: true });
+    await chrome.action.enable(tabId);
   } catch (e) {}
 }
 
 function iniciarComportamento() {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
-  chrome.sidePanel.setOptions({ enabled: false }).catch(() => {});
+  chrome.sidePanel.setOptions({ enabled: true, path: 'panel.html' }).catch(() => {});
+  atualizarContagem().catch(() => {});
 }
 chrome.runtime.onInstalled.addListener(iniciarComportamento);
 chrome.runtime.onStartup.addListener(iniciarComportamento);
 
 chrome.tabs.onUpdated.addListener((id, info, tab) => {
-  if (info.url || info.status === 'complete') ajustar(id, tab.url);
+  if (info.url || info.status === 'complete') ajustar(id);
 });
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   try {
-    const t = await chrome.tabs.get(tabId);
-    ajustar(tabId, t.url);
+    ajustar(tabId);
   } catch (e) {}
 });
 
@@ -225,6 +223,13 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
       .catch((e) => responder({ ok: false, status: 0, error: String(e) }));
     return true;
   }
+  if (msg.type === 'atualizar-agenda') {
+    atualizarAgenda().catch(() => {});
+    return false;
+  }
+  if (msg.type === 'agenda-lida' && sender.tab && sender.tab.id === abaAtualizacao) {
+    fecharAbaAtualizacao();
+  }
   if (msg.type === 'open-panel' && sender.tab) {
     chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => {});
   }
@@ -232,8 +237,9 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     chrome.sidePanel.setOptions({ tabId: sender.tab.id, path: 'panel.html', enabled: true }).catch(() => {});
   }
   if (msg.type === 'fim' && sender.tab) {
-    // reunião acabou: desliga o painel nessa aba, o que fecha ele
-    chrome.sidePanel.setOptions({ tabId: sender.tab.id, enabled: false }).catch(() => {});
+    // reunião acabou: fecha o painel nessa aba (ele segue disponível pra ver as próximas reuniões)
+    if (chrome.sidePanel.close) chrome.sidePanel.close({ tabId: sender.tab.id }).catch(() => {});
+    else chrome.sidePanel.setOptions({ tabId: sender.tab.id, enabled: false }).catch(() => {});
     chrome.action.setBadgeText({ tabId: sender.tab.id, text: '' }).catch(() => {});
   }
   return false;
@@ -292,4 +298,52 @@ chrome.commands.onCommand.addListener(async (comando) => {
 
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === 'limpeza') limparAntigas().catch(() => {});
+  if (a.name === 'contagem') atualizarContagem().catch(() => {});
 });
+
+// ---------- agenda do Meet e contagem no ícone ----------
+// Aba de fundo que lê as reuniões de hoje na tela inicial do Meet e fecha sozinha.
+let abaAtualizacao = null;
+let fechaAba = null;
+function fecharAbaAtualizacao() {
+  clearTimeout(fechaAba);
+  if (abaAtualizacao !== null) chrome.tabs.remove(abaAtualizacao).catch(() => {});
+  abaAtualizacao = null;
+}
+async function atualizarAgenda() {
+  if (abaAtualizacao !== null) return; // já tem uma lendo
+  const aba = await chrome.tabs.create({ url: 'https://meet.google.com/home', active: false });
+  abaAtualizacao = aba.id;
+  fechaAba = setTimeout(fecharAbaAtualizacao, 25000); // sem login ou sem lista: não deixa a aba aberta
+}
+
+const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Próxima reunião de HOJE que ainda não começou. Longe demais (mais de 8 h) ou de outro dia: não cutuca.
+function proximaDeHoje(agenda, agora = new Date()) {
+  const hoje = diaLocal(agora);
+  const min = agora.getHours() * 60 + agora.getMinutes();
+  let melhor = null;
+  for (const a of Array.isArray(agenda) ? agenda : []) {
+    if (!a || a.data !== hoje || !/^\d{1,2}:\d{2}$/.test(a.hora || '')) continue;
+    const [h, m] = a.hora.split(':').map(Number);
+    const t = h * 60 + m;
+    if (t >= min && (!melhor || t < melhor.t)) melhor = { t, a };
+  }
+  if (!melhor || melhor.t - min > 8 * 60) return null;
+  const falta = melhor.t - min;
+  const texto = falta < 60 ? `${falta}m` : falta % 60 ? `${Math.floor(falta / 60)}h${String(falta % 60).padStart(2, '0')}` : `${falta / 60}h`;
+  return { texto, falta, titulo: melhor.a.titulo, hora: melhor.a.hora };
+}
+async function atualizarContagem() {
+  const v = await chrome.storage.local.get(['agendaMeet']);
+  const p = proximaDeHoje(v && v.agendaMeet);
+  await chrome.action.setBadgeText({ text: p ? p.texto : '' });
+  if (p) {
+    await chrome.action.setBadgeBackgroundColor({ color: '#2DD4BF' });
+    if (chrome.action.setBadgeTextColor) await chrome.action.setBadgeTextColor({ color: '#0E0F12' });
+  }
+  await chrome.action.setTitle({ title: p ? `Talktrail: ${p.titulo} às ${p.hora} (falta ${p.texto})` : 'Talktrail' });
+}
+chrome.alarms.create('contagem', { periodInMinutes: 1 });
+chrome.storage.onChanged.addListener((c) => { if (c.agendaMeet) atualizarContagem().catch(() => {}); });
+atualizarContagem().catch(() => {});

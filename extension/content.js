@@ -326,9 +326,12 @@ function iniciar() {
   // tela inicial do Meet: lê as reuniões do dia que está aberto (título e hora) e guarda pro painel listar
   const RE_HORA = /(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/;
   let ultimaAgenda = '';
+  let inicioHome = 0;
+  let avisouVazio = false;
   async function lerAgendaDaHome() {
     const m = location.pathname.match(/^\/home(?:\/(\d{4})\/(\d{2})\/(\d{2}))?\/?$/);
-    if (!m) return;
+    if (!m) { inicioHome = 0; avisouVazio = false; return; }
+    if (!inicioHome) inicioHome = Date.now();
     const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
     const achados = [];
     document.querySelectorAll('button[aria-label], [role="button"][aria-label]').forEach((el) => {
@@ -336,13 +339,23 @@ function iniciar() {
       const t = (el.getAttribute('aria-label') || '').trim();
       if (h && t && t.length < 200 && !achados.some((x) => x.titulo === t)) achados.push({ titulo: t, data, hora: h[1] });
     });
+    if (!achados.length) {
+      // dia sem reunião (ou página ainda carregando): depois de uns segundos conta como lido, sem apagar o que já se sabe
+      if (!avisouVazio && Date.now() - inicioHome > 6000) {
+        avisouVazio = true;
+        chrome.storage.local.set({ agendaLidaEm: Date.now() });
+        enviar({ type: 'agenda-lida' });
+      }
+      return;
+    }
     const chave = data + JSON.stringify(achados);
-    if (!achados.length || chave === ultimaAgenda) return; // dia vazio ou página ainda carregando: não apaga o que já se sabe
+    if (chave === ultimaAgenda) return;
     ultimaAgenda = chave;
     const v = await chrome.storage.local.get(['agendaMeet']);
     const hoje = dia(new Date());
     const resto = (Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []).filter((x) => x.data !== data && x.data >= hoje);
-    await chrome.storage.local.set({ agendaMeet: [...resto, ...achados].slice(-150) });
+    await chrome.storage.local.set({ agendaMeet: [...resto, ...achados].slice(-150), agendaLidaEm: Date.now() });
+    enviar({ type: 'agenda-lida' });
   }
 
   setInterval(() => {

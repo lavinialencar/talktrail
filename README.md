@@ -5,7 +5,7 @@
 Transcrição e notas do Google Meet, **100% local**. Uma extensão para o navegador lê as legendas da reunião, mostra tudo num painel lateral e salva cada reunião como um arquivo Markdown na sua pasta. Nada vai para a nuvem, não há conta, não há telemetria.
 
 - Oferece gravar quando você entra numa chamada e liga as legendas sozinha.
-- Painel lateral com o texto ao vivo, **Notas** (o que sai da reunião) e **Pauta** (o que você leva antes; cada reunião tem a sua, com a lista das próximas vinda da tela inicial do Meet, e carrega sozinha ao entrar na sala) com um editor markdown de verdade: título, lista, tarefa com caixa de marcar, hierarquia), **Marcadores** de momento e tags.
+- Painel lateral com o texto ao vivo, **Notas** (o que sai da reunião) e **Pauta** (o que você leva antes; cada reunião tem a sua, com a lista de hoje vinda da tela inicial do Meet, o ícone contando quanto falta pra próxima reunião, e carrega sozinha ao entrar na sala; o painel abre em qualquer página, não só no Meet) com um editor markdown de verdade: título, lista, tarefa com caixa de marcar, hierarquia), **Marcadores** de momento e tags.
 - Um `.md` por reunião, com cabeçalho (título, tags, data, duração, participantes) e a transcrição por fala.
 - Ao sair da chamada, para, salva e some sozinha.
 - Avisa em vermelho se as legendas forem desligadas (sem elas não há transcrição).

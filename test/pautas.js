@@ -18,13 +18,15 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const src = fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8');
   const dom = new JSDOM(html, { url: 'chrome-extension://abc/panel.html', runScripts: 'outside-only', pretendToBeVisual: true });
   const w = dom.window;
-  const loja = { agendaMeet: [{ titulo: 'Apresentação <img src=x onerror=alert(1)>', data: amanha, hora: '16:00' }], pautas: {} };
-  const estado = { fase: 'oculto', titulo: '', tags: [], segundos: 0, notes: '', cola: 'da tag', linhas: [], marcas: [], pautaId: '', sala: '' };
+  const loja = { agendaMeet: [{ titulo: 'Apresentação <img src=x onerror=alert(1)>', data: hoje, hora: '23:59' }, { titulo: 'Daqui a um mês', data: amanha, hora: '09:00' }], pautas: {}, agendaLidaEm: Date.now() };
+  const enviadas = [];
+  const estado = { fase: 'oculto', titulo: '', projeto: '', tags: [], segundos: 0, notes: '', cola: 'da tag', linhas: [], marcas: [], pautaId: '', sala: '', esconderLegendas: false, legendas: true, legendasMotivo: '', modoSalvar: 'extensao', salvoEm: 0, avisoChat: '', info: '', erro: '' };
   const editores = {};
+  let foraDoMeet = false;
   w.chrome = {
     commands: { getAll: () => Promise.resolve([]) },
-    runtime: { onMessage: { addListener() {} }, sendMessage: () => Promise.resolve(), getURL: (p) => p, getManifest: () => ({ version: '1.0.0' }) },
-    tabs: { query: () => Promise.resolve([{ id: 1 }]), sendMessage: () => Promise.resolve(estado), create() {} },
+    runtime: { onMessage: { addListener() {} }, sendMessage: (m) => { enviadas.push(m); return Promise.resolve(); }, getURL: (p) => p, getManifest: () => ({ version: '1.0.0' }) },
+    tabs: { query: () => Promise.resolve([{ id: 1 }]), sendMessage: () => (foraDoMeet ? Promise.reject(new Error('sem receptor')) : Promise.resolve(estado)), create() {} },
     storage: { onChanged: { addListener() {} }, local: {
       get: (k) => Promise.resolve(Object.fromEntries([].concat(k).filter((x) => x in loja).map((x) => [x, JSON.parse(JSON.stringify(loja[x]))]))),
       set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); } } },
@@ -36,14 +38,19 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await esp(250);
   const $ = (id) => w.document.getElementById(id);
 
-  t('a agenda do Meet vira item da lista', $('pautasLista').children.length === 1);
-  t('o contador mostra 1', $('pautasN').textContent === '1');
+  const falhou = w.eval(`(() => { try { aplicar(${JSON.stringify(estado)}); return ''; } catch (e) { return e.message; } })()`);
+  t('aplicar() com um estado normal não lança erro (nenhuma variável nova esconde outra)', falhou === '', falhou);
+  t('a reunião de hoje vira item da lista', $('pautasLista').children.length === 1);
+  t('o contador mostra só as de hoje', $('pautasN').textContent === '1');
   t('título com HTML aparece como texto, sem criar elemento', !$('pautasLista').querySelector('img') && /<img/.test($('pautasLista').textContent));
-  t('mostra "amanhã" e a hora', /amanhã · 16:00/.test($('pautasLista').textContent));
+  t('mostra "hoje" e a hora', /hoje · 23:59/.test($('pautasLista').textContent));
+  t('reunião de outro dia fica em "Próximos dias", não na lista de hoje', $('pautasProxLista').children.length === 1 && !/um mês/.test($('pautasLista').textContent) && $('pautasProximos').hidden === false);
+  t('a próxima de hoje aparece em destaque, com quanto falta', $('proxima').hidden === false && /Apresentação/.test($('proximaTit').textContent) && /23:59 · em/.test($('proximaQuando').textContent));
+  t('com a agenda recente, não pede atualização ao abrir', !enviadas.some((m) => m.type === 'atualizar-agenda'));
 
   $('pautasLista').querySelector('.abrir').click();
   await esp(50);
-  const id = `${amanha}|${'apresentacao <img src=x onerror=alert(1)>'}`;
+  const id = `${hoje}|${'apresentacao <img src=x onerror=alert(1)>'}`;
   t('escolher a reunião troca o rótulo do editor', /^Pauta: Apresentação/.test($('pautaRot').textContent));
   t('aparece o botão de voltar', $('pautaVoltar').hidden === false);
   t('o editor mostra a pauta da reunião, não a da tag', editores.colaTxt.v === '');
@@ -52,7 +59,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await esp(450);
   const salva = loja.pautas[id];
   t('digitar grava a pauta daquela reunião', !!salva && salva.texto === '- ponto A\n- ponto B', JSON.stringify(Object.keys(loja.pautas)));
-  t('guarda título, dia e hora da agenda', salva && salva.data === amanha && salva.hora === '16:00' && /Apresentação/.test(salva.titulo));
+  t('guarda título, dia e hora da agenda', salva && salva.data === hoje && salva.hora === '23:59' && /Apresentação/.test(salva.titulo));
   t('o item passa a mostrar "com pauta"', /com pauta/.test($('pautasLista').textContent));
 
   $('pautaVoltar').click();
@@ -82,6 +89,18 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await esp(30);
   t('o segundo clique apaga', Object.keys(loja.pautas).length === antes - 1);
 
+  console.log('Painel fora do Meet');
+  foraDoMeet = true;
+  loja.agendaLidaEm = Date.now() - 3 * 3600 * 1000; // agenda velha
+  w.document.getElementById('abaNotas').click();
+  await w.eval('carregarPautas()'); // pega a agenda velha
+  await w.eval("cmd('estado')");
+  await esp(150);
+  t('sem Meet na aba, o painel entra no modo "fora"', w.document.body.classList.contains('fora'));
+  t('abre direto na aba Pauta, com a lista de reuniões aberta', $('cola').hidden === false && $('pautasPainel').hidden === false);
+  await esp(80);
+  t('com agenda velha, pede pro fundo atualizar pelo Meet', enviadas.some((m) => m.type === 'atualizar-agenda'));
+
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');
   const idSala = `${hoje}|apresentacao case`;
@@ -110,6 +129,26 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const ag = m3.loja.agendaMeet || [];
   t('lê título e hora das reuniões da tela inicial', ag.length === 1 && ag[0].titulo === 'Planejamento semanal' && ag[0].hora === '10:00' && ag[0].data === '2026-10-20', JSON.stringify(ag));
   t('botões sem horário (tira de dias) não entram', !ag.some((x) => /feira/i.test(x.titulo)));
+
+  console.log('Fundo: contagem no ícone');
+  const bg = m.bgCtx;
+  const dia0 = new Date(2026, 9, 14, 15, 0); // 14/10/2026, 15:00
+  const agenda = [{ titulo: 'Passou', data: '2026-10-14', hora: '14:00' }, { titulo: 'Daqui a 50', data: '2026-10-14', hora: '15:50' },
+    { titulo: 'Mais tarde', data: '2026-10-14', hora: '17:20' }, { titulo: 'Outro dia', data: '2026-10-15', hora: '15:10' }];
+  const f = (a, d) => require('vm').runInContext('proximaDeHoje', bg)(a, d);
+  const p1 = f(agenda, dia0);
+  t('mostra quanto falta pra próxima de hoje (50m)', p1 && p1.texto === '50m' && p1.titulo === 'Daqui a 50', JSON.stringify(p1));
+  t('uma hora e pouco vira "1h20"', f([{ titulo: 'x', data: '2026-10-14', hora: '16:20' }], dia0).texto === '1h20');
+  t('hora cheia vira "2h"', f([{ titulo: 'x', data: '2026-10-14', hora: '17:00' }], dia0).texto === '2h');
+  t('reunião só de outro dia não aparece', f([{ titulo: 'x', data: '2026-10-15', hora: '15:10' }], dia0) === null);
+  t('reunião já passada não aparece', f([{ titulo: 'x', data: '2026-10-14', hora: '14:00' }], dia0) === null);
+  t('muito longe (mais de 8 h) não cutuca', f([{ titulo: 'x', data: '2026-10-14', hora: '23:30' }], dia0) === null);
+  t('sem agenda não quebra', f(undefined, dia0) === null && f([], dia0) === null);
+  const m4 = await mundo();
+  await m4.tick(1000);
+  m4.sairDaChamada();
+  await m4.tick(2500);
+  t('ao sair da chamada o painel é fechado (close), não desligado de vez', (m4.painel.fechamentos || 0) >= 1, String(m4.painel.fechamentos));
 
   console.log(`\n${ok} ok, ${ruim} falharam`);
   process.exit(ruim ? 1 : 0);

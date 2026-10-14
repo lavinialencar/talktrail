@@ -180,13 +180,21 @@
         <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço. <kbd class="tmod">Cmd</kbd> + Enter marca o momento e põe a hora.</p>
       </section>
       <section id="cola" hidden>
+        <div id="proxima" class="proxima" hidden>
+          <span class="rot">Próxima reunião de hoje</span>
+          <strong id="proximaTit" class="proxima-tit"></strong>
+          <span id="proximaQuando" class="proxima-quando"></span>
+        </div>
         <div class="pautas">
           <button id="pautasBotao" class="sec pautas-botao" type="button" aria-expanded="false" aria-controls="pautasPainel">
             <span>Reuniões</span><span id="pautasN" class="pautas-n"></span>
           </button>
           <div id="pautasPainel" hidden>
-            <p class="dica" id="pautasVazio" hidden>Abra a tela inicial do Meet e as suas próximas reuniões aparecem aqui. Ou adicione uma abaixo.</p>
+            <p class="dica" id="pautasVazio" hidden>Nenhuma reunião de hoje. Toque em Atualizar pelo Meet, ou adicione uma abaixo.</p>
+            <div class="pautas-topo"><span class="rot">Hoje</span><button id="pautasAtualizar" class="sec peq" type="button">Atualizar pelo Meet</button></div>
+            <p id="pautasLidaEm" class="dica" hidden></p>
             <ul id="pautasLista" class="pautas-lista"></ul>
+            <details id="pautasProximos" class="pautas-ant" hidden><summary>Próximos dias</summary><ul id="pautasProxLista" class="pautas-lista"></ul></details>
             <details id="pautasAnteriores" class="pautas-ant" hidden><summary>Anteriores</summary><ul id="pautasAntLista" class="pautas-lista"></ul></details>
             <details id="pautaNovo" class="pautas-novo"><summary>Adicionar reunião</summary>
             <form id="pautaForm" class="pautas-form" autocomplete="off">

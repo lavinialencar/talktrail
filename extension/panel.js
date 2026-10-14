@@ -257,6 +257,9 @@ let pautas = {};
 let agendaMeet = [];
 let alvo = ''; // id escolhido na lista; vazio = a reunião em que o painel está (ou a pauta por tag)
 let confirmaApagar = '';
+let agendaLidaEm = 0;
+let atualizandoAgenda = false;
+let ultimoPedido = 0;
 let pautaPintada = '';
 
 const alvoExterno = () => !!alvo && alvo !== ((ultimo && ultimo.pautaId) || '');
@@ -319,16 +322,33 @@ function itemDePauta(l) {
   }
   return li;
 }
+const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 function pintarPautas() {
   const hoje = diaISO();
   const todas = linhasDePautas();
-  const futuras = todas.filter((l) => l.data >= hoje);
+  const deHoje = todas.filter((l) => l.data === hoje);
+  const proximos = todas.filter((l) => l.data > hoje);
   const passadas = todas.filter((l) => l.data < hoje && l.texto).reverse();
-  $('pautasLista').replaceChildren(...futuras.map(itemDePauta));
+  $('pautasLista').replaceChildren(...deHoje.map(itemDePauta));
+  $('pautasProxLista').replaceChildren(...proximos.map(itemDePauta));
+  $('pautasProximos').hidden = !proximos.length;
   $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
   $('pautasAnteriores').hidden = !passadas.length;
-  $('pautasVazio').hidden = futuras.length > 0;
-  $('pautasN').textContent = futuras.length ? String(futuras.length) : '';
+  $('pautasVazio').hidden = deHoje.length > 0;
+  $('pautasN').textContent = deHoje.length ? String(deHoje.length) : '';
+  // a próxima reunião de hoje (só de hoje: uma de daqui a um mês não fica cutucando)
+  const agora = new Date();
+  const min = agora.getHours() * 60 + agora.getMinutes();
+  const prox = deHoje.map((l) => ({ l, t: minutosDe(l.hora) })).filter((x) => x.t !== null && x.t >= min).sort((a, b) => a.t - b.t)[0];
+  $('proxima').hidden = !prox;
+  if (prox) {
+    const falta = prox.t - min;
+    $('proximaTit').textContent = prox.l.titulo;
+    $('proximaQuando').textContent = `${prox.l.hora} · ` + (falta === 0 ? 'agora' : falta < 60 ? `em ${falta} min` : `em ${Math.floor(falta / 60)} h${falta % 60 ? ` ${falta % 60} min` : ''}`);
+  }
+  const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  $('pautasLidaEm').hidden = !lida && !atualizandoAgenda;
+  $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando…' : lida ? `Atualizado às ${lida}.` : '';
 }
 function rotularPauta() {
   const externo = alvoExterno();
@@ -359,13 +379,34 @@ function salvarPautaAlvo(texto) {
   pintarPautas(); // o selo "com pauta" aparece na hora
 }
 async function carregarPautas() {
-  const v = await chrome.storage.local.get(['pautas', 'agendaMeet']);
+  const v = await chrome.storage.local.get(['pautas', 'agendaMeet', 'agendaLidaEm']);
+  if (v && v.agendaLidaEm && v.agendaLidaEm !== agendaLidaEm) atualizandoAgenda = false;
+  agendaLidaEm = (v && v.agendaLidaEm) || 0;
   pautas = (v && v.pautas) || {};
   agendaMeet = Array.isArray(v && v.agendaMeet) ? v.agendaMeet : [];
   pintarPautas();
   rotularPauta();
 }
-chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet) carregarPautas(); });
+chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm) carregarPautas(); });
+function atualizarAgendaDoMeet() {
+  if (Date.now() - ultimoPedido < 15000) return;
+  ultimoPedido = Date.now();
+  atualizandoAgenda = true;
+  pintarPautas();
+  chrome.runtime.sendMessage({ type: 'atualizar-agenda' }).catch(() => {});
+  setTimeout(() => { atualizandoAgenda = false; pintarPautas(); }, 30000);
+}
+$('pautasAtualizar').onclick = atualizarAgendaDoMeet;
+// fora do Meet o painel vira só "reuniões de hoje e pauta": sem gravar, sem texto, sem marcadores
+function modoFora(ligado) {
+  if (document.body.classList.contains('fora') === ligado) return;
+  document.body.classList.toggle('fora', ligado);
+  if (!ligado) return;
+  $('abaCola').click();
+  $('pautasPainel').hidden = false;
+  $('pautasBotao').setAttribute('aria-expanded', 'true');
+  if (!agendaLidaEm || Date.now() - agendaLidaEm > 20 * 60 * 1000) atualizarAgendaDoMeet();
+}
 $('pautasBotao').onclick = () => {
   const aberto = $('pautasPainel').hidden;
   $('pautasPainel').hidden = !aberto;
@@ -451,6 +492,7 @@ function semMeet() {
   $('sub').textContent = 'Abra uma reunião do Meet pra transcrever.';
   $('sub').hidden = false;
   $('rec').className = 'rec';
+  modoFora(true);
 }
 
 let acaoAviso = 'ligar';
@@ -549,6 +591,7 @@ function chips(sel) {
 
 function aplicar(s) {
   ultimo = s;
+  modoFora(false);
   const gravando = s.fase === 'gravando';
   base = { seg: s.segundos, em: Date.now(), gravando };
   if (!calmo && typeof gsap !== 'undefined' && $('rec').classList.contains('on') !== gravando) {
@@ -647,15 +690,15 @@ function aplicar(s) {
 
   // "Salvo às 07:23" e, quando há arquivo, um botão que abre a pasta com ele selecionado
   const ondeSalvou = { pasta: 'na pasta', extensao: 'na extensão', downloads: 'em Downloads' }[s.modoSalvar] || '';
-  const alvo = $('salvo');
+  const elSalvo = $('salvo');
   const chave = s.salvoEm ? `${hhmm(s.salvoEm)}|${s.modoSalvar}|${s.id}` : '';
-  if (alvo.dataset.chave !== chave) {
-    alvo.dataset.chave = chave;
-    alvo.textContent = '';
+  if (elSalvo.dataset.chave !== chave) {
+    elSalvo.dataset.chave = chave;
+    elSalvo.textContent = '';
     if (s.salvoEm) {
-      alvo.append(`Salvo às ${hhmm(s.salvoEm)}`);
+      elSalvo.append(`Salvo às ${hhmm(s.salvoEm)}`);
       if (s.modoSalvar === 'navegador') {
-        alvo.append(' · na pasta escolhida');
+        elSalvo.append(' · na pasta escolhida');
       } else if (s.modoSalvar === 'pasta' || s.modoSalvar === 'downloads') {
         const b = document.createElement('button');
         b.type = 'button';
@@ -663,9 +706,9 @@ function aplicar(s) {
         b.title = 'Abre a pasta com o arquivo desta reunião selecionado';
         b.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1 1 0 0 1 1-1h3.2l1.4 1.5h5.9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>Mostrar na pasta';
         b.onclick = () => chrome.runtime.sendMessage({ type: 'mostrar', id: s.id }).catch(() => {});
-        alvo.append(b);
+        elSalvo.append(b);
       } else if (ondeSalvou) {
-        alvo.append(` · ${ondeSalvou}`);
+        elSalvo.append(` · ${ondeSalvou}`);
       }
     }
   }

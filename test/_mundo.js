@@ -12,6 +12,8 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
   let ouveBg = null, comando = null, aoConectar = null;
   let ouveConteudo = null;
   const salvos = []; // o que o "servidor" recebeu
+  const badges = [];
+  const titulos = [];
   const bg = {
     storage: { local: {
       get: async (k) => (k === null ? { ...mem } : typeof k === 'string' ? (k in mem ? { [k]: mem[k] } : {}) : {}),
@@ -24,8 +26,9 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
       setPanelBehavior: async () => {},
       setOptions: async (o) => { if (o.enabled === false) { painel.habilitado = false; painel.desabilitacoes++; } else if (o.enabled === true) painel.habilitado = true; },
       open: async () => { if (painel.habilitado === false) throw new Error('painel desabilitado'); painel.aberturas++; },
+      close: async () => { painel.habilitado = false; painel.fechamentos = (painel.fechamentos || 0) + 1; }, // fecha; na vida real segue habilitado
     },
-    action: { enable: async () => {}, disable: async () => {}, setBadgeText: async () => {}, setBadgeBackgroundColor: async () => {} },
+    action: { enable: async () => {}, disable: async () => {}, setBadgeText: async (o) => { badges.push(o); }, setBadgeBackgroundColor: async () => {}, setTitle: async (o) => { titulos.push(o.title); } },
     tabs: {
       onUpdated: { addListener() {} }, onActivated: { addListener() {} }, get: async () => ({}),
       query: async () => [{ id: 7, url: 'https://meet.google.com/abc-defg-hij' }],
@@ -105,7 +108,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
     const r = w.document.querySelector('[role="region"]');
     r.innerHTML = `<div><div>${quem}\n${txt}</div><div></div></div>`; // bloco: primeira linha o falante, o resto a fala (o segundo bloco vazio é como no Meet)
   };
-  return { loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
+  return { badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
 }
 
 module.exports = { mundo };

@@ -325,3 +325,12 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pauta-alvo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0 6px; }
 .pauta-alvo .rot { margin: 0; font-weight: 600; color: var(--texto); }
 .peq { padding: 4px 10px; font-size: 12px; }
+
+/* fora do Meet: só reuniões de hoje e pauta */
+.fora .linharec .rec, .fora .cartao, .fora .sub, .fora footer, .fora .abas button:not([data-aba="cola"]) { display: none; }
+.proxima { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--acento); border-radius: var(--raio); background: var(--card); }
+.proxima .rot { margin: 0; color: var(--acento); }
+.proxima-tit { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.proxima-quando { color: var(--mudo); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pautas-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+.pautas-topo .rot { margin: 0; }
