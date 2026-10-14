@@ -279,6 +279,8 @@ function linhasDePautas() {
 function itemDePauta(l) {
   const li = document.createElement('li');
   li.className = 'pauta-item' + (l.id === (alvo || (ultimo && ultimo.pautaId)) ? ' on' : '');
+  const agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
+  if (l.data === diaISO() && minutosDe(l.hora) !== null && minutosDe(l.hora) < agoraMin) li.classList.add('passou'); // já começou ou passou: fica apagada
   const abrir = document.createElement('button');
   abrir.type = 'button';
   abrir.className = 'abrir';

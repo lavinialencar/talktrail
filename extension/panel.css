@@ -334,3 +334,4 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .proxima-quando { color: var(--mudo); font-size: 13px; font-variant-numeric: tabular-nums; }
 .pautas-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
 .pautas-topo .rot { margin: 0; }
+.pauta-item.passou .tit { color: var(--mudo); font-weight: 500; }
