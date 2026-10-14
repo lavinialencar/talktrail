@@ -60,6 +60,10 @@ Good to know
 
 > Observação: o painel da extensão ainda está só em português. A descrição em inglês só deve ir pra loja depois da interface em inglês (i18n), senão a pessoa instala e encontra tudo em português.
 
+## URL da política de privacidade
+
+https://github.com/lavinialencar/talktrail/blob/main/PRIVACIDADE.md
+
 ## Propósito único (single purpose)
 
 Transcrever reuniões do Google Meet a partir das legendas da própria chamada e salvar o texto localmente.
@@ -86,7 +90,7 @@ Feito em 13/10/2026 (versão 1.13.0):
 
 Falta:
 1. Preencher `URL_COMPLEMENTO` em `extension/panel.js` com a página de releases do GitHub (enquanto vazio, o botão de instalar some no pacote da loja).
-2. Publicar `PRIVACIDADE.md` numa URL pública (o README do GitHub serve) e colar na loja.
+2. ~~Publicar `PRIVACIDADE.md` numa URL pública~~ Feito em 14/10/2026: repositório público, URL acima.
 3. Interface em inglês antes da listagem em inglês.
 4. Link do Buy Me a Coffee. (E-mail de suporte feito em 14/10/2026: talktrail@lavinialencar.com.br, encaminha para o e-mail work pela Cloudflare Email Routing.)
 5. Ela buscar "Talktrail" na loja e nas bases de marca (WIPO, INPI).
