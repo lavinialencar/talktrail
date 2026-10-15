@@ -89,6 +89,15 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await esp(30);
   t('o segundo clique apaga', Object.keys(loja.pautas).length === antes - 1);
 
+  console.log('Aviso de extensão não autorizada');
+  const criadas = [];
+  w.chrome.tabs.create = (o) => criadas.push(o.url);
+  w.eval(`aplicar(${JSON.stringify({ ...estado, fase: 'gravando', erro: 'Esta extensão não está autorizada no servidor da pasta. A reunião continua guardada na extensão. Abra http://127.0.0.1:8787/ e clique em "Parear de novo".' })})`);
+  t('o aviso mostra o botão de abrir a página de pareamento', $('ligar').hidden === false && /pareamento/i.test($('ligar').textContent));
+  $('ligar').click();
+  t('o botão abre a página do servidor local', criadas.includes('http://127.0.0.1:8787/'), JSON.stringify(criadas));
+  w.eval(`aplicar(${JSON.stringify(estado)})`);
+
   console.log('Painel fora do Meet');
   foraDoMeet = true;
   loja.agendaLidaEm = Date.now() - 3 * 3600 * 1000; // agenda velha

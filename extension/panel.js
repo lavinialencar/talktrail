@@ -366,7 +366,9 @@ function rotularPauta() {
   $('pautaVoltar').textContent = ultimo && ultimo.sala ? 'Voltar pra reunião atual' : 'Voltar';
   $('pautaDica').innerHTML = externo
     ? 'Escreva o que quer tratar. Quando você entrar nessa reunião no Meet, a pauta aparece sozinha.'
-    : 'O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Sem uma reunião escolhida, fica guardada pela primeira tag.';
+    : noAtual
+      ? 'Pontos e perguntas pra tratar. Fica guardada nesta reunião e volta quando você entrar de novo.'
+      : 'O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Sem uma reunião escolhida, fica guardada pela primeira tag.';
 }
 function escolherPauta(id) {
   alvo = id === ((ultimo && ultimo.pautaId) || '') ? '' : id;
@@ -408,7 +410,11 @@ $('pautasAtualizar').onclick = atualizarAgendaDoMeet;
 function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;
   document.body.classList.toggle('fora', ligado);
-  if (!ligado) return;
+  if (!ligado) {
+    $('pautasPainel').hidden = true; // dentro da reunião a lista de reuniões começa recolhida: a pauta é o que importa
+    $('pautasBotao').setAttribute('aria-expanded', 'false');
+    return;
+  }
   const dataExtenso = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   $('foraData').textContent = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
   alvo = '';
@@ -671,7 +677,9 @@ function aplicar(s) {
 
   const motivo = s.legendasMotivo;
   if (s.erro) {
-    aviso(s.erro, null, /palavra bloqueada/.test(s.erro) ? 'Transcrição bloqueada' : /não está autorizada/.test(s.erro) ? 'Extensão não autorizada' : 'Problema ao salvar');
+    const naoAutorizada = /não está autorizada/.test(s.erro);
+    aviso(s.erro, naoAutorizada ? { rotulo: 'Abrir a página de pareamento', acao: 'parear' } : null,
+      /palavra bloqueada/.test(s.erro) ? 'Transcrição bloqueada' : naoAutorizada ? 'Extensão não autorizada' : 'Problema ao salvar');
   } else if (gravando && !s.legendas && (motivo === 'organizador' || motivo === 'sem-botao')) {
     aviso(
       motivo === 'organizador'
@@ -746,6 +754,8 @@ $('ligar').onclick = () => {
   } else if (acaoAviso === 'diagnostico') {
     abrirAjustes(true);
     diagnosticar();
+  } else if (acaoAviso === 'parear') {
+    chrome.tabs.create({ url: 'http://127.0.0.1:8787/' }); // lá é um clique em "Parear de novo": só a própria página pode pedir
   } else {
     cmd('ligar');
   }

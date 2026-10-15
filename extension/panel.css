@@ -347,3 +347,7 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pauta-item.passou .tit { color: var(--mudo); font-weight: 500; }
 #pautasVazio strong { display: block; color: var(--texto); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
 #pautasVazio { margin: 4px 0 10px; }
+
+body:not(.fora) #pautaEscolha { display: none; }
+#cola .mb-editor { min-height: 280px; }
+#cola > .dica { margin-top: 8px; }
