@@ -227,6 +227,10 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     atualizarAgenda().catch(() => {});
     return false;
   }
+  if (msg.type === 'preciso-visivel' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
+    trouxeAFrente = true;
+    chrome.tabs.update(sender.tab.id, { active: true }).catch(() => {});
+  }
   if (msg.type === 'agenda-lida' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
     fecharAbaAtualizacao(sender.tab.id);
   }
@@ -306,23 +310,36 @@ chrome.alarms.onAlarm.addListener((a) => {
 // e fecham sozinhas. Cada conta do Google tem a sua lista.
 const abasAtualizacao = new Set();
 let fechaAbas = null;
+let abaAnterior = null; // a aba em que a pessoa estava, pra devolver o foco
+let trouxeAFrente = false;
+function devolverFoco() {
+  if (trouxeAFrente && abaAnterior !== null) chrome.tabs.update(abaAnterior, { active: true }).catch(() => {});
+  trouxeAFrente = false;
+  abaAnterior = null;
+}
 function fecharAbaAtualizacao(id) {
   if (id === undefined) {
     clearTimeout(fechaAbas);
     abasAtualizacao.forEach((i) => chrome.tabs.remove(i).catch(() => {}));
     abasAtualizacao.clear();
+    devolverFoco();
     return;
   }
   if (abasAtualizacao.delete(id)) chrome.tabs.remove(id).catch(() => {});
-  if (!abasAtualizacao.size) clearTimeout(fechaAbas);
+  if (!abasAtualizacao.size) {
+    clearTimeout(fechaAbas);
+    devolverFoco();
+  }
 }
 async function atualizarAgenda() {
   if (abasAtualizacao.size) return; // já tem leitura em andamento
+  const [ativa] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
+  abaAnterior = ativa ? ativa.id : null;
   for (const conta of [0, 1]) {
     const aba = await chrome.tabs.create({ url: `https://meet.google.com/home?authuser=${conta}`, active: false });
     abasAtualizacao.add(aba.id);
   }
-  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 25000); // sem login ou sem lista: não deixa aba aberta
+  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 40000); // sem login ou sem lista: não deixa aba aberta
 }
 
 const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

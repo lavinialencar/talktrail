@@ -157,6 +157,16 @@ const amanha = dia(new Date(Date.now() + 86400000));
   require('vm').runInContext('fecharAbaAtualizacao()', m5.bgCtx);
   t('o limite de tempo fecha as que sobraram', m5.removidas.length === 2 && m5.removidas.includes(102), JSON.stringify(m5.removidas));
 
+  // aba escondida e lista vazia: pede pra ser trazida pra frente (o Meet pode não montar a lista escondido)
+  const m6 = await mundo();
+  Object.defineProperty(m6.w.document, 'visibilityState', { get: () => 'hidden', configurable: true });
+  m6.w.history.pushState({}, '', '/home');
+  m6.w.document.body.innerHTML = '<p>carregando</p>';
+  await m6.tick(7000);
+  t('aba escondida e sem lista: pede pra vir pra frente', m6.msgsParaBg.some((x) => x.type === 'preciso-visivel'));
+  await m6.tick(16000);
+  t('depois de esperar bastante, guarda o diagnóstico da leitura (0 reuniões, aba escondida)', m6.loja.agendaDiag && m6.loja.agendaDiag.achados === 0 && m6.loja.agendaDiag.vis === 'hidden', JSON.stringify(m6.loja.agendaDiag));
+
   console.log('Fundo: contagem no ícone');
   const bg = m.bgCtx;
   const dia0 = new Date(2026, 9, 14, 15, 0); // 14/10/2026, 15:00

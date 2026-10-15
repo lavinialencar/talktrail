@@ -328,9 +328,10 @@ function iniciar() {
   let ultimaAgenda = '';
   let inicioHome = 0;
   let avisouVazio = false;
+  let pediuVisivel = false;
   async function lerAgendaDaHome() {
     const m = location.pathname.match(/^\/home(?:\/(\d{4})\/(\d{2})\/(\d{2}))?\/?$/);
-    if (!m) { inicioHome = 0; avisouVazio = false; return; }
+    if (!m) { inicioHome = 0; avisouVazio = false; pediuVisivel = false; return; }
     if (!inicioHome) inicioHome = Date.now();
     const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
     const achados = [];
@@ -343,11 +344,19 @@ function iniciar() {
       const t = partes[0];
       if (t && t.length < 200 && !achados.some((x) => x.titulo === t && x.hora === h[1])) achados.push({ titulo: t, data, hora: h[1] });
     });
+    const vis = document.visibilityState;
+    const diag = () => ({ em: Date.now(), vis, nLi: document.querySelectorAll('li').length, achados: achados.length, caminho: location.pathname });
     if (!achados.length) {
-      // dia sem reunião (ou página ainda carregando): depois de uns segundos conta como lido, sem apagar o que já se sabe
-      if (!avisouVazio && Date.now() - inicioHome > 6000) {
+      // aba escondida: o Meet pode nem montar a lista; pede pro fundo trazer a aba pra frente por alguns segundos
+      const passou = Date.now() - inicioHome;
+      if (vis === 'hidden' && passou > 5000 && !pediuVisivel) {
+        pediuVisivel = true;
+        enviar({ type: 'preciso-visivel' });
+      }
+      // dia sem reunião (ou página ainda carregando): só conta como lido depois de esperar bastante, sem apagar o que já se sabe
+      if (!avisouVazio && passou > (pediuVisivel ? 20000 : 9000)) {
         avisouVazio = true;
-        chrome.storage.local.set({ agendaLidaEm: Date.now() });
+        chrome.storage.local.set({ agendaLidaEm: Date.now(), agendaDiag: diag() });
         enviar({ type: 'agenda-lida' });
       }
       return;
@@ -362,7 +371,7 @@ function iniciar() {
     const mapa = new Map();
     for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje) mapa.set(chaveDe(x), x);
     for (const x of achados) mapa.set(chaveDe(x), x);
-    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-150), agendaLidaEm: Date.now() });
+    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-150), agendaLidaEm: Date.now(), agendaDiag: diag() });
     enviar({ type: 'agenda-lida' });
   }
 

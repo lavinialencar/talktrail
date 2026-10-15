@@ -258,6 +258,7 @@ let agendaMeet = [];
 let alvo = ''; // id escolhido na lista; vazio = a reunião em que o painel está (ou a pauta por tag)
 let confirmaApagar = '';
 let agendaLidaEm = 0;
+let agendaDiag = null;
 let atualizandoAgenda = false;
 let ultimoPedido = 0;
 let pautaPintada = '';
@@ -353,7 +354,9 @@ function pintarPautas() {
   }
   const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   $('pautasLidaEm').hidden = !lida && !atualizandoAgenda;
-  $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando…' : lida ? `Atualizado às ${lida}.` : '';
+  const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
+  const vazia = agendaDiag && agendaDiag.achados === 0 ? ` A última leitura não achou reuniões${agendaDiag.vis === 'hidden' ? ' (a aba ficou escondida)' : ''}.` : '';
+  $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando…' : lida ? `Atualizado às ${lida}.${vazia}${versao ? ` Talktrail ${versao}.` : ''}` : '';
 }
 function rotularPauta() {
   const externo = alvoExterno();
@@ -388,7 +391,8 @@ function salvarPautaAlvo(texto) {
   pintarPautas(); // o selo "com pauta" aparece na hora
 }
 async function carregarPautas() {
-  const v = await chrome.storage.local.get(['pautas', 'agendaMeet', 'agendaLidaEm']);
+  const v = await chrome.storage.local.get(['pautas', 'agendaMeet', 'agendaLidaEm', 'agendaDiag']);
+  agendaDiag = (v && v.agendaDiag) || null;
   if (v && v.agendaLidaEm && v.agendaLidaEm !== agendaLidaEm) atualizandoAgenda = false;
   agendaLidaEm = (v && v.agendaLidaEm) || 0;
   pautas = (v && v.pautas) || {};
@@ -396,7 +400,7 @@ async function carregarPautas() {
   pintarPautas();
   rotularPauta();
 }
-chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm) carregarPautas(); });
+chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDiag) carregarPautas(); });
 function atualizarAgendaDoMeet() {
   if (Date.now() - ultimoPedido < 15000) return;
   ultimoPedido = Date.now();
