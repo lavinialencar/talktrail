@@ -261,6 +261,7 @@ let agendaLidaEm = 0;
 let atualizandoAgenda = false;
 let ultimoPedido = 0;
 let pautaPintada = '';
+let pautaNovoAberto = false;
 
 const alvoExterno = () => !!alvo && alvo !== ((ultimo && ultimo.pautaId) || '');
 function rotuloQuando(data, hora) {
@@ -337,6 +338,8 @@ function pintarPautas() {
   $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
   $('pautasAnteriores').hidden = !passadas.length;
   $('pautasVazio').hidden = deHoje.length > 0;
+  $('pautaEscolha').textContent = deHoje.length ? 'Toque numa reunião pra escrever a pauta dela.' : 'Adicione uma reunião aqui em cima pra escrever a pauta dela.';
+  if (!deHoje.length && document.body.classList.contains('fora') && !pautaNovoAberto) { pautaNovoAberto = true; $('pautaNovo').open = true; }
   $('pautasN').textContent = deHoje.length ? String(deHoje.length) : '';
   // a próxima reunião de hoje (só de hoje: uma de daqui a um mês não fica cutucando)
   const agora = new Date();
@@ -358,6 +361,8 @@ function rotularPauta() {
   const noAtual = ultimo && ultimo.pautaId;
   $('pautaRot').textContent = externo ? `Pauta: ${e ? e.titulo : ''}` : noAtual ? 'Pauta desta reunião' : 'Pauta';
   $('pautaVoltar').hidden = !externo;
+  document.body.classList.toggle('sem-alvo', !externo);
+  $('pautaEscolha').hidden = externo;
   $('pautaVoltar').textContent = ultimo && ultimo.sala ? 'Voltar pra reunião atual' : 'Voltar';
   $('pautaDica').innerHTML = externo
     ? 'Escreva o que quer tratar. Quando você entrar nessa reunião no Meet, a pauta aparece sozinha.'
@@ -404,6 +409,11 @@ function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;
   document.body.classList.toggle('fora', ligado);
   if (!ligado) return;
+  const dataExtenso = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('foraData').textContent = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
+  alvo = '';
+  pintarPautas();
+  rotularPauta();
   $('abaCola').click();
   $('pautasPainel').hidden = false;
   $('pautasBotao').setAttribute('aria-expanded', 'true');

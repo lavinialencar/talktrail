@@ -18,6 +18,7 @@
 
     <header class="topo">
       <div class="linharec">
+        <div id="foraTitulo" class="fora-titulo"><strong>Hoje</strong><span id="foraData"></span></div>
         <button id="rec" class="rec" title="Transcrever">
           <span class="pt"><i class="onda"></i></span>
           <span id="estado" class="acao">Transcrever</span>
@@ -190,7 +191,7 @@
             <span>Reuniões</span><span id="pautasN" class="pautas-n"></span>
           </button>
           <div id="pautasPainel" hidden>
-            <p class="dica" id="pautasVazio" hidden>Nenhuma reunião de hoje. Toque em Atualizar pelo Meet, ou adicione uma abaixo.</p>
+            <p class="dica" id="pautasVazio" hidden><strong>Nenhuma reunião de hoje no Meet.</strong>Só aparecem as que têm link do Meet no convite.</p>
             <div class="pautas-topo"><span class="rot">Hoje</span><button id="pautasAtualizar" class="sec peq" type="button">Atualizar pelo Meet</button></div>
             <p id="pautasLidaEm" class="dica" hidden></p>
             <ul id="pautasLista" class="pautas-lista"></ul>
@@ -209,6 +210,7 @@
           </div>
         </div>
         <div class="pauta-alvo"><span id="pautaRot" class="rot">Pauta</span><button id="pautaVoltar" class="sec peq" type="button" hidden>Voltar pra reunião atual</button></div>
+        <p id="pautaEscolha" class="topodica" hidden>Toque numa reunião pra escrever a pauta dela.</p>
         <p id="pautaDica" class="topodica">O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Fica guardada pela primeira tag e volta na próxima reunião dela.</p>
         <div id="colaTxt" class="mb-editor"></div>
         <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço.</p>

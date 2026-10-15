@@ -327,7 +327,17 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .peq { padding: 4px 10px; font-size: 12px; }
 
 /* fora do Meet: só reuniões de hoje e pauta */
-.fora .linharec .rec, .fora .cartao, .fora .sub, .fora footer, .fora .abas button:not([data-aba="cola"]) { display: none; }
+.fora .linharec .rec, .fora .cartao, .fora .sub, .fora footer, .fora .abas, .fora #pautasBotao, .fora .pautas-topo .rot { display: none; }
+.fora-titulo { display: none; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.fora .fora-titulo { display: flex; }
+.fora-titulo strong { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.fora-titulo span { color: var(--mudo); font-size: 13px; }
+.fora .topo { padding-bottom: 4px; }
+.fora .pautas-topo { margin-top: 0; justify-content: flex-end; }
+.fora .pautas { margin-bottom: 8px; }
+.fora.sem-alvo .pauta-alvo, .fora.sem-alvo #pautaDica, .fora.sem-alvo #colaTxt, .fora.sem-alvo #cola > .dica { display: none; }
+.fora:not(.sem-alvo) #pautaEscolha { display: none; }
+#pautaEscolha { color: var(--mudo); }
 .proxima { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--acento); border-radius: var(--raio); background: var(--card); }
 .proxima .rot { margin: 0; color: var(--acento); }
 .proxima-tit { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
@@ -335,3 +345,5 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pautas-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
 .pautas-topo .rot { margin: 0; }
 .pauta-item.passou .tit { color: var(--mudo); font-weight: 500; }
+#pautasVazio strong { display: block; color: var(--texto); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+#pautasVazio { margin: 4px 0 10px; }
