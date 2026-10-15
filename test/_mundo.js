@@ -46,7 +46,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
     if (url.endsWith('/save')) { salvos.push(JSON.parse(op.body)); return { ok: true, status: 200, json: async () => ({ ok: true, arquivo: 'x.md' }) }; }
     return { ok: true, status: 200, json: async () => ({ ok: true }) };
   };
-  const ctx = vm.createContext({ chrome: bg, fetch: fetchBg, console, URL, TextEncoder, setTimeout, importScripts: (...arqs) => arqs.forEach((f) => vm.runInContext(fs.readFileSync(__dirname + '/../extension/' + f, 'utf8'), ctx)), self: null });
+  const ctx = vm.createContext({ chrome: bg, fetch: fetchBg, console, URL, TextEncoder, setTimeout, clearTimeout, importScripts: (...arqs) => arqs.forEach((f) => vm.runInContext(fs.readFileSync(__dirname + '/../extension/' + f, 'utf8'), ctx)), self: null });
   ctx.self = ctx;
   vm.runInContext(fs.readFileSync(__dirname + '/../extension/background.js', 'utf8'), ctx);
 
