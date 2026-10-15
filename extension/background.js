@@ -227,8 +227,8 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     atualizarAgenda().catch(() => {});
     return false;
   }
-  if (msg.type === 'agenda-lida' && sender.tab && sender.tab.id === abaAtualizacao) {
-    fecharAbaAtualizacao();
+  if (msg.type === 'agenda-lida' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
+    fecharAbaAtualizacao(sender.tab.id);
   }
   if (msg.type === 'open-panel' && sender.tab) {
     chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => {});
@@ -302,19 +302,27 @@ chrome.alarms.onAlarm.addListener((a) => {
 });
 
 // ---------- agenda do Meet e contagem no ícone ----------
-// Aba de fundo que lê as reuniões de hoje na tela inicial do Meet e fecha sozinha.
-let abaAtualizacao = null;
-let fechaAba = null;
-function fecharAbaAtualizacao() {
-  clearTimeout(fechaAba);
-  if (abaAtualizacao !== null) chrome.tabs.remove(abaAtualizacao).catch(() => {});
-  abaAtualizacao = null;
+// Abas de fundo que leem as reuniões de hoje na tela inicial do Meet (conta principal e a segunda conta, se houver)
+// e fecham sozinhas. Cada conta do Google tem a sua lista.
+const abasAtualizacao = new Set();
+let fechaAbas = null;
+function fecharAbaAtualizacao(id) {
+  if (id === undefined) {
+    clearTimeout(fechaAbas);
+    abasAtualizacao.forEach((i) => chrome.tabs.remove(i).catch(() => {}));
+    abasAtualizacao.clear();
+    return;
+  }
+  if (abasAtualizacao.delete(id)) chrome.tabs.remove(id).catch(() => {});
+  if (!abasAtualizacao.size) clearTimeout(fechaAbas);
 }
 async function atualizarAgenda() {
-  if (abaAtualizacao !== null) return; // já tem uma lendo
-  const aba = await chrome.tabs.create({ url: 'https://meet.google.com/home', active: false });
-  abaAtualizacao = aba.id;
-  fechaAba = setTimeout(fecharAbaAtualizacao, 25000); // sem login ou sem lista: não deixa a aba aberta
+  if (abasAtualizacao.size) return; // já tem leitura em andamento
+  for (const conta of [0, 1]) {
+    const aba = await chrome.tabs.create({ url: `https://meet.google.com/home?authuser=${conta}`, active: false });
+    abasAtualizacao.add(aba.id);
+  }
+  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 25000); // sem login ou sem lista: não deixa aba aberta
 }
 
 const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

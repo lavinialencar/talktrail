@@ -133,11 +133,29 @@ const amanha = dia(new Date(Date.now() + 86400000));
 
   const m3 = await mundo();
   m3.w.history.pushState({}, '', '/home/2026/10/20');
-  m3.w.document.body.insertAdjacentHTML('beforeend', '<button aria-label="Planejamento semanal"><span>10:00 – 11:00</span></button><button aria-label="Quinta-feira, 15 de outubro">15</button>');
+  // a estrutura real da tela inicial do Meet: <li> com horário e título em texto, sem botão nem aria-label
+  m3.w.document.body.insertAdjacentHTML('beforeend', '<ul><li><div><span>10:00 – 11:00</span></div><div>Planejamento semanal</div></li><li><span>videocam</span></li></ul><button aria-label="Quinta-feira, 15 de outubro">15</button>');
   await m3.tick(3200);
-  const ag = m3.loja.agendaMeet || [];
-  t('lê título e hora das reuniões da tela inicial', ag.length === 1 && ag[0].titulo === 'Planejamento semanal' && ag[0].hora === '10:00' && ag[0].data === '2026-10-20', JSON.stringify(ag));
-  t('botões sem horário (tira de dias) não entram', !ag.some((x) => /feira/i.test(x.titulo)));
+  let ag = m3.loja.agendaMeet || [];
+  t('lê título e hora das reuniões da tela inicial (estrutura real: li com texto)', ag.length === 1 && ag[0].titulo === 'Planejamento semanal' && ag[0].hora === '10:00' && ag[0].data === '2026-10-20', JSON.stringify(ag));
+  t('item sem horário (ícone, tira de dias) não entra', !ag.some((x) => /feira|videocam/i.test(x.titulo)));
+  t('guarda a hora da última leitura', typeof m3.loja.agendaLidaEm === 'number');
+
+  // segunda conta do Meet (outra lista no mesmo dia): junta, não apaga a primeira
+  m3.w.document.body.innerHTML = '<ul><li><div>15:00 – 15:30</div><div>1:1 Brisas</div></li></ul>';
+  await m3.tick(3200);
+  ag = m3.loja.agendaMeet || [];
+  t('a leitura da segunda conta se junta à da primeira', ag.length === 2 && ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Planejamento semanal'), JSON.stringify(ag));
+
+  // atualizar pelo Meet: uma aba de fundo por conta, e cada uma fecha quando a leitura termina
+  const m5 = await mundo();
+  await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda' });
+  await m5.tick(200);
+  t('atualizar abre a tela inicial das duas contas, em aba de fundo', m5.criadas.length === 2 && /authuser=0/.test(m5.criadas[0]) && /authuser=1/.test(m5.criadas[1]), JSON.stringify(m5.criadas));
+  require('vm').runInContext('fecharAbaAtualizacao(101)', m5.bgCtx);
+  t('quando uma conta termina de ler, só a aba dela fecha', m5.removidas.length === 1 && m5.removidas[0] === 101, JSON.stringify(m5.removidas));
+  require('vm').runInContext('fecharAbaAtualizacao()', m5.bgCtx);
+  t('o limite de tempo fecha as que sobraram', m5.removidas.length === 2 && m5.removidas.includes(102), JSON.stringify(m5.removidas));
 
   console.log('Fundo: contagem no ícone');
   const bg = m.bgCtx;

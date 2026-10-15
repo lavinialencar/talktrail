@@ -334,10 +334,14 @@ function iniciar() {
     if (!inicioHome) inicioHome = Date.now();
     const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
     const achados = [];
-    document.querySelectorAll('button[aria-label], [role="button"][aria-label]').forEach((el) => {
-      const h = (el.textContent || '').match(RE_HORA);
-      const t = (el.getAttribute('aria-label') || '').trim();
-      if (h && t && t.length < 200 && !achados.some((x) => x.titulo === t)) achados.push({ titulo: t, data, hora: h[1] });
+    // cada reunião é um <li> com o horário e o título em texto (sem botão nem aria-label), em qualquer das contas do Meet
+    document.querySelectorAll('li').forEach((li) => {
+      const txt = (li.innerText || li.textContent || '').trim();
+      const h = txt.match(RE_HORA);
+      if (!h || txt.length > 400) return;
+      const partes = txt.replace(RE_HORA, '\n').split('\n').map((x) => x.trim()).filter((x) => x && !/^[a-z_]+$/.test(x)); // sem nome de ícone
+      const t = partes[0];
+      if (t && t.length < 200 && !achados.some((x) => x.titulo === t && x.hora === h[1])) achados.push({ titulo: t, data, hora: h[1] });
     });
     if (!achados.length) {
       // dia sem reunião (ou página ainda carregando): depois de uns segundos conta como lido, sem apagar o que já se sabe
@@ -353,8 +357,12 @@ function iniciar() {
     ultimaAgenda = chave;
     const v = await chrome.storage.local.get(['agendaMeet']);
     const hoje = dia(new Date());
-    const resto = (Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []).filter((x) => x.data !== data && x.data >= hoje);
-    await chrome.storage.local.set({ agendaMeet: [...resto, ...achados].slice(-150), agendaLidaEm: Date.now() });
+    // une com o que já se sabia (outra conta do Meet pode ter lido o mesmo dia); só some o que já passou de dia
+    const chaveDe = (x) => `${x.data}|${normTitulo(x.titulo)}|${x.hora}`;
+    const mapa = new Map();
+    for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje) mapa.set(chaveDe(x), x);
+    for (const x of achados) mapa.set(chaveDe(x), x);
+    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-150), agendaLidaEm: Date.now() });
     enviar({ type: 'agenda-lida' });
   }
 
