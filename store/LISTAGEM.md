@@ -27,9 +27,10 @@ Talktrail transforma as legendas do Google Meet em um arquivo de texto no seu co
 O que ele faz
 • Oferece transcrever quando você entra na chamada e liga as legendas sozinho.
 • Mostra o texto ao vivo num painel ao lado da chamada, com quem falou e quando.
-• Notas e pauta no mesmo painel. A pauta de cada reunião fica guardada e carrega sozinha quando você entra nela. As reuniões de hoje aparecem numa lista, vindas da tela inicial do Meet, e o ícone mostra quanto falta pra próxima. Funciona também fora do Meet.
+• Notas e pauta no mesmo painel. Uma página de Pautas mostra as próximas reuniões num calendário: escolha a reunião, escreva a pauta e ela carrega sozinha quando você entrar na sala. Reunião que se repete oferece copiar a pauta da última vez. As reuniões vêm da tela inicial do Meet, e o ícone mostra quanto falta pra próxima. Funciona também fora do Meet.
 • Marcadores de momento por atalho de teclado.
 • Salva cada reunião como um arquivo .md, com título, tags, data, duração e participantes.
+• Cópia de segurança: exporte e importe reuniões, pautas e ajustes num arquivo só.
 
 Privacidade
 Tudo fica no seu computador. Não tem conta, não tem nuvem e não tem telemetria. A extensão lê as legendas que o próprio Meet já mostra e guarda o texto aqui, na pasta que você escolher.
@@ -46,9 +47,10 @@ Talktrail turns Google Meet captions into a text file on your computer.
 What it does
 • Offers to transcribe when you join a call and turns captions on for you.
 • Shows the live text in a side panel next to the call, with who spoke and when.
-• Notes and agenda in the same panel. Each meeting's agenda is saved and loads by itself when you join. Today's meetings show up in a list, read from the Meet home page, and the icon shows the countdown to the next one. It also works outside Meet.
+• Notes and agenda in the same panel. An Agendas page lists your upcoming meetings in a calendar: pick a meeting, write its agenda, and it loads by itself when you join the room. A recurring meeting offers to copy last time's agenda. Meetings come from the Meet home page, and the icon shows the countdown to the next one. It also works outside Meet.
 • Keyboard shortcut to mark moments.
 • Saves each meeting as a .md file with title, tags, date, duration and participants.
+• Backup: export and import meetings, agendas and settings in a single file.
 
 Privacy
 Everything stays on your computer. No account, no cloud, no telemetry. The extension reads the captions Meet already shows and stores the text locally, in the folder you choose.
@@ -87,6 +89,8 @@ Feito em 13/10/2026 (versão 1.13.0):
 - [x] Permissão `tabs` removida (o host do Meet já dá acesso à URL das abas do Meet).
 - [x] Política de privacidade em `PRIVACIDADE.md` (português e inglês), `LICENSE` (MIT) e `AVISOS-DE-TERCEIROS.md`.
 - [x] Arte revisada pelo impeccable (sem eyebrow, sem caixa-alta mono, texto de apoio a 12 px, sombra do aviso neutra).
+
+Feito em 16/10/2026: pacote `dist/talktrail-1.20.0.zip` (385 KB) gerado e conferido; boas-vindas na instalação, página de Pautas, cópia de segurança.
 
 Falta:
 1. Preencher `URL_COMPLEMENTO` em `extension/panel.js` com a página de releases do GitHub (enquanto vazio, o botão de instalar some no pacote da loja).
