@@ -5,7 +5,6 @@ main.pg { display: block; flex: none; min-height: 0; background: transparent; }
 .pg section { flex: none; overflow: visible; padding: 0; } /* o painel usa section como coluna que rola; aqui a página inteira rola */
 .pg { max-width: 1180px; margin: 0 auto; padding: 36px 28px 64px; }
 .pg-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
-.pg-topo h1 { display: flex; align-items: center; gap: 12px; margin: 0 0 6px; font-size: 26px; letter-spacing: -.02em; }
 .pg-topo .sub { margin: 0; color: var(--mudo); max-width: 52ch; font-size: 14px; line-height: 1.55; }
 .pg-acoes { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .pg-acoes .dica { margin: 0; text-align: right; max-width: 42ch; }
@@ -62,4 +61,3 @@ main.pg { display: block; flex: none; min-height: 0; background: transparent; }
 .ed-quando { margin: 0 0 16px; color: var(--mudo); font-size: 13px; }
 .pg-dir .mb-editor { flex: 1; height: auto; min-height: 420px; background: var(--fundo); border-color: var(--linha2); }
 
-.pg-topo .logo { width: 32px; height: 32px; flex: none; }

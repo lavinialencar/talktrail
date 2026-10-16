@@ -457,16 +457,17 @@ function atualizarAgendaDoMeet() { // só quando a pessoa toca no botão: abre a
 }
 $('pautasAtualizar').onclick = atualizarAgendaDoMeet;
 $('pautasMostrar').onclick = () => { listaAberta = true; pintarPautas(); };
-$('pautasFrente').onclick = async () => {
-  await chrome.tabs.create({ url: chrome.runtime.getURL('pautas.html') });
-  // a página abre numa aba; o painel lateral fecha (sidePanel.close no Chrome 141+, senão window.close)
+// abre uma página da extensão numa aba e fecha o painel lateral (sidePanel.close no Chrome 141+, senão window.close)
+async function abrirPagina(url) {
+  await chrome.tabs.create({ url });
   try {
     const [aba] = await chrome.tabs.query({ active: true, currentWindow: true });
     const janela = (aba && aba.windowId) || (await chrome.windows.getCurrent()).id;
     if (chrome.sidePanel && chrome.sidePanel.close) { await chrome.sidePanel.close({ windowId: janela }); return; }
   } catch {}
   window.close();
-};
+}
+$('pautasFrente').onclick = () => abrirPagina(chrome.runtime.getURL('pautas.html'));
 // fora do Meet o painel vira só "reuniões de hoje e pauta": sem gravar, sem texto, sem marcadores
 function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;
@@ -789,13 +790,13 @@ $('ligar').onclick = () => {
     abrirAjustes(true);
     diagnosticar();
   } else if (acaoAviso === 'parear') {
-    chrome.tabs.create({ url: 'http://127.0.0.1:8787/' }); // lá é um clique em "Parear de novo": só a própria página pode pedir
+    abrirPagina('http://127.0.0.1:8787/'); // lá é um clique em "Parear de novo": só a própria página pode pedir
   } else {
     cmd('ligar');
   }
 };
 $('ajInstalar').onclick = baixarComplemento;
-$('ajBiblioteca').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('biblioteca.html') });
+$('ajBiblioteca').onclick = () => abrirPagina(chrome.runtime.getURL('biblioteca.html'));
 $('ajAbrir').onclick = escolherPastaAoVivo;
 
 // "Por que não está transcrevendo?": cada ponto da cadeia, com o que fazer
@@ -879,7 +880,7 @@ $('ajApagar').onchange = () => {
   AJ.apagarAntigas = $('ajApagar').value;
   salvarAjustes();
 };
-$('ajAtalhoMudar').onclick = () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+$('ajAtalhoMudar').onclick = () => abrirPagina('chrome://extensions/shortcuts');
 async function pintarAtalho() {
   try {
     const todos = await chrome.commands.getAll();

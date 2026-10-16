@@ -10,14 +10,14 @@
 </head>
 <body class="pagina">
   <main class="pg">
+    <div class="pagina-topo"><h1 class="pagina-titulo"><img class="logo" src="icons/icon-128.png" width="48" height="48" alt="">Pautas</h1>
+    <nav class="pagina-nav" aria-label="Páginas do Talktrail"><a href="biblioteca.html">Biblioteca</a><a href="pautas.html" aria-current="page">Pautas</a></nav></div>
     <header class="pg-topo">
       <div>
-        <h1><img class="logo" src="icons/icon-48.png" width="32" height="32" alt="">Pautas</h1>
         <p class="sub">Escolha um dia, escreva a pauta de cada reunião e ela aparece sozinha quando você entrar na sala.</p>
       </div>
       <div class="pg-acoes">
-        <button id="atualizar" class="sec peq" type="button">Atualizar os próximos 14 dias</button>
-        <button id="parar" class="sec peq" type="button" hidden>Parar a leitura</button>
+        <button id="atualizar" class="sec peq" type="button">Atualizar agenda</button>
         <p id="status" class="dica" role="status"></p>
       </div>
     </header>
@@ -43,7 +43,6 @@
           <ul id="diaLista" class="pautas-lista"></ul>
           <div id="diaVazio" class="dia-vazio" hidden>
             <p id="diaVazioTxt" class="dica"></p>
-            <button id="lerDia" class="sec peq" type="button" hidden>Ler este dia no Meet</button>
           </div>
         </div>
 
@@ -61,7 +60,7 @@
       <section class="pg-dir cartao-pg" aria-label="Pauta da reunião">
         <div id="edVazio" class="ed-vazio">
           <p><strong>Escolha uma reunião</strong></p>
-          <p class="dica">Toque num dia do calendário e depois na reunião. Para um dia mais adiante, mude de mês: a extensão lê esse dia no Meet quando você pedir.</p>
+          <p class="dica">Toque num dia do calendário e depois na reunião. Um dia ainda não lido aparece vazio: use o botão no alto da página para ler.</p>
         </div>
         <div id="edCorpo" hidden>
           <h2 id="edTitulo"></h2>

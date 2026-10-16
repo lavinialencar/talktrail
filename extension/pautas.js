@@ -168,10 +168,7 @@ function pintarDia(dias) {
   const lido = !!diasLidos[diaSel];
   $('diaVazio').hidden = doDia.length > 0;
   if (!doDia.length) {
-    $('diaVazioTxt').textContent = lido ? 'Nenhuma reunião do Meet neste dia.' : 'Ainda não li este dia no Meet.';
-    $('lerDia').hidden = lido || diaSel < diaISO();
-    $('lerDia').disabled = lendo === diaSel;
-    $('lerDia').textContent = lendo === diaSel ? 'Lendo no Meet…' : 'Ler este dia no Meet';
+    $('diaVazioTxt').textContent = lido ? 'Nenhuma reunião do Meet neste dia.' : diaSel < diaISO() ? 'Dia que já passou.' : 'Ainda não li este dia. Use o botão no alto da página para ler.';
   }
 }
 
@@ -220,8 +217,8 @@ function pintar() {
   const ate = Object.keys(diasLidos).sort().pop();
   const ateTxt = ate ? new Date(`${ate}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : '';
   $('status').textContent = lendo ? 'Lendo a agenda do Meet em abas de fundo, sem tirar você daqui.' : hora ? `Atualizado às ${hora}. Reuniões lidas até ${ateTxt || 'hoje'}. Dias depois disso aparecem vazios até você ler.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
-  $('parar').hidden = !lendo;
-  $('atualizar').disabled = lendo === 'tudo';
+  const pt = pontoDeLeitura();
+  $('atualizar').textContent = lendo ? 'Parar a leitura' : pt.rotulo;
 }
 
 function pintarEditor() {
@@ -263,6 +260,13 @@ async function carregar() {
   if (!alvo) pintarEditor();
 }
 
+// um botão só: lê os próximos dias; se o dia escolhido está longe demais, lê a partir dele
+function pontoDeLeitura() {
+  const limite = diaISO(new Date(Date.now() + (DIAS_A_FRENTE - 1) * 86400000));
+  if (diaSel > limite && !diasLidos[diaSel]) return { desde: diaSel, rotulo: `Ler a partir de ${dataDe(diaSel).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}` };
+  return { desde: '', rotulo: 'Atualizar agenda' };
+}
+
 function pedirLeitura(modo, dias, desde) {
   lendo = modo;
   pintar();
@@ -293,8 +297,9 @@ for (const b of document.querySelectorAll('.filtro')) {
 $('mesAnt').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() - 1, 1); pintar(); };
 $('mesProx').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() + 1, 1); pintar(); };
 $('irHoje').onclick = () => { diaSel = diaISO(); mes = new Date(new Date().getFullYear(), new Date().getMonth(), 1); pintar(); };
-$('lerDia').onclick = () => pedirLeitura(diaSel, 1, diaSel);
-$('atualizar').onclick = () => pedirLeitura('tudo', DIAS_A_FRENTE);
-$('parar').onclick = () => { lendo = ''; pintar(); chrome.runtime.sendMessage({ type: 'cancelar-agenda' }).catch(() => {}); };
+$('atualizar').onclick = () => {
+  if (lendo) { lendo = ''; pintar(); chrome.runtime.sendMessage({ type: 'cancelar-agenda' }).catch(() => {}); return; }
+  pedirLeitura('tudo', DIAS_A_FRENTE, pontoDeLeitura().desde);
+};
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
 carregar();

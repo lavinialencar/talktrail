@@ -52,16 +52,19 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   console.log('Dia lido e dia ainda não lido');
   celula(dia(1)).click();
   await esp(20);
-  t('dia já lido e sem reunião: diz que não há, sem botão de ler', /Nenhuma reunião do Meet/.test($('diaVazioTxt').textContent) && $('lerDia').hidden === true);
+  t('dia já lido e sem reunião: diz que não há, sem botão de ler', /Nenhuma reunião do Meet/.test($('diaVazioTxt').textContent) && !$('lerDia') && $('atualizar').textContent === 'Atualizar agenda');
   const alem = dia(40);
   for (let i = 0; i < 4 && !celula(alem); i++) $('mesProx').click(); // navega pelo calendário até o mês daquele dia
   celula(alem).click();
   await esp(20);
-  t('dia que ainda não foi lido: avisa e oferece ler no Meet', /Ainda não li/.test($('diaVazioTxt').textContent) && $('lerDia').hidden === false);
-  $('lerDia').click();
+  t('dia longe e ainda não lido: avisa, e o único botão passa a ler a partir dele', /Ainda não li/.test($('diaVazioTxt').textContent) && /^Ler a partir de \d{2}\/\d{2}$/.test($('atualizar').textContent));
+  $('atualizar').click();
   await esp(20);
-  t('ler o dia pede ao fundo só aquele dia, a partir dele', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 1 && m.desde === alem), JSON.stringify(enviadas));
-  t('enquanto lê, o botão trava e avisa', $('lerDia').disabled === true && /Lendo/.test($('lerDia').textContent));
+  t('ler a partir dele pede 14 dias começando naquele dia', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && m.desde === alem), JSON.stringify(enviadas));
+  t('enquanto lê, o mesmo botão vira "Parar a leitura"', $('atualizar').textContent === 'Parar a leitura');
+  $('atualizar').click();
+  await esp(20);
+  t('tocar de novo cancela a leitura', enviadas.some((m) => m.type === 'cancelar-agenda') && $('atualizar').textContent !== 'Parar a leitura');
   loja.agendaDias[alem] = Date.now();
   await w.eval('carregar()');
   t('depois de lido (sem reunião), o aviso muda', /Nenhuma reunião do Meet/.test($('diaVazioTxt').textContent));
@@ -108,10 +111,10 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   t('apagar: o segundo clique apaga só a pauta; a reunião continua na agenda', Object.keys(loja.pautas).length === 1 && $('lista').querySelectorAll('.pauta-item').length === 3);
   $('atualizar').click();
   await esp(20);
-  t('"Atualizar os próximos 14 dias" pede 14 dias ao fundo e avisa que abas vão abrir', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && !m.desde) && /abas de fundo/.test($('status').textContent) && $('atualizar').disabled === true && $('parar').hidden === false);
-  $('parar').click();
+  t('"Atualizar os próximos 14 dias" pede 14 dias ao fundo e avisa que abas vão abrir', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && !m.desde) && /abas de fundo/.test($('status').textContent) && $('atualizar').textContent === 'Parar a leitura');
+  $('atualizar').click();
   await esp(20);
-  t('"Parar a leitura" cancela e o botão some', enviadas.some((m) => m.type === 'cancelar-agenda') && $('parar').hidden === true && /lidas até/.test($('status').textContent));
+  t('"Parar a leitura" cancela e o botão some', enviadas.some((m) => m.type === 'cancelar-agenda') && $('atualizar').textContent === 'Atualizar agenda' && /lidas até/.test($('status').textContent));
 
   console.log(`\n${ok} ok, ${ruim} falharam`);
   process.exit(ruim ? 1 : 0);

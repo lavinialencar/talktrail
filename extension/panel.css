@@ -337,7 +337,7 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .fora-titulo span { color: var(--mudo); font-size: 13px; }
 .fora .topo { padding-bottom: 4px; }
 .fora .pautas { margin-bottom: 8px; }
-.fora.sem-alvo #colaTxt, .fora.sem-alvo #cola > .dica { display: none; }
+.fora.sem-alvo #colaTxt { display: none; }
 #pautaEscolha { color: var(--mudo); }
 .proxima { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--acento); border-radius: var(--raio); background: var(--card); }
 .proxima .rot { margin: 0; color: var(--acento); }
@@ -350,7 +350,6 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 body:not(.fora) #pautaEscolha { display: none; }
 #cola .mb-editor { flex: 1 1 auto; min-height: 320px; } /* a pauta ocupa o resto da altura */
 #cola .pautas { flex: 0 0 auto; } /* a lista não é cortada; o painel rola inteiro quando a pauta pede espaço */
-#cola > .dica { margin-top: 8px; }
 .pauta-dia { list-style: none; margin: 16px 0 0; display: flex; align-items: baseline; gap: 8px; }
 .pauta-dia:first-child { margin-top: 0; }
 .pauta-dia b { font-size: 13px; font-weight: 700; color: var(--texto); text-transform: capitalize; }
@@ -371,3 +370,12 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 @media (prefers-reduced-motion: reduce) { .icone-btn.girando svg { animation: none; } }
 .agenda-meta { margin: -4px 0 10px; color: var(--mudo); font-size: 12px; }
 .pautas-frente.leve { color: var(--mudo); font-weight: 500; }
+
+/* cabeçalho das páginas da extensão (Biblioteca, Pautas): logo + título à esquerda, navegação à direita */
+.pagina-topo { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 16px; }
+.pagina-titulo { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 26px; letter-spacing: -.02em; }
+.pagina-titulo .logo { width: 48px; height: 48px; flex: none; }
+.pagina-nav { display: inline-flex; padding: 3px; gap: 2px; background: var(--fundo); border: 1px solid var(--linha2); border-radius: 10px; }
+.pagina-nav a { padding: 6px 14px; border-radius: 8px; color: var(--mudo); font-weight: 600; font-size: 13px; text-decoration: none; }
+.pagina-nav a:hover { color: var(--texto); }
+.pagina-nav a[aria-current="page"] { background: var(--card); color: var(--texto); box-shadow: 0 0 0 1px var(--linha2) inset; }
