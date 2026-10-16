@@ -401,13 +401,12 @@ function pintarPautas() {
   }
   const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-  const vazia = agendaDiag && agendaDiag.achados === 0 && !futuras.length ? 'A última leitura não achou reuniões.' : '';
-  const velha = agendaLidaEm && Date.now() - agendaLidaEm > 30 * 60 * 1000 ? 'A lista pode estar desatualizada.' : '';
-  // o status só aparece quando há algo a dizer; o detalhe fica na dica do botão de atualizar
-  const aviso = atualizandoAgenda ? 'Atualizando. Abas do Meet abrem por alguns segundos.' : !lida ? 'Toque em atualizar para ver as suas reuniões.' : vazia || velha;
-  $('pautasLidaEm').textContent = aviso;
-  $('pautasLidaEm').hidden = !aviso || recolhida;
-  const dica = lida ? `Atualizar pelo Meet. Última leitura às ${lida}${versao ? `, Talktrail ${versao}` : ''}.` : 'Atualizar pelo Meet';
+  const velha = !!agendaLidaEm && Date.now() - agendaLidaEm > 30 * 60 * 1000;
+  // nada de texto solto no topo: o estado vai no próprio botão (bolinha quando a lista pode estar velha, giro enquanto lê)
+  // e, com a lista vazia, na mensagem da lista
+  const dica = atualizandoAgenda ? 'Lendo o Meet em abas de fundo, por alguns segundos.' : lida ? `Atualizar pelo Meet. Última leitura às ${lida}${velha ? ', a lista pode estar desatualizada' : ''}${versao ? `. Talktrail ${versao}` : ''}.` : 'Atualizar pelo Meet';
+  $('pautasAtualizar').classList.toggle('velha', (velha || !lida) && !atualizandoAgenda);
+  $('pautasVazioTxt').textContent = !lida ? 'Toque no botão de atualizar, no topo, para ler as suas reuniões do Meet.' : agendaDiag && agendaDiag.achados === 0 ? 'A última leitura não achou reuniões. Só aparecem as que têm link do Meet no convite.' : 'Só aparecem as que têm link do Meet no convite. Toque no botão de atualizar, no topo.';
   $('pautasAtualizar').title = dica;
   $('pautasAtualizar').setAttribute('aria-label', dica);
   $('pautasAtualizar').classList.toggle('girando', atualizandoAgenda);
