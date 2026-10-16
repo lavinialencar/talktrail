@@ -386,3 +386,9 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; animation-timing-function: ease; }
 ::view-transition-group(topo-pagina) { animation-duration: 0s; }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
+
+/* reunião repetida: oferta discreta de copiar a pauta da última vez */
+.serie { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 12px; background: var(--card); border: 1px solid var(--linha2); border-radius: var(--raio); color: var(--mudo); font-size: 13px; }
+.serie[hidden] { display: none; }
+.serie-btn { border: 0; background: none; color: var(--acento); font: inherit; font-weight: 700; cursor: pointer; padding: 4px 8px; margin: 0 -8px; border-radius: 6px; }
+.serie-btn:hover { background: var(--fundo); }

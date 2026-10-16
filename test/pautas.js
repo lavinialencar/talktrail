@@ -39,6 +39,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   w.matchMedia = () => ({ matches: false, addEventListener() {}, addListener() {} });
   w.MBEditor = { create: (el, o) => (editores[el.id] = { v: '', setValue(x) { this.v = x; }, getValue() { return this.v; }, hasFocus: () => false, digitar(x) { this.v = x; o.onChange(x); } }) };
   w.close = () => { fechou = true; };
+  w.eval(require('fs').readFileSync(path.join(__dirname, '../extension/serie.js'), 'utf8'));
   w.eval(src);
   await esp(250);
   const $ = (id) => w.document.getElementById(id);
@@ -63,7 +64,8 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const id = `${hoje}|${'apresentacao <img src=x onerror=alert(1)>'}`;
   t('não repete o nome da reunião nem tem botão de voltar (a linha escolhida já aparece destacada)', !$('pautaRot') && !$('pautaVoltar') && !!itens()[0].classList.contains('on'));
   t('escolhida a reunião, o editor aparece e a frase de orientação some', $('pautaEscolha').hidden === true && !document_body_sem_alvo());
-  t('o editor mostra a pauta da reunião, não a da tag', editores.colaTxt.v === '');
+  t('o editor mostra o modelo (lista numerada + combinados), não a pauta da tag', editores.colaTxt.v === '1. \n2. \n3. \n\nCombinados\n- [ ] ');
+  t('só abrir a reunião não grava nada: o modelo não vira pauta sozinho', Object.keys(loja.pautas).length === 0);
 
   editores.colaTxt.digitar('- ponto A\n- ponto B');
   await esp(450);

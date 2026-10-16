@@ -229,7 +229,22 @@ function pintarEditor() {
   if (!e) return;
   $('edTitulo').textContent = e.titulo;
   $('edQuando').textContent = cap(`${dataDe(e.data).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}${e.hora ? ` · ${e.hora}${e.fim ? ` às ${e.fim}` : ''}` : ''}`);
-  ed.setValue(e.texto || '');
+  ed.setValue(e.texto || MB_SERIE.MODELO); // pauta nova começa no modelo; só vira pauta quando a pessoa escreve
+  pintarSerie(e);
+}
+
+// reunião repetida: se a pauta está vazia e já houve outra com o mesmo nome, oferece copiar a última
+function pintarSerie(e) {
+  const ant = e && !e.texto ? MB_SERIE.anterior(linhas(), e.titulo, e.data, e.id) : null;
+  $('edSerie').hidden = !ant;
+  if (!ant) return;
+  const dia = dataDe(ant.data).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+  $('edSerieTxt').textContent = `Reunião repetida. Última pauta: ${dia}.`;
+  $('edCopiar').onclick = () => {
+    const txt = MB_SERIE.copiar(ant.texto);
+    ed.setValue(txt);
+    salvar(txt);
+  };
 }
 
 function escolher(id) {
@@ -242,12 +257,14 @@ function escolher(id) {
 
 function salvar(texto) {
   if (!alvo) return;
+  texto = MB_SERIE.vazia(texto) ? '' : texto; // só o modelo, sem nada escrito, não vira pauta
   const l = linhas().find((x) => x.id === alvo) || {};
   if (!texto && !pautas[alvo]) return;
   const base = pautas[alvo] || { titulo: l.titulo || '', data: l.data || alvo.split('|')[0], hora: l.hora || '', codigo: '', criada: Date.now() };
   pautas[alvo] = { ...base, texto, atualizada: Date.now() };
   chrome.storage.local.set({ pautas });
   pintar();
+  pintarSerie(linhas().find((x) => x.id === alvo));
 }
 
 async function carregar() {

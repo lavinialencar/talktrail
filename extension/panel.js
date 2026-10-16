@@ -344,7 +344,7 @@ function itemDePauta(l) {
       chrome.storage.local.set({ pautas });
       pintarPautas();
       rotularPauta();
-      if (!edCola.hasFocus()) edCola.setValue(alvoExterno() ? '' : (ultimo && ultimo.cola) || '');
+      if (!edCola.hasFocus()) edCola.setValue(alvoExterno() ? MB_SERIE.MODELO : (ultimo && ultimo.cola) || '');
     };
     li.append(x);
   }
@@ -382,7 +382,7 @@ function pintarPautas() {
   }
   $('pautasLista').replaceChildren(...linhas);
   $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
-  $('pautasAnteriores').hidden = !passadas.length;
+  $('pautasAnteriores').hidden = !passadas.length || recolhida;
   $('pautasVazio').hidden = futuras.length > 0;
   $('pautasMostrar').hidden = !recolhida;
   $('pautasAtualizar').parentElement.hidden = recolhida; // recolhida, o editor ganha a altura do topo também
@@ -413,9 +413,24 @@ function pintarPautas() {
   $('pautasAtualizar').classList.toggle('girando', atualizandoAgenda);
   $('pautasAtualizar').disabled = atualizandoAgenda;
 }
+// reunião repetida: se a pauta está vazia e já houve outra com o mesmo nome, oferece copiar a última
+function pintarSerie() {
+  const l = alvoExterno() ? linhasDePautas().find((x) => x.id === alvo) : null;
+  const ant = l && !l.texto ? MB_SERIE.anterior(linhasDePautas(), l.titulo, l.data, l.id) : null;
+  $('pautaSerie').hidden = !ant;
+  if (!ant) return;
+  const dia = new Date(`${ant.data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+  $('pautaSerieTxt').textContent = `Reunião repetida. Última pauta: ${dia}.`;
+  $('pautaCopiar').onclick = () => {
+    const txt = MB_SERIE.copiar(ant.texto);
+    edCola.setValue(txt);
+    salvarPautaAlvo(txt);
+  };
+}
 function rotularPauta() {
   const externo = alvoExterno();
   document.body.classList.toggle('sem-alvo', !externo);
+  pintarSerie();
   $('pautaEscolha').hidden = externo;
 }
 function escolherPauta(id) {
@@ -423,10 +438,11 @@ function escolherPauta(id) {
   listaAberta = !alvoExterno();
   pintarPautas();
   rotularPauta();
-  edCola.setValue(alvoExterno() ? (pautas[alvo] && pautas[alvo].texto) || '' : (ultimo && ultimo.cola) || '');
+  edCola.setValue(alvoExterno() ? (pautas[alvo] && pautas[alvo].texto) || MB_SERIE.MODELO : (ultimo && ultimo.cola) || '');
 }
 function salvarPautaAlvo(texto) {
   if (!alvoExterno()) return;
+  texto = MB_SERIE.vazia(texto) ? '' : texto; // só o modelo, sem nada escrito, não vira pauta
   const base = pautas[alvo] || (() => {
     const l = linhasDePautas().find((x) => x.id === alvo) || {};
     return { titulo: l.titulo || '', data: l.data || alvo.split('|')[0], hora: l.hora || '', codigo: '', criada: Date.now() };
