@@ -396,7 +396,7 @@ PAGINA = """<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="
 @media(prefers-color-scheme:dark){:root{--bg:#09090b;--card:#141417;--tx:#fafafa;--mu:#a1a1aa;--ln:#34343b;--bt:#fafafa;--bt-t:#09090b}}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif}
 main{max-width:640px;margin:0 auto;padding:40px 20px 80px}
-h1{font-size:22px;margin:0 0 4px;display:flex;align-items:center;gap:12px}h1 img{width:48px;height:48px}.sub{color:var(--mu);margin:0 0 28px}
+h1{font-size:26px;margin:0 0 4px;display:flex;align-items:center;gap:12px}h1 img{width:48px;height:48px}.sub{color:var(--mu);margin:0 0 28px}
 section{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:18px 20px;margin:0 0 14px}
 h2{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
 .ok{color:var(--ok)}.mu{color:var(--mu);font-size:13px}
