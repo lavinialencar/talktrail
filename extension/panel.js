@@ -932,6 +932,30 @@ async function copiar(botao, texto) {
 }
 $('ajCopiar').onclick = () => (servidorOk && pastaServidor ? copiar($('ajCopiar'), pastaServidor) : voltarProDownloads());
 
+// ---------- cópia de segurança ----------
+const msgBackup = (txt) => { $('ajBackupMsg').textContent = txt; $('ajBackupMsg').hidden = !txt; };
+$('ajExportar').onclick = async () => {
+  const f = MB_BACKUP.exportar(await chrome.storage.local.get(null));
+  const url = URL.createObjectURL(new Blob([f.texto], { type: 'application/json' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: f.nome });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  msgBackup(`Cópia salva como ${f.nome}.`);
+};
+$('ajImportar').onclick = () => $('ajArquivo').click();
+$('ajArquivo').onchange = async () => {
+  const arq = $('ajArquivo').files[0];
+  $('ajArquivo').value = '';
+  if (!arq) return;
+  const lido = MB_BACKUP.ler(await arq.text());
+  if (lido.erro) { msgBackup(lido.erro); return; }
+  const { grava, n } = MB_BACKUP.mesclar(await chrome.storage.local.get(null), lido.dados);
+  if (Object.keys(grava).length) await chrome.storage.local.set(grava);
+  msgBackup(MB_BACKUP.resumo(n));
+};
+
 // ---------- relatar um problema ----------
 // Só o que ajuda a achar o defeito: versão, sistema, estado do diagnóstico. Nunca nome, texto, notas nem caminho de pasta.
 const semCaminho = (s) => String(s || '').replace(/(\/Users\/|\/home\/|[A-Za-z]:\\Users\\)[^\s/\\)"']+/g, '$1…').replace(/\s+/g, ' ').trim();

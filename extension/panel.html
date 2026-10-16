@@ -130,6 +130,17 @@
       </div>
 
       <div class="aj">
+        <h3>Cópia de segurança</h3>
+        <p class="ajdica">Reuniões da biblioteca, pautas, tags e ajustes num arquivo só. Guarde onde quiser. Importar junta com o que já existe, sem apagar nada.</p>
+        <div class="ajbotoes duas">
+          <button id="ajExportar" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10.5V2.5M4.5 6 8 2.5 11.5 6"/><path d="M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2"/></svg><span>Exportar tudo</span></button>
+          <button id="ajImportar" class="sec" type="button"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7"/><path d="M2.5 10.5v2a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-2"/></svg><span>Importar</span></button>
+        </div>
+        <input id="ajArquivo" type="file" accept="application/json,.json" hidden>
+        <p id="ajBackupMsg" class="ajdica" role="status" hidden></p>
+      </div>
+
+      <div class="aj">
         <h3>Atalhos</h3>
         <div class="atalho">
           <span class="atalho-nome">Abrir ou fechar o painel</span><span class="lider"></span>
@@ -223,6 +234,7 @@
   <script src="vendor/editor.js"></script>
   <script src="pasta.js"></script>
   <script src="zip.js"></script>
+  <script src="backup.js"></script>
   <script src="panel.js"></script>
 </body>
 </html>
