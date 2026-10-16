@@ -32,7 +32,7 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
       set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); } } },
   };
   w.MBEditor = { create: (el, o) => (editores[el.id] = { v: '', setValue(x) { this.v = x; }, getValue() { return this.v; }, hasFocus: () => false, digitar(x) { this.v = x; o.onChange(x); } }) };
-  w.eval(require('fs').readFileSync(path.join(__dirname, '../extension/serie.js'), 'utf8'));
+  w.eval(require('fs').readFileSync(path.join(__dirname, '../extension/modelo.js'), 'utf8'));
   w.eval(src);
   await esp(150);
   const $ = (id) => w.document.getElementById(id);
@@ -110,26 +110,13 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   [...$('lista').querySelectorAll('.apagar')].find((b) => /Apagar\?/.test(b.textContent)).click();
   await esp(30);
   t('apagar: o segundo clique apaga só a pauta; a reunião continua na agenda', Object.keys(loja.pautas).length === 1 && $('lista').querySelectorAll('.pauta-item').length === 3);
-  console.log('Reunião repetida e modelo');
-  loja.pautas[`${dia(-7)}|alinhamento com o cliente`] = { titulo: 'Alinhamento com o cliente', data: dia(-7), hora: '23:00', texto: '1. pauta anterior\n- [x] feito\n- [ ] falta', criada: 1, atualizada: 2 };
-  await w.eval('carregar()');
-  w.document.querySelector('[data-filtro="todas"]').click();
-  const itemAlinh = [...$('lista').querySelectorAll('.pauta-item')].find((x) => /Alinhamento/.test(x.textContent));
-  itemAlinh.querySelector('.abrir').click();
+  console.log('Modelo da pauta');
+  const itemModelo = [...$('lista').querySelectorAll('.pauta-item')].find((x) => /Alinhamento/.test(x.textContent));
+  itemModelo.querySelector('.abrir').click();
   await esp(30);
-  const idAl = `${dia(0)}|alinhamento com o cliente`;
   t('pauta nova começa no modelo (lista numerada e combinados como tarefa)', editores.edTxt.v === '1. \n2. \n3. \n\nCombinados\n- [ ] ');
-  t('só abrir não grava: o modelo sozinho não vira pauta', !loja.pautas[idAl]);
-  t('reunião repetida oferece copiar a pauta da última vez, com o dia dela', $('edSerie').hidden === false && /Reunião repetida/.test($('edSerieTxt').textContent));
-  $('edCopiar').click();
-  await esp(30);
-  t('copiar traz a pauta de antes sem o que já foi feito', editores.edTxt.v === '1. pauta anterior\n- [ ] falta');
-  t('e a copia fica gravada na reunião de hoje', loja.pautas[idAl] && loja.pautas[idAl].texto === '1. pauta anterior\n- [ ] falta');
-  t('depois de copiar, a oferta some', $('edSerie').hidden === true);
-  const itemPl = [...$('lista').querySelectorAll('.pauta-item')].find((x) => /Planejamento/.test(x.textContent));
-  itemPl.querySelector('.abrir').click();
-  await esp(30);
-  t('reunião que não se repete não oferece cópia', $('edSerie').hidden === true);
+  t('só abrir não grava: o modelo sozinho não vira pauta', !loja.pautas[`${dia(0)}|alinhamento com o cliente`]);
+  t('não existe mais "copiar a pauta da última vez" (recurso arriscado, desligado)', !$('edSerie') && !$('edCopiar'));
 
   $('atualizar').click();
   await esp(20);

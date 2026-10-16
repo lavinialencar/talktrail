@@ -39,7 +39,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   w.matchMedia = () => ({ matches: false, addEventListener() {}, addListener() {} });
   w.MBEditor = { create: (el, o) => (editores[el.id] = { v: '', setValue(x) { this.v = x; }, getValue() { return this.v; }, hasFocus: () => false, digitar(x) { this.v = x; o.onChange(x); } }) };
   w.close = () => { fechou = true; };
-  w.eval(require('fs').readFileSync(path.join(__dirname, '../extension/serie.js'), 'utf8'));
+  w.eval(require('fs').readFileSync(path.join(__dirname, '../extension/modelo.js'), 'utf8'));
   w.eval(src);
   await esp(250);
   const $ = (id) => w.document.getElementById(id);
@@ -120,12 +120,11 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('mas abre quando a pessoa toca em "Atualizar pelo Meet"', enviadas.some((m) => m.type === 'atualizar-agenda'));
   t('enquanto atualiza, o botão gira e fica desligado', $('pautasAtualizar').classList.contains('girando') && $('pautasAtualizar').disabled === true);
   t('a frase de orientação está no topo, antes do botão de atualizar', $('pautaEscolha').hidden === false && $('pautaEscolha').compareDocumentPosition($('pautasAtualizar')) & 4);
+  criadas.length = 0;
   $('pautasLista').querySelector('.abrir').click();
   await esp(50);
-  t('escolhida a reunião, a lista recolhe e sobra só a escolhida', [...$('pautasLista').querySelectorAll('.pauta-item')].length === 1 && $('pautasMostrar').hidden === false && $('pautasFrente').hidden === true && $('proxima').hidden === true);
-  $('pautasMostrar').click();
-  await esp(30);
-  t('"Mostrar todas as reuniões" reabre a lista inteira', [...$('pautasLista').querySelectorAll('.pauta-item')].length === 2 && $('pautasMostrar').hidden === true && $('pautasFrente').hidden === false);
+  t('fora do Meet, tocar numa reunião abre a página de Pautas já nela e fecha o painel', criadas.length === 1 && /^pautas\.html\?reuniao=/.test(criadas[0]) && decodeURIComponent(criadas[0].split('=')[1]).startsWith(hoje) && !!painelFechado);
+  t('fora do Meet o painel não tem editor de texto, só a lista', /\.fora #colaTxt \{ display: none; \}/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8')) && w.document.body.classList.contains('fora'));
 
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');

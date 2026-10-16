@@ -337,7 +337,7 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .fora-titulo span { color: var(--mudo); font-size: 13px; }
 .fora .topo { padding-bottom: 4px; }
 .fora .pautas { margin-bottom: 8px; }
-.fora.sem-alvo #colaTxt { display: none; }
+.fora #colaTxt { display: none; } /* fora do Meet o painel só lista; a pauta se escreve na página de Pautas */
 #pautaEscolha { color: var(--mudo); }
 .proxima { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--acento); border-radius: var(--raio); background: var(--card); }
 .proxima .rot { margin: 0; color: var(--acento); }
@@ -386,9 +386,3 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; animation-timing-function: ease; }
 ::view-transition-group(topo-pagina) { animation-duration: 0s; }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; } }
-
-/* reunião repetida: oferta discreta de copiar a pauta da última vez */
-.serie { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; padding: 10px 12px; background: var(--card); border: 1px solid var(--linha2); border-radius: var(--raio); color: var(--mudo); font-size: 13px; }
-.serie[hidden] { display: none; }
-.serie-btn { border: 0; background: none; color: var(--acento); font: inherit; font-weight: 700; cursor: pointer; padding: 4px 8px; margin: 0 -8px; border-radius: 6px; }
-.serie-btn:hover { background: var(--fundo); }
