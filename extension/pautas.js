@@ -305,3 +305,4 @@ $('atualizar').onclick = () => {
 };
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
 carregar();
+chrome.runtime.sendMessage({ type: 'sincronizar-pautas' }).catch(() => {}); // traz o que foi editado nos arquivos da pasta Pautas

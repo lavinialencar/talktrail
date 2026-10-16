@@ -41,5 +41,6 @@ console.log('Painel');
 const html = fs.readFileSync(path.join(__dirname, '../extension/panel.html'), 'utf8');
 t('os Ajustes têm o grupo Cópia de segurança com Exportar e Importar', /<h3>Cópia de segurança<\/h3>/.test(html) && /id="ajExportar"/.test(html) && /id="ajImportar"/.test(html) && /<script src="backup\.js">/.test(html));
 
+t('Ajustes explicam que as pautas também ficam em arquivos (Pautas/) editáveis por IA', /id="ajPautasArq"/.test(html) && /Pautas\//.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')));
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);

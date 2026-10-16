@@ -64,6 +64,9 @@ const instaladorEmbutido = /dev/.test(chrome.runtime.getManifest().version_name 
 const instalavel = instaladorEmbutido || !!URL_COMPLEMENTO;
 function pintarPasta() {
   const ao_vivo = servidorOk && !!pastaServidor;
+  $('ajPautasArq').textContent = ao_vivo || pastaNavegador
+    ? 'As pautas também ficam em arquivos, na subpasta Pautas/. Uma IA pode editar esses arquivos e a mudança aparece aqui em até 1 minuto, com o navegador aberto.'
+    : 'Escolhendo uma pasta, as pautas também passam a ficar em arquivos (subpasta Pautas/) que uma IA pode editar.';
   // com o complemento: escolher a pasta ao vivo e copiar o caminho. Sem ele: escolher uma pasta pelo navegador
   $('ajAbrir').hidden = false;
   $('ajInstalar').hidden = ao_vivo || !instalavel; // com o complemento já rodando, ou sem instalador à mão, não mostra
@@ -498,6 +501,7 @@ $('pautasBotao').onclick = () => {
   $('pautasBotao').setAttribute('aria-expanded', String(aberto));
 };
 carregarPautas();
+chrome.runtime.sendMessage({ type: 'sincronizar-pautas' }).catch(() => {}); // traz o que foi editado nos arquivos da pasta Pautas
 let travaEsconder = 0; // o interruptor responde na hora; o eco do estado não pode desfazer o clique
 // vírgula e ponto e vírgula separam tags; pontuação nas pontas não faz parte do nome
 const limparTag = (s) => String(s).replace(/^[\s,;.#]+|[\s,;]+$/g, '');

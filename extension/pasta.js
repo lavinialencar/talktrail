@@ -37,6 +37,27 @@
       if ((await handle.queryPermission(opcoes)) === 'granted') return true;
       return pedir && (await handle.requestPermission(opcoes)) === 'granted';
     },
+    // arquivos .md da subpasta Pautas (sem criar a pasta): nome, data de modificação e texto
+    async listarPautas(handle) {
+      let dir;
+      try { dir = await handle.getDirectoryHandle('Pautas'); } catch (e) { return []; }
+      const saida = [];
+      for await (const [nome, h] of dir.entries()) {
+        if (h.kind !== 'file' || !nome.endsWith('.md')) continue;
+        const f = await h.getFile();
+        if (f.size > 200000) continue;
+        saida.push({ nome, mtime: f.lastModified, conteudo: await f.text() });
+        if (saida.length >= 500) break;
+      }
+      return saida;
+    },
+    async apagar(handle, caminho) {
+      const partes = String(caminho).split('/').filter(Boolean);
+      const nome = partes.pop();
+      let dir = handle;
+      for (const sub of partes) dir = await dir.getDirectoryHandle(sub);
+      await dir.removeEntry(nome);
+    },
     // grava texto em AAAA-MM/arquivo.md dentro da pasta escolhida (cria a subpasta)
     async escrever(handle, caminho, texto) {
       const partes = String(caminho).split('/').filter(Boolean);

@@ -17,6 +17,7 @@ O Talktrail não coleta, não envia e não vende nenhum dado seu. Tudo o que ele
 
 - Na **biblioteca da própria extensão**, dentro do seu navegador (`chrome.storage`).
 - Em um **arquivo `.md`** que a extensão salva em Downloads, ou na pasta que você escolher.
+- As pautas também são gravadas como arquivos `.md` na subpasta `Pautas/` da pasta que você escolheu, pra você (ou uma IA que você use) poder editá-las. A extensão só lê e grava nessa subpasta.
 - Se você instalar o **complemento opcional** (pasta ao vivo), o texto também passa por um programa que roda só no seu computador, em `127.0.0.1`. Ele não aceita conexões de fora da sua máquina.
 
 ## O que a extensão não faz

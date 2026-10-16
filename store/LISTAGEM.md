@@ -30,6 +30,7 @@ O que ele faz
 • Notas e pauta no mesmo painel. Uma página de Pautas mostra as próximas reuniões num calendário: escolha a reunião, escreva a pauta e ela carrega sozinha quando você entrar na sala. As reuniões vêm da tela inicial do Meet, e o ícone mostra quanto falta pra próxima. Funciona também fora do Meet.
 • Marcadores de momento por atalho de teclado.
 • Salva cada reunião como um arquivo .md, com título, tags, data, duração e participantes.
+• Pautas em arquivos: com uma pasta escolhida, cada pauta também vira um .md na subpasta Pautas/. Você ou uma IA edita o arquivo e a pauta muda na extensão, e o contrário também.
 • Cópia de segurança: exporte e importe reuniões, pautas e ajustes num arquivo só.
 
 Privacidade
@@ -50,6 +51,7 @@ What it does
 • Notes and agenda in the same panel. An Agendas page lists your upcoming meetings in a calendar: pick a meeting, write its agenda, and it loads by itself when you join the room. Meetings come from the Meet home page, and the icon shows the countdown to the next one. It also works outside Meet.
 • Keyboard shortcut to mark moments.
 • Saves each meeting as a .md file with title, tags, date, duration and participants.
+• Agendas as files: with a folder chosen, each agenda also becomes a .md file in the Pautas/ subfolder. You or an AI edit the file and the agenda updates in the extension, and the other way around.
 • Backup: export and import meetings, agendas and settings in a single file.
 
 Privacy

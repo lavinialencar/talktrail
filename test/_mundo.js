@@ -21,7 +21,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
   const titulos = [];
   const bg = {
     storage: { local: {
-      get: async (k) => (k === null ? { ...mem } : typeof k === 'string' ? (k in mem ? { [k]: mem[k] } : {}) : {}),
+      get: async (k) => JSON.parse(JSON.stringify(k === null ? mem : typeof k === 'string' ? (k in mem ? { [k]: mem[k] } : {}) : Array.isArray(k) ? Object.fromEntries(k.filter((x) => x in mem).map((x) => [x, mem[x]])) : {})), // cópia, como o navegador de verdade
       set: async (o) => Object.assign(mem, JSON.parse(JSON.stringify(o))),
       remove: async (ks) => [].concat(ks).forEach((k) => delete mem[k]),
     }, onChanged: { addListener() {} } },

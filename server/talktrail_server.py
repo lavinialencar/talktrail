@@ -462,6 +462,47 @@ def pagina_config():
                      else "Instale a extensão (passo 2). A primeira que conectar passa a ser a única autorizada a gravar."))
 
 
+# ---- Pautas em arquivo: OUT/Pautas/*.md, um por reunião. O servidor só lê e grava texto; quem entende o formato é a extensão.
+MAX_PAUTA = 200_000
+MAX_PAUTAS = 500
+
+
+def pasta_pautas(criar=False):
+    d = os.path.join(OUT, "Pautas")
+    if criar:
+        os.makedirs(d, exist_ok=True)
+    return d
+
+
+def nome_pauta_ok(nome):
+    """Só um nome simples de arquivo .md dentro de Pautas: nada de pasta, ponto no começo, controle ou caminho."""
+    if not isinstance(nome, str) or not (4 <= len(nome) <= 150) or not nome.endswith(".md"):
+        return False
+    if nome.startswith(".") or "/" in nome or "\\" in nome or ".." in nome:
+        return False
+    return not re.search("[\x00-\x1f\x7f:*?\"<>|]", nome)
+
+
+def listar_pautas():
+    d = pasta_pautas()
+    saida = []
+    try:
+        nomes = sorted(n for n in os.listdir(d) if n.endswith(".md") and nome_pauta_ok(n))
+    except OSError:
+        return saida
+    for n in nomes[:MAX_PAUTAS]:
+        caminho = os.path.join(d, n)
+        try:
+            if not os.path.isfile(caminho) or os.path.islink(caminho) or os.path.getsize(caminho) > MAX_PAUTA:
+                continue
+            with open(caminho, "r", encoding="utf-8", errors="replace") as f:
+                conteudo = f.read()
+            saida.append({"nome": n, "mtime": int(os.path.getmtime(caminho) * 1000), "conteudo": conteudo})
+        except OSError:
+            continue
+    return saida
+
+
 def pasta_valida(caminho):
     """Pasta escolhida na página: caminho absoluto dentro da pasta do usuário ou de um volume, e gravável."""
     bruto = os.path.expanduser(texto(caminho, 500).strip())
@@ -749,6 +790,45 @@ class H(BaseHTTPRequestHandler):
                 if not _env("OUT"):
                     OUT = nova
             return self._json(200, {"ok": True, "pasta": nova})
+
+        if caminho in ("/pautas/listar", "/pautas/gravar", "/pautas/apagar"):
+            if not self._autorizado():
+                return self._json(403, {"ok": False, "erro": "extensão não pareada", "parear": True})
+            if caminho == "/pautas/listar":
+                with TRAVA:
+                    return self._json(200, {"ok": True, "arquivos": listar_pautas()})
+            d, erro = self._corpo_json()
+            if erro:
+                return self._json(*erro)
+            nome = d.get("nome")
+            if not nome_pauta_ok(nome):
+                return self._json(400, {"ok": False, "erro": "nome de arquivo inválido"})
+            if caminho == "/pautas/apagar":
+                with TRAVA:
+                    try:
+                        alvo = os.path.join(pasta_pautas(), nome)
+                        if os.path.isfile(alvo) and not os.path.islink(alvo):
+                            os.remove(alvo)
+                    except OSError:
+                        pass
+                return self._json(200, {"ok": True})
+            conteudo = d.get("conteudo")
+            if not isinstance(conteudo, str) or len(conteudo) > MAX_PAUTA:
+                return self._json(400, {"ok": False, "erro": "conteúdo inválido"})
+            conteudo = texto(conteudo)
+            with TRAVA:
+                try:
+                    pasta = pasta_pautas(True)
+                    alvo = os.path.join(pasta, nome)
+                    if os.path.islink(alvo):
+                        return self._json(400, {"ok": False, "erro": "nome de arquivo inválido"})
+                    tmp = alvo + ".tmp"
+                    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+                        f.write(conteudo)
+                    substituir(tmp, alvo)
+                except OSError as e:
+                    return self._json(500, {"ok": False, "erro": f"não consegui gravar: {e}"[:200]})
+            return self._json(200, {"ok": True})
 
         if caminho != "/save":
             return self._json(404, {"ok": False})

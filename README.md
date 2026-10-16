@@ -6,6 +6,7 @@ Transcrição e notas do Google Meet, **100% local**. Uma extensão para o naveg
 
 - Oferece gravar quando você entra numa chamada e liga as legendas sozinha.
 - Painel lateral com o texto ao vivo, **Notas** (o que sai da reunião) e **Pauta** (o que você leva antes; cada reunião tem a sua, com a lista de hoje vinda da tela inicial do Meet, o ícone contando quanto falta pra próxima reunião, e carrega sozinha ao entrar na sala; o painel abre em qualquer página, não só no Meet) com um editor markdown de verdade: título, lista, tarefa com caixa de marcar, hierarquia), **Marcadores** de momento e tags.
+- **Pautas em arquivos, editáveis por IA:** com uma pasta escolhida, cada pauta também vira um `.md` em `Pautas/` (título e dia no cabeçalho, texto em Markdown). Edite o arquivo, à mão ou com uma IA, e a pauta muda no painel em até 1 minuto; o contrário também vale. Um `LEIA-ME.md` na pasta explica o formato.
 - Um `.md` por reunião, com cabeçalho (título, tags, data, duração, participantes) e a transcrição por fala.
 - Ao sair da chamada, para, salva e some sozinha.
 - Avisa em vermelho se as legendas forem desligadas (sem elas não há transcrição).

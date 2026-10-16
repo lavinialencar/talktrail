@@ -356,6 +356,44 @@ class Seguranca(unittest.TestCase):
             except OSError:
                 pass
 
+    def test_pautas_em_arquivo(self):
+        h = {"X-Meet-Token": TOKEN}
+        # sem pareamento ou de origem errada: negado
+        for hh in [{}, {"Origin": "https://evil.com", "X-Meet-Token": TOKEN}, {"X-Meet-Token": "errado"}]:
+            st, _ = post({}, path="/pautas/listar", headers=hh)
+            self.assertEqual(st, 403, hh)
+        st, r = post({}, path="/pautas/listar", headers=h)
+        self.assertEqual((st, r.get("arquivos")), (200, []))
+        conteudo = '---\ntitulo: "Daily"\ndata: 2026-10-20\n---\n\n1. ponto A\n'
+        st, r = post({"nome": "2026-10-20_daily.md", "conteudo": conteudo}, path="/pautas/gravar", headers=h)
+        self.assertEqual((st, r.get("ok")), (200, True), r)
+        self.assertTrue(os.path.isfile(os.path.join(TMP, "Pautas", "2026-10-20_daily.md")))
+        st, r = post({}, path="/pautas/listar", headers=h)
+        self.assertEqual([a["nome"] for a in r["arquivos"]], ["2026-10-20_daily.md"])
+        self.assertEqual(r["arquivos"][0]["conteudo"], conteudo)
+        self.assertGreater(r["arquivos"][0]["mtime"], 1_700_000_000_000)
+        # nomes perigosos e conteúdo absurdo são recusados
+        for nome in ["../fora.md", "a/b.md", "..\\x.md", ".oculto.md", "sem-extensao", "x.txt", "", None, 5, "a" * 200 + ".md", "c:evil.md", "a\x00b.md"]:
+            st, _ = post({"nome": nome, "conteudo": "x"}, path="/pautas/gravar", headers=h)
+            self.assertEqual(st, 400, repr(nome))
+        st, _ = post({"nome": "grande.md", "conteudo": "x" * 250_000}, path="/pautas/gravar", headers=h)
+        self.assertEqual(st, 400)
+        st, _ = post({"nome": "ok.md", "conteudo": 5}, path="/pautas/gravar", headers=h)
+        self.assertEqual(st, 400)
+        self.assertFalse(os.path.exists(os.path.join(TMP, "fora.md")))
+        # arquivo editado por fora (a IA) aparece na lista; apagar remove só dentro de Pautas
+        with open(os.path.join(TMP, "Pautas", "2026-10-21_nova.md"), "w", encoding="utf-8") as f:
+            f.write("---\ntitulo: Nova\ndata: 2026-10-21\n---\ntexto da IA")
+        st, r = post({}, path="/pautas/listar", headers=h)
+        self.assertEqual(len(r["arquivos"]), 2)
+        st, _ = post({"nome": "2026-10-21_nova.md"}, path="/pautas/apagar", headers=h)
+        self.assertEqual(st, 200)
+        st, _ = post({"nome": "../x.md"}, path="/pautas/apagar", headers=h)
+        self.assertEqual(st, 400)
+        st, r = post({}, path="/pautas/listar", headers=h)
+        self.assertEqual([a["nome"] for a in r["arquivos"]], ["2026-10-20_daily.md"])
+        os.remove(os.path.join(TMP, "Pautas", "2026-10-20_daily.md"))
+
     def test_reset_so_da_propria_pagina(self):
         for o in ["https://evil.com", "null", ORIGEM, "chrome-extension://zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"]:
             with self.subTest(o=o):

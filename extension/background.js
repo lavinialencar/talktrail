@@ -1,4 +1,4 @@
-importScripts('md.js', 'pasta.js'); // MB_MD: gera o .md no navegador; MB_PASTA: pasta escolhida pela pessoa (modo simples)
+importScripts('md.js', 'pasta.js', 'pautas-arquivo.js'); // MB_MD: gera o .md no navegador; MB_PASTA: pasta escolhida pela pessoa (modo simples)
 // só no build de desenvolvimento (version_name com "dev"): recarrega a extensão sozinha quando os arquivos mudam.
 // O pacote da loja não leva esse arquivo nem o version_name (ver tools/empacotar.py).
 if (/dev/.test(chrome.runtime.getManifest().version_name || '')) importScripts('dev-hot.js');
@@ -207,6 +207,10 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
       chrome.action.setBadgeBackgroundColor({ color: erro ? '#D97706' : '#DC2626' }).catch(() => {});
     }
   }
+  if (msg.type === 'sincronizar-pautas') {
+    sincronizarPautas().then(() => responder({ ok: true })).catch(() => responder({ ok: false }));
+    return true;
+  }
   if (msg.type === 'mostrar') {
     mostrarNaPasta(msg.id).then(responder).catch(() => responder({ ok: false }));
     return true;
@@ -309,6 +313,7 @@ chrome.commands.onCommand.addListener(async (comando) => {
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === 'limpeza') limparAntigas().catch(() => {});
   if (a.name === 'contagem') atualizarContagem().catch(() => {});
+  if (a.name === 'pautas') sincronizarPautas().catch(() => {});
 });
 
 // ---------- agenda do Meet e contagem no ícone ----------
@@ -377,3 +382,101 @@ async function atualizarContagem() {
 chrome.alarms.create('contagem', { periodInMinutes: 1 });
 chrome.storage.onChanged.addListener((c) => { if (c.agendaMeet) atualizarContagem().catch(() => {}); });
 atualizarContagem().catch(() => {});
+
+// ---------- pautas em arquivo ----------
+// Pasta Pautas/ dentro da pasta de reuniões: um .md por reunião. Quem editou por último ganha (ver pautas-arquivo.js).
+// Usa o servidor local, se estiver pareado; senão a pasta escolhida no navegador, se a permissão estiver ativa.
+async function armazemDePautas() {
+  const { pareamento } = await chrome.storage.local.get('pareamento');
+  if (pareamento && Date.now() >= servidorForaAte) {
+    try {
+      const chamar = async (caminho, corpo) => {
+        const r = await fetch(SERVER + caminho, { method: 'POST', headers: await cabecalhos(pareamento), body: JSON.stringify(corpo) });
+        return r.json().catch(() => ({ ok: false }));
+      };
+      const l = await chamar('/pautas/listar', {});
+      if (l && l.ok) {
+        return {
+          tipo: 'servidor',
+          arquivos: l.arquivos || [],
+          gravar: (nome, conteudo) => chamar('/pautas/gravar', { nome, conteudo }),
+          apagar: (nome) => chamar('/pautas/apagar', { nome }),
+        };
+      }
+    } catch (e) {
+      servidorForaAte = Date.now() + 20000;
+    }
+  }
+  const alvo = await MB_PASTA.ler().catch(() => null);
+  if (alvo && (await MB_PASTA.permissao(alvo, false).catch(() => false))) {
+    return {
+      tipo: 'pasta',
+      arquivos: await MB_PASTA.listarPautas(alvo),
+      gravar: (nome, conteudo) => MB_PASTA.escrever(alvo, `Pautas/${nome}`, conteudo),
+      apagar: (nome) => MB_PASTA.apagar(alvo, `Pautas/${nome}`),
+    };
+  }
+  return null;
+}
+
+let sincronizando = null;
+let sincPendente = false;
+async function sincronizarPautas() {
+  if (sincronizando) { sincPendente = true; return sincronizando; }
+  sincronizando = (async () => {
+    try {
+      const arm = await armazemDePautas();
+      if (!arm) { await chrome.storage.local.set({ pautasSync: { modo: '', em: Date.now() } }); return; }
+      const v = await chrome.storage.local.get(['pautas', 'pautasApagadas', 'pautasConhecidas', 'pautasSync']);
+      const original = v.pautas || {};
+      const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0 });
+      for (const e of r.escrever) await arm.gravar(e.nome, e.conteudo);
+      for (const nome of r.apagar) await arm.apagar(nome);
+      if (!arm.arquivos.some((a) => a.nome === 'LEIA-ME.md')) await arm.gravar('LEIA-ME.md', MB_PAUTAS_ARQ.LEIA_ME);
+      const grava = { pautasSync: { modo: arm.tipo, em: Date.now() }, pautasConhecidas: r.conhecidas };
+      if (r.pautas) {
+        // aplica só o que veio dos arquivos em cima do que está agora (a pessoa pode ter editado durante a conversa com a pasta)
+        const agora = (await chrome.storage.local.get('pautas')).pautas || {};
+        const juntas = { ...agora };
+        for (const id of Object.keys(r.pautas)) {
+          if (r.pautas[id] !== original[id] && (!agora[id] || JSON.stringify(agora[id]) === JSON.stringify(original[id]) || (agora[id].atualizada || 0) <= ((original[id] || {}).atualizada || 0))) juntas[id] = r.pautas[id];
+        }
+        for (const id of r.removidas) if (JSON.stringify(agora[id]) === JSON.stringify(original[id])) delete juntas[id]; // só se ninguém mexeu nela enquanto isso
+        grava.pautas = juntas;
+      }
+      if (r.reapareceu.length) {
+        const ap = { ...(v.pautasApagadas || {}) };
+        r.reapareceu.forEach((id) => delete ap[id]);
+        grava.pautasApagadas = ap;
+      }
+      await chrome.storage.local.set(grava);
+    } catch (e) {
+      // pasta sem permissão, servidor fora, disco cheio: tenta de novo no próximo minuto
+    } finally {
+      sincronizando = null;
+      if (sincPendente) { sincPendente = false; setTimeout(() => sincronizarPautas().catch(() => {}), 1500); }
+    }
+  })();
+  return sincronizando;
+}
+let tSincPautas = null;
+chrome.storage.onChanged.addListener((c) => {
+  if (!c.pautas) return;
+  // pauta apagada no navegador: anota, pro arquivo dela sair em vez de a pauta voltar
+  const antes = c.pautas.oldValue || {};
+  const depois = c.pautas.newValue || {};
+  const sumiram = Object.keys(antes).filter((id) => !(id in depois));
+  if (sumiram.length) {
+    chrome.storage.local.get('pautasApagadas').then(({ pautasApagadas }) => {
+      const ap = { ...(pautasApagadas || {}) };
+      const corte = Date.now() - 30 * 86400000;
+      for (const k of Object.keys(ap)) if (ap[k] < corte) delete ap[k];
+      sumiram.forEach((id) => { ap[id] = Date.now(); });
+      return chrome.storage.local.set({ pautasApagadas: ap });
+    }).catch(() => {});
+  }
+  clearTimeout(tSincPautas);
+  tSincPautas = setTimeout(() => sincronizarPautas().catch(() => {}), 1500);
+});
+chrome.alarms.create('pautas', { periodInMinutes: 1 });
+sincronizarPautas().catch(() => {});
