@@ -17,5 +17,6 @@ for (const f of ['biblioteca.html', 'pautas.html']) {
 t('a página do servidor local tem o logo embutido', /<h1><img src="data:image\/png;base64,/.test(ler('server/talktrail_server.py')));
 t('a cópia do servidor dentro da extensão está sincronizada', ler('server/talktrail_server.py') === ler('extension/complemento/talktrail_server.py'));
 t('o painel não tem mais a dica de atalhos embaixo da pauta', !/<div id="colaTxt"[^>]*><\/div>\s*<p class="dica">/.test(ler('extension/panel.html')));
+t('trocar de página é suave: a transição entre páginas está ligada e o cabeçalho fica parado', /@view-transition \{ navigation: auto; \}/.test(ler('extension/panel.css')) && /view-transition-name: topo-pagina/.test(ler('extension/panel.css')) && /prefers-reduced-motion/.test(ler('extension/panel.css').split('@view-transition')[1]));
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);
