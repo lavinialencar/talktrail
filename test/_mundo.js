@@ -15,6 +15,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
   const badges = [];
   const criadas = [];
   const removidas = [];
+  let aoInstalar = null;
   const atualizadas = [];
   const criadasOpts = [];
   const titulos = [];
@@ -25,7 +26,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
       remove: async (ks) => [].concat(ks).forEach((k) => delete mem[k]),
     }, onChanged: { addListener() {} } },
     downloads: { download: async () => 1, show() {} },
-    runtime: { onMessage: { addListener: (f) => (ouveBg = f) }, onConnect: { addListener: (f) => (aoConectar = f) }, onInstalled: { addListener() {} }, onStartup: { addListener() {} }, reload() {}, getManifest: () => ({ version: '0', version_name: '' }) },
+    runtime: { onMessage: { addListener: (f) => (ouveBg = f) }, onConnect: { addListener: (f) => (aoConectar = f) }, onInstalled: { addListener: (f) => (aoInstalar = f) }, onStartup: { addListener() {} }, reload() {}, getManifest: () => ({ version: '0', version_name: '' }), getURL: (p) => 'chrome-extension://abc/' + p },
     sidePanel: {
       setPanelBehavior: async () => {},
       setOptions: async (o) => { if (o.enabled === false) { painel.habilitado = false; painel.desabilitacoes++; } else if (o.enabled === true) painel.habilitado = true; },
@@ -115,7 +116,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
     const r = w.document.querySelector('[role="region"]');
     r.innerHTML = `<div><div>${quem}\n${txt}</div><div></div></div>`; // bloco: primeira linha o falante, o resto a fala (o segundo bloco vazio é como no Meet)
   };
-  return { bgMensagem: (msg, tabId) => ouveBg(msg, { tab: { id: tabId } }, () => {}), atualizadas, criadas, criadasOpts, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
+  return { instalar: (d) => aoInstalar && aoInstalar(d), bgMensagem: (msg, tabId) => ouveBg(msg, { tab: { id: tabId } }, () => {}), atualizadas, criadas, criadasOpts, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
 }
 
 module.exports = { mundo };

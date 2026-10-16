@@ -215,6 +215,14 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await m6.tick(16000);
   t('depois de esperar bastante, guarda o diagnóstico da leitura (0 reuniões, aba escondida)', m6.loja.agendaDiag && m6.loja.agendaDiag.achados === 0 && m6.loja.agendaDiag.vis === 'hidden', JSON.stringify(m6.loja.agendaDiag));
 
+  const mI = await mundo();
+  await mI.instalar({ reason: 'update' });
+  await mI.tick(20);
+  t('atualizar ou recarregar a extensão NÃO abre as boas-vindas', !mI.criadas.some((u) => /boas-vindas/.test(u)));
+  await mI.instalar({ reason: 'install' });
+  await mI.tick(20);
+  t('instalar pela primeira vez abre as boas-vindas', mI.criadas.some((u) => /boas-vindas\.html$/.test(u)) && mI.criadasOpts.length === 1, JSON.stringify(mI.criadas));
+
   console.log('Fundo: contagem no ícone');
   const bg = m.bgCtx;
   const dia0 = new Date(2026, 9, 14, 15, 0); // 14/10/2026, 15:00

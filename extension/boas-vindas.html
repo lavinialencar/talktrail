@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boas-vindas ao Talktrail</title>
+<style>
+  :root { --fundo: #f5f5f7; --texto: #09090b; --mudo: #52525b; --acento: #0f766e; --acento-t: #fff; --card: #fff; --linha: #d4d4dc; --ok: #15803d; }
+  @media (prefers-color-scheme: dark) { :root { --fundo: #131313; --texto: #fafafa; --mudo: #a3a3a3; --acento: #2dd4bf; --acento-t: #04201d; --card: #1f1f1f; --linha: #3b3b3b; --ok: #4ade80; } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body { background: var(--fundo); color: var(--texto); font: 15px/1.5 Inter, -apple-system, system-ui, sans-serif; display: grid; place-items: center; padding: 32px 0; }
+  main { width: min(560px, calc(100% - 40px)); background: var(--card); border: 1px solid var(--linha); border-radius: 16px; padding: 32px; }
+  h1 { margin: 0 0 6px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; display: flex; align-items: center; gap: 14px; }
+  h1 img { width: 48px; height: 48px; flex: none; }
+  .sub { margin: 0 0 28px; color: var(--mudo); }
+  ol { list-style: none; counter-reset: passo; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 26px; }
+  li { counter-increment: passo; display: flex; align-items: flex-start; gap: 16px; }
+  li::before { content: counter(passo); flex: none; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--acento); color: var(--acento-t); font-weight: 800; font-size: 16px; font-variant-numeric: tabular-nums; }
+  li.pronto::before { content: "\2713"; }
+  .corpo { flex: 1; min-width: 0; }
+  h2 { margin: 3px 0 4px; font-size: 16px; font-weight: 700; line-height: 1.3; }
+  p { margin: 0; color: var(--mudo); }
+  b { color: var(--texto); font-weight: 700; }
+  .acao { display: inline-block; margin-top: 12px; padding: 10px 16px; border-radius: 10px; border: 1px solid var(--linha); background: transparent; color: var(--texto); font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .acao:hover { border-color: var(--mudo); }
+  .acao.primaria { background: var(--acento); border-color: var(--acento); color: var(--acento-t); }
+  .acao.primaria:hover { filter: brightness(1.08); }
+  .acao:focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+  #status { margin: 10px 0 0; color: var(--ok); font-weight: 600; }
+  #status:empty { display: none; }
+  #status.erro { color: var(--mudo); }
+  .rodape { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--linha); font-size: 13px; }
+</style>
+<body>
+  <main>
+    <h1><img src="icons/icon-128.png" alt="">Boas-vindas ao Talktrail</h1>
+    <p class="sub">Quatro passos e está pronto. Tudo fica no seu computador.</p>
+    <ol>
+      <li id="passoPasta"><div class="corpo">
+        <h2>Escolha onde salvar</h2>
+        <p>Cada reunião vira um arquivo de texto numa pasta sua. Sem pasta, tudo fica na biblioteca e vai para Downloads ao terminar.</p>
+        <button id="escolher" class="acao primaria" type="button">Escolher uma pasta…</button>
+        <p id="status" role="status"></p>
+      </div></li>
+      <li><div class="corpo">
+        <h2>Fixe o Talktrail na barra</h2>
+        <p>Clique no ícone de <b>peça de quebra-cabeça</b>, ao lado da barra de endereço, e no <b>alfinete</b> ao lado do Talktrail. Assim o painel fica a um clique.</p>
+      </div></li>
+      <li><div class="corpo">
+        <h2>Entre numa reunião do Meet</h2>
+        <p>O Talktrail pergunta se você quer transcrever e liga as legendas sozinho. Lembre de avisar o pessoal da chamada.</p>
+        <a class="acao" href="https://meet.google.com/" target="_blank" rel="noopener">Abrir o Google Meet</a>
+      </div></li>
+      <li><div class="corpo">
+        <h2>Escreva a pauta antes</h2>
+        <p>Em <b>Pautas</b>, escolha a reunião e escreva. Ela aparece sozinha quando você entrar na sala, e o ícone mostra quanto falta para a próxima.</p>
+        <a class="acao" href="pautas.html">Ver as pautas</a>
+      </div></li>
+    </ol>
+    <p class="rodape">Para rever esta página, abra os Ajustes do painel e toque em "Boas-vindas".</p>
+  </main>
+  <script src="pagina.js"></script>
+  <script src="pasta.js"></script>
+  <script src="boas-vindas.js"></script>
+</body>
+</html>

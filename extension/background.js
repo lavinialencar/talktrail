@@ -21,6 +21,10 @@ function iniciarComportamento() {
   atualizarContagem().catch(() => {});
 }
 chrome.runtime.onInstalled.addListener(iniciarComportamento);
+// só na primeira instalação (atualizar ou recarregar não abre de novo)
+chrome.runtime.onInstalled.addListener((d) => {
+  if (d && d.reason === 'install') chrome.tabs.create({ url: chrome.runtime.getURL('boas-vindas.html') }).catch(() => {});
+});
 chrome.runtime.onStartup.addListener(iniciarComportamento);
 
 chrome.tabs.onUpdated.addListener((id, info, tab) => {

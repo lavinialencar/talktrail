@@ -797,6 +797,7 @@ $('ligar').onclick = () => {
 };
 $('ajInstalar').onclick = baixarComplemento;
 $('ajBiblioteca').onclick = () => abrirPagina(chrome.runtime.getURL('biblioteca.html'));
+$('ajBoasVindas').onclick = () => abrirPagina(chrome.runtime.getURL('boas-vindas.html'));
 $('ajAbrir').onclick = escolherPastaAoVivo;
 
 // "Por que não está transcrevendo?": cada ponto da cadeia, com o que fazer
