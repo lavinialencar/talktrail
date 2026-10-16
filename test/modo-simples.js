@@ -206,7 +206,7 @@ const base = { id: 's1', startedAt: '2026-10-11T22:00:00Z', titulo: 'Kickoff ðŸš
   console.log('Escolher a pasta pelo navegador: janelinha e oferta Ãºnica');
   x = ambiente({ servidor: 'fora' });
   await x.mandar({ type: 'escolher-pasta-navegador' });
-  t('abre a janelinha de escolher a pasta', x.janelas.length === 1 && /escolher-pasta\.html$/.test(x.janelas[0].url) && x.janelas[0].type === 'popup', JSON.stringify(x.janelas));
+  t('abre a janelinha de escolher a pasta', x.janelas.length === 1 && /boas-vindas\.html\?so=pasta$/.test(x.janelas[0].url) && x.janelas[0].type === 'popup', JSON.stringify(x.janelas));
   x.mem.ajustes = { oferta: 'perguntar' };
   await x.mandar({ type: 'pasta-oferecida' });
   await new Promise((r2) => setImmediate(r2));

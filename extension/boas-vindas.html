@@ -29,11 +29,14 @@
   #status { margin: 10px 0 0; color: var(--ok); font-weight: 600; }
   #status:empty { display: none; }
   #status.erro { color: var(--mudo); }
+  body.so-pasta li:not(#passoPasta), body.so-pasta .rodape, body.so-pasta .sub { display: none; }
+  body.so-pasta main { padding: 28px; }
+  body.so-pasta h1 { margin-bottom: 26px; }
   .rodape { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--linha); font-size: 13px; }
 </style>
 <body>
   <main>
-    <h1><img src="icons/icon-128.png" alt="">Boas-vindas ao Talktrail</h1>
+    <h1><img src="icons/icon-128.png" alt=""><span id="titulo">Boas-vindas ao Talktrail</span></h1>
     <p class="sub">Quatro passos e está pronto. Tudo fica no seu computador.</p>
     <ol>
       <li id="passoPasta"><div class="corpo">

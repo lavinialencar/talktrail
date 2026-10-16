@@ -212,7 +212,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     return true;
   }
   if (msg.type === 'escolher-pasta-navegador') {
-    chrome.windows.create({ url: chrome.runtime.getURL('escolher-pasta.html'), type: 'popup', width: 460, height: 400 }).catch(() => {});
+    chrome.windows.create({ url: chrome.runtime.getURL('boas-vindas.html?so=pasta'), type: 'popup', width: 560, height: 400 }).catch(() => {});
   }
   if (msg.type === 'pasta-oferecida') {
     chrome.storage.local.get('ajustes').then(({ ajustes }) => chrome.storage.local.set({ ajustes: { ...(ajustes || {}), pastaOferecida: true } })).catch(() => {});

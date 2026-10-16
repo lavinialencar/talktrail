@@ -1,4 +1,10 @@
-// Boas-vindas: aparece uma vez, quando a extensão é instalada. O passo da pasta usa o mesmo seletor da janelinha do Meet.
+// Boas-vindas e configuração inicial. Aparece na instalação e pode ser revista nos Ajustes.
+// Com ?so=pasta (janelinha aberta pelo Meet na hora de gravar) mostra só o passo da pasta e fecha ao terminar.
+const soPasta = new URLSearchParams(location.search).get('so') === 'pasta';
+if (soPasta) {
+  document.body.classList.add('so-pasta');
+  document.getElementById('titulo').textContent = 'Onde salvar suas reuniões?';
+}
 const status = document.getElementById('status');
 const passo = document.getElementById('passoPasta');
 function pronto(nome) {
@@ -6,6 +12,7 @@ function pronto(nome) {
   status.classList.remove('erro');
   status.textContent = `Pronto. Salvando em "${nome}".`;
 }
+
 MB_PASTA.ler().then((h) => { if (h) pronto(h.name); }).catch(() => {});
 document.getElementById('escolher').onclick = async () => {
   status.classList.add('erro');
@@ -18,6 +25,7 @@ document.getElementById('escolher').onclick = async () => {
     await MB_PASTA.guardar(h);
     await chrome.storage.local.set({ pastaPendente: false });
     pronto(h.name);
+    if (soPasta) setTimeout(() => window.close(), 1600);
   } catch (e) {
     status.textContent = e && e.name === 'AbortError' ? '' : 'Não consegui usar essa pasta. Escolha outra.';
   }
