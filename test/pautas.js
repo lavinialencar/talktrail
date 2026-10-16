@@ -103,7 +103,10 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('sem Meet na aba, o painel entra no modo "fora"', w.document.body.classList.contains('fora'));
   t('abre direto na aba Pauta, com a agenda aberta', $('cola').hidden === false && $('pautasPainel').hidden === false);
   await esp(80);
-  t('com agenda velha, pede pro fundo atualizar pelo Meet', enviadas.some((m) => m.type === 'atualizar-agenda'));
+  t('com agenda velha, NÃO abre o Meet sozinho; só avisa que pode estar desatualizada', !enviadas.some((m) => m.type === 'atualizar-agenda') && /desatualizada/.test($('pautasLidaEm').textContent));
+  $('pautasAtualizar').click();
+  await esp(30);
+  t('mas abre quando a pessoa toca em "Atualizar pelo Meet"', enviadas.some((m) => m.type === 'atualizar-agenda'));
 
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');

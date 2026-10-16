@@ -224,7 +224,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     return true;
   }
   if (msg.type === 'atualizar-agenda') {
-    atualizarAgenda().catch(() => {});
+    atualizarAgenda().catch(() => {}); // só chega aqui quando a pessoa toca no botão do painel
     return false;
   }
   if (msg.type === 'preciso-visivel' && sender.tab && abasAtualizacao.has(sender.tab.id)) {

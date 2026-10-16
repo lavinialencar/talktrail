@@ -395,10 +395,11 @@ function pintarPautas() {
     $('proximaQuando').textContent = `${prox.l.hora} · ` + (falta === 0 ? 'agora' : falta < 60 ? `em ${falta} min` : `em ${Math.floor(falta / 60)} h${falta % 60 ? ` ${falta % 60} min` : ''}`);
   }
   const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-  $('pautasLidaEm').hidden = !lida && !atualizandoAgenda;
+  $('pautasLidaEm').hidden = false;
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
   const vazia = agendaDiag && agendaDiag.achados === 0 && !futuras.length ? ` A última leitura não achou reuniões${agendaDiag.vis === 'hidden' ? ' (a aba ficou escondida)' : ''}.` : '';
-  $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando…' : lida ? `Atualizado às ${lida}.${vazia}${versao ? ` Talktrail ${versao}.` : ''}` : '';
+  const velha = agendaLidaEm && Date.now() - agendaLidaEm > 30 * 60 * 1000 ? ' Pode estar desatualizada: toque em Atualizar pelo Meet.' : '';
+  $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando: abas do Meet podem abrir por alguns segundos.' : lida ? `Atualizado às ${lida}.${velha}${vazia}${versao ? ` Talktrail ${versao}.` : ''}` : 'Toque em Atualizar pelo Meet para ver as suas reuniões.';
 }
 function rotularPauta() {
   const externo = alvoExterno();
@@ -443,7 +444,7 @@ async function carregarPautas() {
   rotularPauta();
 }
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDiag) carregarPautas(); });
-function atualizarAgendaDoMeet() {
+function atualizarAgendaDoMeet() { // só quando a pessoa toca no botão: abre abas do Meet por alguns segundos
   if (Date.now() - ultimoPedido < 15000) return;
   ultimoPedido = Date.now();
   atualizandoAgenda = true;
@@ -469,7 +470,6 @@ function modoFora(ligado) {
   $('abaCola').click();
   $('pautasPainel').hidden = false;
   $('pautasBotao').setAttribute('aria-expanded', 'true');
-  if (!agendaLidaEm || Date.now() - agendaLidaEm > 20 * 60 * 1000) atualizarAgendaDoMeet();
 }
 $('pautasBotao').onclick = () => {
   const aberto = $('pautasPainel').hidden;
