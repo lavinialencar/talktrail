@@ -1,24 +1,63 @@
-/* página de pautas: a agenda à esquerda, o editor à direita */
+/* página de pautas: calendário e reuniões do dia à esquerda, a pauta grande à direita */
 html:has(body.pagina), body.pagina { height: auto; overflow: auto; overscroll-behavior: auto; } /* o painel não rola; esta página rola */
 body.pagina { margin: 0; background: var(--fundo); color: var(--texto); font-size: 15px; }
 main.pg { display: block; flex: none; min-height: 0; background: transparent; }
 .pg section { flex: none; overflow: visible; padding: 0; } /* o painel usa section como coluna que rola; aqui a página inteira rola */
-.pg { max-width: 1120px; margin: 0 auto; padding: 32px 24px 56px; }
-.pg-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
-.pg-topo h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.02em; }
-.pg-topo .sub { margin: 0; color: var(--mudo); max-width: 56ch; line-height: 1.5; }
+.pg { max-width: 1180px; margin: 0 auto; padding: 36px 28px 64px; }
+.pg-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
+.pg-topo h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -.02em; }
+.pg-topo .sub { margin: 0; color: var(--mudo); max-width: 52ch; font-size: 14px; line-height: 1.55; }
 .pg-acoes { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.pg-acoes .dica { margin: 0; text-align: right; max-width: 40ch; }
-.pg-filtros { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--linha); }
-.filtro { background: none; border: 0; color: var(--fraco); padding: 10px 12px; font: inherit; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.pg-acoes .dica { margin: 0; text-align: right; max-width: 42ch; }
+.pg-cols { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 20px; align-items: start; }
+.pg .cartao-pg { background: var(--card); border: 1px solid var(--linha2); border-radius: 16px; padding: 22px; }
+.pg-dir { position: sticky; top: 24px; min-height: calc(100vh - 170px); display: flex; flex-direction: column; }
+@media (max-width: 860px) { .pg-cols { grid-template-columns: 1fr; } .pg-dir { position: static; min-height: 0; } .pg-acoes { align-items: flex-start; } .pg-acoes .dica { text-align: left; } }
+
+/* trocar entre calendário e lista */
+.vistas { display: inline-flex; padding: 3px; gap: 2px; background: var(--fundo); border-radius: 10px; margin-bottom: 18px; }
+.vista { border: 0; background: none; color: var(--mudo); font: inherit; font-weight: 600; font-size: 13px; padding: 6px 14px; border-radius: 8px; cursor: pointer; }
+.vista.on { background: var(--card); color: var(--texto); box-shadow: 0 0 0 1px var(--linha2) inset; }
+
+/* calendário */
+.cal-topo { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+.cal-topo strong { flex: 1; text-align: center; font-size: 15px; }
+.cal-nav { width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--texto); font-size: 20px; line-height: 1; cursor: pointer; }
+.cal-nav:hover { background: var(--fundo); }
+.cal-sem, .cal-grade { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-sem span { text-align: center; font-size: 11px; font-weight: 600; color: var(--mudo); padding: 4px 0; }
+.cal-grade { gap: 2px; }
+.dia { position: relative; aspect-ratio: 1 / 1; border: 0; border-radius: 10px; background: none; color: var(--texto); font: inherit; font-size: 14px; font-variant-numeric: tabular-nums; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.dia:hover { background: var(--fundo); }
+.dia.passado { color: var(--mudo); }
+.dia.hoje { box-shadow: 0 0 0 1.5px var(--acento) inset; font-weight: 700; }
+.dia.sel { background: var(--acento); color: var(--acento-t); font-weight: 700; box-shadow: none; }
+.dia .ponto { position: absolute; bottom: 5px; left: 50%; margin-left: -3px; }
+.ponto { display: inline-block; width: 6px; height: 6px; border-radius: 50%; vertical-align: middle; margin: 0 4px 0 10px; }
+.ponto.tem { background: var(--acento); }
+.ponto.sem { border: 1.5px solid var(--acento); }
+.dia.sel .ponto.tem { background: var(--acento-t); }
+.dia.sel .ponto.sem { border-color: var(--acento-t); }
+.cal-legenda { margin: 10px 0 18px; color: var(--mudo); font-size: 12px; text-align: center; }
+.cal-legenda .ponto:first-child { margin-left: 0; }
+
+/* reuniões do dia escolhido */
+.dia-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding-top: 16px; border-top: 1px solid var(--linha); }
+.dia-cab b { font-size: 14px; }
+.dia-cab span { color: var(--mudo); font-size: 12px; }
+.dia-vazio { padding: 8px 0 4px; }
+.dia-vazio .dica { margin: 0 0 10px; }
+.pg-filtros { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--linha); }
+.filtro { background: none; border: 0; color: var(--fraco); padding: 8px 10px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .filtro:hover { color: var(--texto); }
 .filtro.on { color: var(--texto); border-bottom-color: var(--acento); }
-.filtro i { font-style: normal; color: var(--mudo); margin-left: 4px; font-variant-numeric: tabular-nums; }
-.pg-cols { display: grid; grid-template-columns: minmax(300px, 440px) 1fr; gap: 28px; align-items: start; }
-@media (max-width: 860px) { .pg-cols { grid-template-columns: 1fr; } }
-.pg-agenda #vazio strong { display: block; color: var(--texto); margin-bottom: 2px; }
-.pg-editor { position: sticky; top: 24px; }
-.pg-editor h2 { margin: 0 0 2px; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
-.pg-editor #edQuando { margin: 0 0 12px; }
-.pg-editor .mb-editor { height: auto; min-height: 420px; }
-@media (max-width: 860px) { .pg-editor { position: static; } .pg-acoes { align-items: flex-start; } .pg-acoes .dica { text-align: left; } }
+.filtro i { font-style: normal; color: var(--mudo); margin-left: 3px; font-variant-numeric: tabular-nums; }
+
+/* a pauta */
+.ed-vazio { margin: auto; text-align: center; max-width: 34ch; padding: 24px 0; }
+.ed-vazio p { margin: 0 0 6px; }
+.ed-vazio strong { font-size: 16px; }
+#edCorpo { display: flex; flex-direction: column; flex: 1; }
+.pg-dir h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.ed-quando { margin: 0 0 16px; color: var(--mudo); font-size: 13px; }
+.pg-dir .mb-editor { flex: 1; height: auto; min-height: 420px; background: var(--fundo); border-color: var(--linha2); }

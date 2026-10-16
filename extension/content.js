@@ -326,6 +326,14 @@ function iniciar() {
   // tela inicial do Meet: lê as reuniões do dia que está aberto (título e hora) e guarda pro painel listar
   const RE_HORA = /(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/;
   const RE_ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar|copiar|copy)$/i; // rótulos do Meet que não são título
+  // dias já lidos: o calendário da página de Pautas sabe a diferença entre "sem reunião" e "ainda não li"
+  async function marcarDiaLido(data) {
+    const v = await chrome.storage.local.get(['agendaDias']);
+    const dias = { ...((v && v.agendaDias) || {}), [data]: Date.now() };
+    const chaves = Object.keys(dias).sort();
+    while (chaves.length > 400) delete dias[chaves.shift()];
+    await chrome.storage.local.set({ agendaDias: dias });
+  }
   let ultimaAgenda = '';
   let inicioHome = 0;
   let avisouVazio = false;
@@ -359,6 +367,7 @@ function iniciar() {
       if (!avisouVazio && passou > (pediuVisivel ? 20000 : 7000)) {
         avisouVazio = true;
         chrome.storage.local.set({ agendaLidaEm: Date.now(), agendaDiag: diag() });
+        marcarDiaLido(data).catch(() => {});
         enviar({ type: 'agenda-lida' });
       }
       return;
@@ -373,7 +382,8 @@ function iniciar() {
     const mapa = new Map();
     for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje && !RE_ROTULO.test(String(x.titulo || '').trim())) mapa.set(chaveDe(x), x);
     for (const x of achados) mapa.set(chaveDe(x), x);
-    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-150), agendaLidaEm: Date.now(), agendaDiag: diag() });
+    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-400), agendaLidaEm: Date.now(), agendaDiag: diag() });
+    await marcarDiaLido(data);
     enviar({ type: 'agenda-lida' });
   }
 

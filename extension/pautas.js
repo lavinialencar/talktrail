@@ -1,19 +1,27 @@
-// Página de pautas: a agenda do Meet (lida pela extensão) e a pauta de cada reunião, em tela cheia.
-// Os dados são os mesmos do painel: `pautas` (o que a pessoa escreveu) e `agendaMeet` (o que a extensão leu). Tudo local.
+// Página de pautas: calendário do mês, reuniões do dia escolhido e a pauta de cada uma, em tela cheia.
+// Dados (os mesmos do painel): `pautas` (o que a pessoa escreveu), `agendaMeet` (o que a extensão leu) e
+// `agendaDias` (quais dias já foram lidos, com ou sem reunião). Tudo local, no navegador.
 const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
 const normT = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
-const diaISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const diaISO = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+const dataDe = (iso) => new Date(`${iso}T12:00:00`);
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1); // "outubro de 2026" -> "Outubro de 2026" (só a primeira letra)
 const ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar)$/i;
 const DIAS_A_FRENTE = 14;
 
 let pautas = {};
 let agenda = [];
+let diasLidos = {};
 let lidaEm = 0;
 let alvo = '';
+let vista = 'calendario';
 let filtro = 'todas';
+let mes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let diaSel = diaISO();
 let confirmaApagar = '';
-let atualizando = false;
+let lendo = ''; // 'tudo' ou o dia que está sendo lido no Meet
 let tSalvar = null;
 
 const ed = MBEditor.create($('edTxt'), {
@@ -37,11 +45,18 @@ function linhas() {
   }
   return [...por.values()].sort((a, b) => (a.data + (a.hora || '99')).localeCompare(b.data + (b.hora || '99')));
 }
+const porDia = () => {
+  const m = new Map();
+  for (const l of linhas()) m.set(l.data, [...(m.get(l.data) || []), l]);
+  return m;
+};
 
-function tituloDoDia(data) {
-  if (data === diaISO()) return 'Hoje';
-  if (data === diaISO(new Date(Date.now() + 86400000))) return 'Amanhã';
-  return new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long' });
+function diaLongo(iso) {
+  const hoje = diaISO();
+  const base = dataDe(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (iso === hoje) return `Hoje, ${base}`;
+  if (iso === diaISO(new Date(Date.now() + 86400000))) return `Amanhã, ${base}`;
+  return cap(base);
 }
 
 function item(l) {
@@ -115,7 +130,52 @@ function item(l) {
   return li;
 }
 
-function pintar() {
+function pintarCalendario(dias) {
+  const ano = mes.getFullYear();
+  const m = mes.getMonth();
+  const nome = mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  $('mesNome').textContent = cap(nome);
+  const hoje = diaISO();
+  const cels = [];
+  for (let i = 0; i < new Date(ano, m, 1).getDay(); i++) cels.push(document.createElement('span'));
+  for (let d = 1; d <= new Date(ano, m + 1, 0).getDate(); d++) {
+    const iso = `${ano}-${pad(m + 1)}-${pad(d)}`;
+    const reunioes = dias.get(iso) || [];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dia' + (iso === hoje ? ' hoje' : '') + (iso === diaSel ? ' sel' : '') + (iso < hoje ? ' passado' : '');
+    b.textContent = String(d);
+    b.dataset.dia = iso;
+    const completas = reunioes.length && reunioes.every((r) => r.texto);
+    if (reunioes.length) {
+      const p = document.createElement('i');
+      p.className = 'ponto ' + (completas ? 'tem' : 'sem');
+      b.append(p);
+    }
+    b.setAttribute('aria-label', `${dataDe(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}${reunioes.length ? `, ${reunioes.length} ${reunioes.length === 1 ? 'reunião' : 'reuniões'}, ${completas ? 'todas com pauta' : 'falta pauta'}` : ''}`);
+    b.setAttribute('aria-pressed', String(iso === diaSel));
+    b.onclick = () => { diaSel = iso; pintar(); };
+    cels.push(b);
+  }
+  $('calGrade').replaceChildren(...cels);
+}
+
+function pintarDia(dias) {
+  const doDia = dias.get(diaSel) || [];
+  $('diaNome').textContent = diaLongo(diaSel);
+  $('diaN').textContent = doDia.length ? `${doDia.length} ${doDia.length === 1 ? 'reunião' : 'reuniões'}` : '';
+  $('diaLista').replaceChildren(...doDia.map(item));
+  const lido = !!diasLidos[diaSel];
+  $('diaVazio').hidden = doDia.length > 0;
+  if (!doDia.length) {
+    $('diaVazioTxt').textContent = lido ? 'Nenhuma reunião do Meet neste dia.' : 'Ainda não li este dia no Meet.';
+    $('lerDia').hidden = lido || diaSel < diaISO();
+    $('lerDia').disabled = lendo === diaSel;
+    $('lerDia').textContent = lendo === diaSel ? 'Lendo no Meet…' : 'Ler este dia no Meet';
+  }
+}
+
+function pintarLista() {
   const hoje = diaISO();
   const futuras = linhas().filter((l) => l.data >= hoje);
   const sem = futuras.filter((l) => !l.texto);
@@ -132,9 +192,9 @@ function pintar() {
       const h = document.createElement('li');
       h.className = 'pauta-dia';
       const nome = document.createElement('b');
-      nome.textContent = tituloDoDia(l.data);
+      nome.textContent = diaLongo(l.data).split(',')[0];
       const curta = document.createElement('span');
-      curta.textContent = new Date(`${l.data}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      curta.textContent = dataDe(l.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
       h.append(nome, curta);
       els.push(h);
     }
@@ -142,14 +202,23 @@ function pintar() {
   }
   $('lista').replaceChildren(...els);
   $('vazio').hidden = mostrar.length > 0;
-  if (!mostrar.length && futuras.length) {
-    $('vazio').firstElementChild.textContent = filtro === 'sem' ? 'Todas as reuniões já têm pauta.' : 'Nenhuma reunião com pauta ainda.';
-    $('vazio').lastChild.textContent = '';
+  $('vazio').textContent = futuras.length ? (filtro === 'sem' ? 'Todas as reuniões já têm pauta.' : 'Nenhuma reunião com pauta ainda.') : 'Nenhuma reunião lida ainda. Toque em "Atualizar os próximos 14 dias".';
+}
+
+function pintar() {
+  const dias = porDia();
+  $('vCal').hidden = vista !== 'calendario';
+  $('vLista').hidden = vista !== 'lista';
+  if (vista === 'calendario') {
+    pintarCalendario(dias);
+    pintarDia(dias);
+  } else {
+    pintarLista();
   }
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
   const hora = lidaEm ? new Date(lidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-  $('status').textContent = atualizando ? 'Lendo a agenda do Meet: abas do Meet podem abrir por alguns minutos.' : hora ? `Atualizado às ${hora}.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
-  $('buscar').disabled = atualizando;
+  $('status').textContent = lendo ? 'Lendo a agenda do Meet: abas do Meet abrem e fecham sozinhas.' : hora ? `Atualizado às ${hora}.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
+  $('atualizar').disabled = lendo === 'tudo';
 }
 
 function pintarEditor() {
@@ -158,12 +227,14 @@ function pintarEditor() {
   $('edCorpo').hidden = !e;
   if (!e) return;
   $('edTitulo').textContent = e.titulo;
-  $('edQuando').textContent = `${tituloDoDia(e.data)}, ${new Date(`${e.data}T12:00:00`).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}${e.hora ? ` · ${e.hora}${e.fim ? ` às ${e.fim}` : ''}` : ''}`;
+  $('edQuando').textContent = cap(`${dataDe(e.data).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}${e.hora ? ` · ${e.hora}${e.fim ? ` às ${e.fim}` : ''}` : ''}`);
   ed.setValue(e.texto || '');
 }
 
 function escolher(id) {
   alvo = id;
+  const l = linhas().find((x) => x.id === id);
+  if (l) { diaSel = l.data; mes = new Date(dataDe(l.data).getFullYear(), dataDe(l.data).getMonth(), 1); }
   pintar();
   pintarEditor();
 }
@@ -179,15 +250,33 @@ function salvar(texto) {
 }
 
 async function carregar() {
-  const v = await chrome.storage.local.get(['pautas', 'agendaMeet', 'agendaLidaEm']);
-  if (v && v.agendaLidaEm && v.agendaLidaEm !== lidaEm) atualizando = false;
+  const v = await chrome.storage.local.get(['pautas', 'agendaMeet', 'agendaLidaEm', 'agendaDias']);
+  if (v && v.agendaLidaEm && v.agendaLidaEm !== lidaEm) lendo = '';
   lidaEm = (v && v.agendaLidaEm) || 0;
+  diasLidos = (v && v.agendaDias) || {};
   pautas = (v && v.pautas) || {};
   agenda = Array.isArray(v && v.agendaMeet) ? v.agendaMeet : [];
   pintar();
   if (!alvo) pintarEditor();
 }
 
+function pedirLeitura(modo, dias, desde) {
+  lendo = modo;
+  pintar();
+  chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias, ...(desde ? { desde } : {}) }).catch(() => {});
+  setTimeout(() => { if (lendo === modo) { lendo = ''; pintar(); } }, 30000 + dias * 12000);
+}
+
+for (const b of document.querySelectorAll('.vista')) {
+  b.onclick = () => {
+    vista = b.dataset.vista;
+    for (const o of document.querySelectorAll('.vista')) {
+      o.classList.toggle('on', o === b);
+      o.setAttribute('aria-selected', String(o === b));
+    }
+    pintar();
+  };
+}
 for (const b of document.querySelectorAll('.filtro')) {
   b.onclick = () => {
     filtro = b.dataset.filtro;
@@ -198,11 +287,10 @@ for (const b of document.querySelectorAll('.filtro')) {
     pintar();
   };
 }
-$('buscar').onclick = () => {
-  atualizando = true;
-  pintar();
-  chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: DIAS_A_FRENTE }).catch(() => {});
-  setTimeout(() => { atualizando = false; pintar(); }, 30000 + DIAS_A_FRENTE * 12000);
-};
-chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm) carregar(); });
+$('mesAnt').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() - 1, 1); pintar(); };
+$('mesProx').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() + 1, 1); pintar(); };
+$('irHoje').onclick = () => { diaSel = diaISO(); mes = new Date(new Date().getFullYear(), new Date().getMonth(), 1); pintar(); };
+$('lerDia').onclick = () => pedirLeitura(diaSel, 1, diaSel);
+$('atualizar').onclick = () => pedirLeitura('tudo', DIAS_A_FRENTE);
+chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
 carregar();

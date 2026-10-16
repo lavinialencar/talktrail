@@ -403,18 +403,8 @@ function pintarPautas() {
 }
 function rotularPauta() {
   const externo = alvoExterno();
-  const e = externo ? pautas[alvo] || linhasDePautas().find((l) => l.id === alvo) : null;
-  const noAtual = ultimo && ultimo.pautaId;
-  $('pautaRot').textContent = externo ? `Pauta: ${e ? e.titulo : ''}` : noAtual ? 'Pauta desta reunião' : 'Pauta';
-  $('pautaVoltar').hidden = !externo;
   document.body.classList.toggle('sem-alvo', !externo);
   $('pautaEscolha').hidden = externo;
-  $('pautaVoltar').textContent = ultimo && ultimo.sala ? 'Voltar pra reunião atual' : 'Voltar';
-  $('pautaDica').innerHTML = externo
-    ? 'Escreva o que quer tratar. Quando você entrar nessa reunião no Meet, a pauta aparece sozinha.'
-    : noAtual
-      ? 'Pontos e perguntas pra tratar. Fica guardada nesta reunião e volta quando você entrar de novo.'
-      : 'O que você leva <strong>antes</strong> da reunião: pontos e perguntas pra tratar. Sem uma reunião escolhida, fica guardada pela primeira tag.';
 }
 function escolherPauta(id) {
   alvo = id === ((ultimo && ultimo.pautaId) || '') ? '' : id;
@@ -453,7 +443,10 @@ function atualizarAgendaDoMeet() { // só quando a pessoa toca no botão: abre a
   setTimeout(() => { atualizandoAgenda = false; pintarPautas(); }, 30000);
 }
 $('pautasAtualizar').onclick = atualizarAgendaDoMeet;
-$('pautasFrente').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('pautas.html') });
+$('pautasFrente').onclick = async () => {
+  await chrome.tabs.create({ url: chrome.runtime.getURL('pautas.html') });
+  window.close(); // a página abre numa aba; o painel não precisa ficar aberto
+};
 // fora do Meet o painel vira só "reuniões de hoje e pauta": sem gravar, sem texto, sem marcadores
 function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;
@@ -476,12 +469,6 @@ $('pautasBotao').onclick = () => {
   const aberto = $('pautasPainel').hidden;
   $('pautasPainel').hidden = !aberto;
   $('pautasBotao').setAttribute('aria-expanded', String(aberto));
-};
-$('pautaVoltar').onclick = () => {
-  alvo = '';
-  pintarPautas();
-  rotularPauta();
-  edCola.setValue((ultimo && ultimo.cola) || '');
 };
 carregarPautas();
 let travaEsconder = 0; // o interruptor responde na hora; o eco do estado não pode desfazer o clique

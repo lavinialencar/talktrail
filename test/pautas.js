@@ -23,10 +23,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const estado = { fase: 'oculto', titulo: '', projeto: '', tags: [], segundos: 0, notes: '', cola: 'da tag', linhas: [], marcas: [], pautaId: '', sala: '', esconderLegendas: false, legendas: true, legendasMotivo: '', modoSalvar: 'extensao', salvoEm: 0, avisoChat: '', info: '', erro: '' };
   const editores = {};
   let foraDoMeet = false;
+  const criadasAbas = [];
+  let fechou = false;
   w.chrome = {
     commands: { getAll: () => Promise.resolve([]) },
     runtime: { onMessage: { addListener() {} }, sendMessage: (m) => { enviadas.push(m); return Promise.resolve(); }, getURL: (p) => p, getManifest: () => ({ version: '1.0.0' }) },
-    tabs: { query: () => Promise.resolve([{ id: 1 }]), sendMessage: () => (foraDoMeet ? Promise.reject(new Error('sem receptor')) : Promise.resolve(estado)), create() {} },
+    tabs: { create: (o) => { criadasAbas.push(o.url); return Promise.resolve(); }, query: () => Promise.resolve([{ id: 1 }]), sendMessage: () => (foraDoMeet ? Promise.reject(new Error('sem receptor')) : Promise.resolve(estado)) },
     storage: { onChanged: { addListener() {} }, local: {
       get: (k) => Promise.resolve(Object.fromEntries([].concat(k).filter((x) => x in loja).map((x) => [x, JSON.parse(JSON.stringify(loja[x]))]))),
       set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); } } },
@@ -34,12 +36,14 @@ const amanha = dia(new Date(Date.now() + 86400000));
   w.fetch = () => Promise.resolve({ ok: false, json: () => Promise.resolve({}) });
   w.matchMedia = () => ({ matches: false, addEventListener() {}, addListener() {} });
   w.MBEditor = { create: (el, o) => (editores[el.id] = { v: '', setValue(x) { this.v = x; }, getValue() { return this.v; }, hasFocus: () => false, digitar(x) { this.v = x; o.onChange(x); } }) };
+  w.close = () => { fechou = true; };
   w.eval(src);
   await esp(250);
   const $ = (id) => w.document.getElementById(id);
 
   const falhou = w.eval(`(() => { try { aplicar(${JSON.stringify(estado)}); return ''; } catch (e) { return e.message; } })()`);
   t('aplicar() com um estado normal não lança erro (nenhuma variável nova esconde outra)', falhou === '', falhou);
+  const document_body_sem_alvo = () => w.document.body.classList.contains('sem-alvo');
   const itens = () => [...$('pautasLista').querySelectorAll('.pauta-item')];
   t('a agenda mostra as reuniões de hoje e de amanhã', itens().length === 2);
   t('cada dia tem o seu título (Hoje, Amanhã)', [...$('pautasLista').querySelectorAll('.pauta-dia b')].map((x) => x.textContent).join('|') === 'Hoje|Amanhã');
@@ -55,8 +59,8 @@ const amanha = dia(new Date(Date.now() + 86400000));
   $('pautasLista').querySelector('.abrir').click();
   await esp(50);
   const id = `${hoje}|${'apresentacao <img src=x onerror=alert(1)>'}`;
-  t('escolher a reunião troca o rótulo do editor', /^Pauta: Apresentação/.test($('pautaRot').textContent));
-  t('aparece o botão de voltar', $('pautaVoltar').hidden === false);
+  t('não repete o nome da reunião nem tem botão de voltar (a linha escolhida já aparece destacada)', !$('pautaRot') && !$('pautaVoltar') && !!itens()[0].classList.contains('on'));
+  t('escolhida a reunião, o editor aparece e a frase de orientação some', $('pautaEscolha').hidden === true && !document_body_sem_alvo());
   t('o editor mostra a pauta da reunião, não a da tag', editores.colaTxt.v === '');
 
   editores.colaTxt.digitar('- ponto A\n- ponto B');
@@ -66,9 +70,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('guarda título, dia e hora da agenda', salva && salva.data === hoje && salva.hora === '23:59' && /Apresentação/.test(salva.titulo));
   t('depois de escrever, a linha mostra "Pauta pronta"', /Pauta pronta/.test($('pautasLista').textContent));
 
-  $('pautaVoltar').click();
-  await esp(50);
-  t('voltar devolve a pauta da reunião atual (da tag)', editores.colaTxt.v === 'da tag' && $('pautaVoltar').hidden === true);
+  const colunaHora = w.document.querySelector('.pauta-item .hora');
+  t('o horário fica centralizado na coluna (CSS: itens centralizados, sem padding assimétrico)', /align-items:\s*center/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8').match(/\.pauta-item \.hora \{[^}]*\}/)[0]) && !/padding:\s*12px 8px 12px 14px/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8')));
+  $('pautasFrente').click();
+  await esp(30);
+  t('"Ver reuniões para frente" abre a página de Pautas e fecha o painel', criadasAbas.includes('pautas.html') && fechou);
+  // voltar para a reunião atual é só tocar na linha dela; sem botão extra
 
   const apagar = [...$('pautasLista').querySelectorAll('.apagar')][0];
   const antes = Object.keys(loja.pautas).length;

@@ -224,7 +224,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     return true;
   }
   if (msg.type === 'atualizar-agenda') {
-    atualizarAgenda(msg.dias).catch(() => {}); // só chega aqui quando a pessoa toca num botão de atualizar
+    atualizarAgenda(msg.dias, msg.desde).catch(() => {}); // só chega aqui quando a pessoa toca num botão de atualizar
     return false;
   }
   if (msg.type === 'preciso-visivel' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
@@ -337,16 +337,17 @@ function fecharAbaAtualizacao(id) {
 }
 const filaDias = new Map(); // aba -> endereços dos próximos dias, ainda por ler
 const DIAS_DA_AGENDA = 3; // padrão: hoje, amanhã e depois de amanhã (a página de Pautas pede mais)
-async function atualizarAgenda(dias = DIAS_DA_AGENDA) {
+async function atualizarAgenda(dias = DIAS_DA_AGENDA, desde = '') {
   dias = Math.max(1, Math.min(21, Number(dias) || DIAS_DA_AGENDA));
+  const base = /^\d{4}-\d{2}-\d{2}$/.test(String(desde)) ? new Date(`${desde}T12:00:00`).getTime() : 0; // um dia escolhido no calendário
   if (abasAtualizacao.size) return; // já tem leitura em andamento
   const [ativa] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   abaAnterior = ativa ? ativa.id : null;
   const pad = (n) => String(n).padStart(2, '0');
   for (const conta of [0, 1]) {
     const urls = Array.from({ length: dias }, (_, n) => {
-      const d = new Date(Date.now() + n * 86400000);
-      return n === 0 ? `https://meet.google.com/home?authuser=${conta}` : `https://meet.google.com/home/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}?authuser=${conta}`;
+      const d = new Date((base || Date.now()) + n * 86400000);
+      return n === 0 && !base ? `https://meet.google.com/home?authuser=${conta}` : `https://meet.google.com/home/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}?authuser=${conta}`;
     });
     const aba = await chrome.tabs.create({ url: urls[0], active: false });
     abasAtualizacao.add(aba.id);

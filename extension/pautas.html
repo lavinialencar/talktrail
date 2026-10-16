@@ -13,30 +13,59 @@
     <header class="pg-topo">
       <div>
         <h1>Pautas</h1>
-        <p class="sub">As suas próximas reuniões do Meet. Escreva a pauta antes e ela aparece sozinha quando você entrar na sala.</p>
+        <p class="sub">Escolha um dia, escreva a pauta de cada reunião e ela aparece sozinha quando você entrar na sala.</p>
       </div>
       <div class="pg-acoes">
-        <button id="buscar" class="sec" type="button">Buscar os próximos 14 dias</button>
+        <button id="atualizar" class="sec peq" type="button">Atualizar os próximos 14 dias</button>
         <p id="status" class="dica" role="status"></p>
       </div>
     </header>
-    <div class="pg-filtros" role="tablist" aria-label="Filtrar reuniões">
-      <button class="filtro on" data-filtro="todas" role="tab" aria-selected="true">Todas <i id="nTodas"></i></button>
-      <button class="filtro" data-filtro="sem" role="tab" aria-selected="false">Sem pauta <i id="nSem"></i></button>
-      <button class="filtro" data-filtro="com" role="tab" aria-selected="false">Com pauta <i id="nCom"></i></button>
-    </div>
+
     <div class="pg-cols">
-      <section class="pg-agenda" aria-label="Agenda">
-        <p id="vazio" class="dica" hidden><strong>Nenhuma reunião para mostrar.</strong>Toque em "Buscar os próximos 14 dias" para ler a sua agenda do Meet.</p>
-        <ul id="lista" class="pautas-lista"></ul>
+      <section class="pg-esq cartao-pg" aria-label="Agenda">
+        <div class="vistas" role="tablist" aria-label="Como ver">
+          <button class="vista on" data-vista="calendario" role="tab" aria-selected="true">Calendário</button>
+          <button class="vista" data-vista="lista" role="tab" aria-selected="false">Lista</button>
+        </div>
+
+        <div id="vCal">
+          <div class="cal-topo">
+            <button id="mesAnt" class="cal-nav" type="button" aria-label="Mês anterior">‹</button>
+            <strong id="mesNome"></strong>
+            <button id="mesProx" class="cal-nav" type="button" aria-label="Próximo mês">›</button>
+            <button id="irHoje" class="sec peq" type="button">Hoje</button>
+          </div>
+          <div class="cal-sem" aria-hidden="true"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div>
+          <div id="calGrade" class="cal-grade"></div>
+          <p class="cal-legenda"><i class="ponto tem"></i>pauta pronta <i class="ponto sem"></i>falta pauta</p>
+          <div class="dia-cab"><b id="diaNome"></b><span id="diaN"></span></div>
+          <ul id="diaLista" class="pautas-lista"></ul>
+          <div id="diaVazio" class="dia-vazio" hidden>
+            <p id="diaVazioTxt" class="dica"></p>
+            <button id="lerDia" class="sec peq" type="button" hidden>Ler este dia no Meet</button>
+          </div>
+        </div>
+
+        <div id="vLista" hidden>
+          <div class="pg-filtros" role="tablist" aria-label="Filtrar reuniões">
+            <button class="filtro on" data-filtro="todas" role="tab" aria-selected="true">Todas <i id="nTodas"></i></button>
+            <button class="filtro" data-filtro="sem" role="tab" aria-selected="false">Sem pauta <i id="nSem"></i></button>
+            <button class="filtro" data-filtro="com" role="tab" aria-selected="false">Com pauta <i id="nCom"></i></button>
+          </div>
+          <ul id="lista" class="pautas-lista"></ul>
+          <p id="vazio" class="dica" hidden></p>
+        </div>
       </section>
-      <section class="pg-editor" aria-label="Pauta da reunião">
-        <p id="edVazio" class="topodica">Escolha uma reunião ao lado para escrever a pauta dela.</p>
+
+      <section class="pg-dir cartao-pg" aria-label="Pauta da reunião">
+        <div id="edVazio" class="ed-vazio">
+          <p><strong>Escolha uma reunião</strong></p>
+          <p class="dica">Toque num dia do calendário e depois na reunião. Para um dia mais adiante, mude de mês: a extensão lê esse dia no Meet quando você pedir.</p>
+        </div>
         <div id="edCorpo" hidden>
           <h2 id="edTitulo"></h2>
-          <p id="edQuando" class="dica"></p>
+          <p id="edQuando" class="ed-quando"></p>
           <div id="edTxt" class="mb-editor"></div>
-          <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço.</p>
         </div>
       </section>
     </div>
