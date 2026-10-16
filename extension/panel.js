@@ -453,6 +453,7 @@ function atualizarAgendaDoMeet() { // só quando a pessoa toca no botão: abre a
   setTimeout(() => { atualizandoAgenda = false; pintarPautas(); }, 30000);
 }
 $('pautasAtualizar').onclick = atualizarAgendaDoMeet;
+$('pautasFrente').onclick = () => chrome.tabs.create({ url: chrome.runtime.getURL('pautas.html') });
 // fora do Meet o painel vira só "reuniões de hoje e pauta": sem gravar, sem texto, sem marcadores
 function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;

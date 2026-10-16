@@ -156,6 +156,16 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda' });
   await m5.tick(200);
   t('atualizar abre a tela inicial das duas contas, em aba de fundo', m5.criadas.length === 2 && /authuser=0/.test(m5.criadas[0]) && /authuser=1/.test(m5.criadas[1]), JSON.stringify(m5.criadas));
+  // a página de Pautas pede mais dias: a fila de cada aba cresce
+  const m7 = await mundo();
+  await m7.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: 14 });
+  await m7.tick(200);
+  t('pedindo 14 dias, cada conta ganha 13 dias na fila depois de hoje', require('vm').runInContext('filaDias.get(101).length', m7.bgCtx) === 13, String(require('vm').runInContext('filaDias.get(101).length', m7.bgCtx)));
+  const m8 = await mundo();
+  await m8.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: 999 });
+  await m8.tick(200);
+  t('o pedido é limitado a 21 dias', require('vm').runInContext('filaDias.get(101).length', m8.bgCtx) === 20);
+
   // cada conta lê hoje, amanhã e depois de amanhã, na mesma aba, e só então fecha
   m5.bgMensagem({ type: 'agenda-lida' }, 101);
   await m5.tick(50);

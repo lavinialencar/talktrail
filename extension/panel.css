@@ -152,7 +152,7 @@ section[hidden] { display: none; }
 .mb-editor .cm-editor { height: 100%; background: transparent; color: var(--texto); font: inherit; }
 .mb-editor .cm-editor.cm-focused { outline: none; }
 .mb-editor .cm-scroller { font: inherit; line-height: 1.65; padding: 10px 6px; overflow: auto; }
-.mb-editor .cm-content { padding: 2px 8px; caret-color: var(--acento); }
+.mb-editor .cm-content { padding: 2px 8px; caret-color: var(--acento); font-size: 16px; line-height: 1.6; }
 .mb-editor .cm-line { padding: 0; }
 .mb-editor .cm-placeholder { color: var(--fraco); display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
 .mb-editor .cm-cursor { border-left-color: var(--acento); }
@@ -310,8 +310,8 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pauta-item .abrir { flex: 1; min-width: 0; text-align: left; padding: 0; border: 1px solid var(--linha2); border-radius: var(--raio); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; display: flex; align-items: stretch; overflow: hidden; transition: border-color .15s ease; }
 .pauta-item .abrir:hover { border-color: var(--controle); }
 .pauta-item.on .abrir { border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento) inset; }
-.pauta-item .hora { flex: none; width: 74px; padding: 12px 8px 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-right: 1px solid var(--linha2); font-variant-numeric: tabular-nums; }
-.pauta-item .hora b { font-size: 18px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+.pauta-item .hora { flex: none; width: 66px; padding: 12px 8px 12px 14px; display: flex; flex-direction: column; justify-content: center; gap: 1px; border-right: 1px solid var(--linha2); font-variant-numeric: tabular-nums; }
+.pauta-item .hora b { font-size: 16px; font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
 .pauta-item .hora small { color: var(--mudo); font-size: 12px; }
 .pauta-item .corpo { flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
 .pauta-item .tit { font-weight: 600; font-size: 14px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
@@ -358,5 +358,6 @@ body:not(.fora) #pautaEscolha { display: none; }
 #cola > .dica { margin-top: 8px; }
 .pauta-dia { list-style: none; margin: 16px 0 0; display: flex; align-items: baseline; gap: 8px; }
 .pauta-dia:first-child { margin-top: 0; }
-.pauta-dia b { font-size: 13px; font-weight: 700; color: var(--texto); }
+.pauta-dia b { font-size: 13px; font-weight: 700; color: var(--texto); text-transform: capitalize; }
 .pauta-dia span { color: var(--mudo); font-size: 12px; text-transform: capitalize; }
+.pautas-frente { width: 100%; margin-top: 12px; }

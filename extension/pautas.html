@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Talktrail, pautas</title>
+  <link rel="stylesheet" href="panel.css">
+  <link rel="stylesheet" href="pautas.css">
+</head>
+<body class="pagina">
+  <main class="pg">
+    <header class="pg-topo">
+      <div>
+        <h1>Pautas</h1>
+        <p class="sub">As suas próximas reuniões do Meet. Escreva a pauta antes e ela aparece sozinha quando você entrar na sala.</p>
+      </div>
+      <div class="pg-acoes">
+        <button id="buscar" class="sec" type="button">Buscar os próximos 14 dias</button>
+        <p id="status" class="dica" role="status"></p>
+      </div>
+    </header>
+    <div class="pg-filtros" role="tablist" aria-label="Filtrar reuniões">
+      <button class="filtro on" data-filtro="todas" role="tab" aria-selected="true">Todas <i id="nTodas"></i></button>
+      <button class="filtro" data-filtro="sem" role="tab" aria-selected="false">Sem pauta <i id="nSem"></i></button>
+      <button class="filtro" data-filtro="com" role="tab" aria-selected="false">Com pauta <i id="nCom"></i></button>
+    </div>
+    <div class="pg-cols">
+      <section class="pg-agenda" aria-label="Agenda">
+        <p id="vazio" class="dica" hidden><strong>Nenhuma reunião para mostrar.</strong>Toque em "Buscar os próximos 14 dias" para ler a sua agenda do Meet.</p>
+        <ul id="lista" class="pautas-lista"></ul>
+      </section>
+      <section class="pg-editor" aria-label="Pauta da reunião">
+        <p id="edVazio" class="topodica">Escolha uma reunião ao lado para escrever a pauta dela.</p>
+        <div id="edCorpo" hidden>
+          <h2 id="edTitulo"></h2>
+          <p id="edQuando" class="dica"></p>
+          <div id="edTxt" class="mb-editor"></div>
+          <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script src="vendor/editor.js"></script>
+  <script src="pautas.js"></script>
+</body>
+</html>

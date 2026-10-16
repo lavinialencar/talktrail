@@ -356,7 +356,7 @@ function iniciar() {
         enviar({ type: 'preciso-visivel' });
       }
       // dia sem reunião (ou página ainda carregando): só conta como lido depois de esperar bastante, sem apagar o que já se sabe
-      if (!avisouVazio && passou > (pediuVisivel ? 20000 : 9000)) {
+      if (!avisouVazio && passou > (pediuVisivel ? 20000 : 7000)) {
         avisouVazio = true;
         chrome.storage.local.set({ agendaLidaEm: Date.now(), agendaDiag: diag() });
         enviar({ type: 'agenda-lida' });

@@ -224,7 +224,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     return true;
   }
   if (msg.type === 'atualizar-agenda') {
-    atualizarAgenda().catch(() => {}); // só chega aqui quando a pessoa toca no botão do painel
+    atualizarAgenda(msg.dias).catch(() => {}); // só chega aqui quando a pessoa toca num botão de atualizar
     return false;
   }
   if (msg.type === 'preciso-visivel' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
@@ -336,14 +336,15 @@ function fecharAbaAtualizacao(id) {
   }
 }
 const filaDias = new Map(); // aba -> endereços dos próximos dias, ainda por ler
-const DIAS_DA_AGENDA = 3; // hoje, amanhã e depois de amanhã
-async function atualizarAgenda() {
+const DIAS_DA_AGENDA = 3; // padrão: hoje, amanhã e depois de amanhã (a página de Pautas pede mais)
+async function atualizarAgenda(dias = DIAS_DA_AGENDA) {
+  dias = Math.max(1, Math.min(21, Number(dias) || DIAS_DA_AGENDA));
   if (abasAtualizacao.size) return; // já tem leitura em andamento
   const [ativa] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   abaAnterior = ativa ? ativa.id : null;
   const pad = (n) => String(n).padStart(2, '0');
   for (const conta of [0, 1]) {
-    const urls = Array.from({ length: DIAS_DA_AGENDA }, (_, n) => {
+    const urls = Array.from({ length: dias }, (_, n) => {
       const d = new Date(Date.now() + n * 86400000);
       return n === 0 ? `https://meet.google.com/home?authuser=${conta}` : `https://meet.google.com/home/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}?authuser=${conta}`;
     });
@@ -351,7 +352,7 @@ async function atualizarAgenda() {
     abasAtualizacao.add(aba.id);
     filaDias.set(aba.id, urls.slice(1));
   }
-  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 90000); // sem login ou sem lista: não deixa aba aberta
+  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 30000 + dias * 12000); // sem login ou sem lista: não deixa aba aberta
 }
 
 const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
