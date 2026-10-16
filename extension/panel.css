@@ -337,7 +337,7 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .fora-titulo span { color: var(--mudo); font-size: 13px; }
 .fora .topo { padding-bottom: 4px; }
 .fora .pautas { margin-bottom: 8px; }
-.fora #colaTxt { display: none; } /* fora do Meet o painel só lista; a pauta se escreve na página de Pautas */
+.fora.sem-alvo #colaTxt { display: none; } /* fora do Meet, sem reunião escolhida, só a lista: o editor aparece quando ela toca numa */
 #pautaEscolha { color: var(--mudo); }
 .proxima { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; margin: 0 0 12px; border: 1px solid var(--acento); border-radius: var(--raio); background: var(--card); }
 .proxima .rot { margin: 0; color: var(--acento); }

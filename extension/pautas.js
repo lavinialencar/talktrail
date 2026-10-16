@@ -304,8 +304,4 @@ $('atualizar').onclick = () => {
   pedirLeitura('tudo', DIAS_A_FRENTE, pontoDeLeitura().desde);
 };
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
-carregar().then(() => {
-  // o painel abre a página já na reunião tocada: /pautas.html?reuniao=<id>
-  const id = new URLSearchParams(location.search).get('reuniao');
-  if (id && linhas().some((l) => l.id === id)) escolher(id);
-});
+carregar();

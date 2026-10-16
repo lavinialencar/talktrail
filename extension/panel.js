@@ -259,6 +259,7 @@ let confirmaApagar = '';
 let agendaLidaEm = 0;
 let agendaDiag = null;
 let atualizandoAgenda = false;
+let listaAberta = true; // fora do Meet: tocar numa reunião recolhe a lista e abre o editor dela; "Mostrar todas" volta à lista, sem editor
 let ultimoPedido = 0;
 let pautaPintada = '';
 
@@ -280,7 +281,7 @@ function linhasDePautas() {
 }
 function itemDePauta(l) {
   const li = document.createElement('li');
-  li.className = 'pauta-item' + (l.id === (alvo || (ultimo && ultimo.pautaId)) ? ' on' : '');
+  li.className = 'pauta-item' + (l.id === (alvo || (!document.body.classList.contains('fora') && ultimo && ultimo.pautaId)) ? ' on' : '');
   const agora = new Date().getHours() * 60 + new Date().getMinutes();
   const ini = minutosDe(l.hora);
   let fim = minutosDe(l.fim);
@@ -364,8 +365,9 @@ function pintarPautas() {
   // uma pequena agenda: o título de cada dia e as reuniões dele
   const linhas = [];
   let dia = '';
-  for (const l of futuras) {
-    if (l.data !== dia) {
+  const recolhida = document.body.classList.contains('fora') && alvoExterno() && !listaAberta;
+  for (const l of recolhida ? futuras.filter((x) => x.id === alvo) : futuras) {
+    if (l.data !== dia && !recolhida) {
       dia = l.data;
       const h = document.createElement('li');
       h.className = 'pauta-dia';
@@ -380,15 +382,18 @@ function pintarPautas() {
   }
   $('pautasLista').replaceChildren(...linhas);
   $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
-  $('pautasAnteriores').hidden = !passadas.length;
+  $('pautasAnteriores').hidden = !passadas.length || recolhida;
   $('pautasVazio').hidden = futuras.length > 0;
+  $('pautasMostrar').hidden = !recolhida;
+  $('pautasAtualizar').parentElement.hidden = recolhida;
+  $('pautasFrente').hidden = recolhida;
   $('pautasN').textContent = futuras.length ? String(futuras.length) : '';
   $('pautaEscolha').textContent = 'Toque numa reunião pra escrever a pauta dela.';
   // a próxima reunião de HOJE em destaque (só de hoje: uma de daqui a um mês não fica cutucando)
   const agora = new Date();
   const min = agora.getHours() * 60 + agora.getMinutes();
   const prox = deHoje.map((l) => ({ l, t: minutosDe(l.hora) })).filter((x) => x.t !== null && x.t >= min).sort((a, b) => a.t - b.t)[0];
-  $('proxima').hidden = !prox;
+  $('proxima').hidden = !prox || recolhida;
   if (prox) {
     const falta = prox.t - min;
     $('proximaTit').textContent = prox.l.titulo;
@@ -401,7 +406,7 @@ function pintarPautas() {
   // o status só aparece quando há algo a dizer; o detalhe fica na dica do botão de atualizar
   const aviso = atualizandoAgenda ? 'Atualizando. Abas do Meet abrem por alguns segundos.' : !lida ? 'Toque em atualizar para ver as suas reuniões.' : vazia || velha;
   $('pautasLidaEm').textContent = aviso;
-  $('pautasLidaEm').hidden = !aviso;
+  $('pautasLidaEm').hidden = !aviso || recolhida;
   const dica = lida ? `Atualizar pelo Meet. Última leitura às ${lida}${versao ? `, Talktrail ${versao}` : ''}.` : 'Atualizar pelo Meet';
   $('pautasAtualizar').title = dica;
   $('pautasAtualizar').setAttribute('aria-label', dica);
@@ -414,9 +419,8 @@ function rotularPauta() {
   $('pautaEscolha').hidden = externo;
 }
 function escolherPauta(id) {
-  // fora do Meet o painel só lista: a pauta de cada reunião se escreve na página de Pautas, já na reunião escolhida
-  if (document.body.classList.contains('fora')) { abrirPagina(`${chrome.runtime.getURL('pautas.html')}?reuniao=${encodeURIComponent(id)}`); return; }
   alvo = id === ((ultimo && ultimo.pautaId) || '') ? '' : id;
+  listaAberta = !alvoExterno();
   pintarPautas();
   rotularPauta();
   edCola.setValue(alvoExterno() ? (pautas[alvo] && pautas[alvo].texto) || MB_MODELO.TEXTO : (ultimo && ultimo.cola) || '');
@@ -463,6 +467,12 @@ async function abrirPagina(url) {
   } catch {}
   window.close();
 }
+$('pautasMostrar').onclick = () => { // volta à lista inteira, sem editor, pra escolher outra reunião
+  alvo = '';
+  listaAberta = true;
+  pintarPautas();
+  rotularPauta();
+};
 $('pautasFrente').onclick = () => abrirPagina(chrome.runtime.getURL('pautas.html'));
 // fora do Meet o painel vira só "reuniões de hoje e pauta": sem gravar, sem texto, sem marcadores
 function modoFora(ligado) {
@@ -476,6 +486,7 @@ function modoFora(ligado) {
   const dataExtenso = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   $('foraData').textContent = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
   alvo = '';
+  listaAberta = true;
   pintarPautas();
   rotularPauta();
   $('abaCola').click();

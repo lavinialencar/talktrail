@@ -120,11 +120,17 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('mas abre quando a pessoa toca em "Atualizar pelo Meet"', enviadas.some((m) => m.type === 'atualizar-agenda'));
   t('enquanto atualiza, o botão gira e fica desligado', $('pautasAtualizar').classList.contains('girando') && $('pautasAtualizar').disabled === true);
   t('a frase de orientação está no topo, antes do botão de atualizar', $('pautaEscolha').hidden === false && $('pautaEscolha').compareDocumentPosition($('pautasAtualizar')) & 4);
-  criadas.length = 0;
+  t('ao abrir fora do Meet só tem a lista: sem reunião escolhida, sem editor, sem linha marcada', w.document.body.classList.contains('sem-alvo') && !$('pautasLista').querySelector('.pauta-item.on') && /\.fora\.sem-alvo #colaTxt \{ display: none; \}/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8')));
   $('pautasLista').querySelector('.abrir').click();
   await esp(50);
-  t('fora do Meet, tocar numa reunião abre a página de Pautas já nela e fecha o painel', criadas.length === 1 && /^pautas\.html\?reuniao=/.test(criadas[0]) && decodeURIComponent(criadas[0].split('=')[1]).startsWith(hoje) && !!painelFechado);
-  t('fora do Meet o painel não tem editor de texto, só a lista', /\.fora #colaTxt \{ display: none; \}/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8')) && w.document.body.classList.contains('fora'));
+  t('tocar numa reunião recolhe a lista nela e abre o editor', !w.document.body.classList.contains('sem-alvo') && $('pautasLista').querySelectorAll('.pauta-item').length === 1 && $('pautasMostrar').hidden === false && $('pautasFrente').hidden === true);
+  t('o editor mostra o modelo da pauta', editores.colaTxt.v === '1. \n2. \n3. \n\nCombinados\n- [ ] ');
+  $('pautasMostrar').click();
+  await esp(40);
+  t('"Mostrar todas as reuniões" volta à lista inteira, sem editor', w.document.body.classList.contains('sem-alvo') && $('pautasLista').querySelectorAll('.pauta-item').length === 2 && $('pautasMostrar').hidden === true && !$('pautasLista').querySelector('.pauta-item.on'));
+  $('pautasLista').querySelectorAll('.abrir')[1].click();
+  await esp(40);
+  t('dá pra escolher outra reunião em seguida', !w.document.body.classList.contains('sem-alvo') && /um mês/.test($('pautasLista').textContent));
 
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');
