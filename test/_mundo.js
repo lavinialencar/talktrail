@@ -114,7 +114,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
     const r = w.document.querySelector('[role="region"]');
     r.innerHTML = `<div><div>${quem}\n${txt}</div><div></div></div>`; // bloco: primeira linha o falante, o resto a fala (o segundo bloco vazio é como no Meet)
   };
-  return { atualizadas, criadas, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
+  return { bgMensagem: (msg, tabId) => ouveBg(msg, { tab: { id: tabId } }, () => {}), atualizadas, criadas, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
 }
 
 module.exports = { mundo };

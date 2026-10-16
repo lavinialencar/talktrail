@@ -317,11 +317,6 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pauta-item .apagar:hover, .pauta-item .apagar.confirma { color: var(--rec); border-color: var(--rec); }
 .pautas-ant { margin-top: 10px; }
 .pautas-ant summary { cursor: pointer; color: var(--mudo); font-size: 12px; }
-.pautas-novo { margin-top: 12px; }
-.pautas-novo summary { cursor: pointer; color: var(--texto); font-weight: 600; font-size: 12px; padding: 4px 0; }
-.pautas-form { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
-.pautas-linha { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr); gap: 8px; }
-@media (max-width: 340px) { .pautas-linha { grid-template-columns: 1fr; } }
 .pauta-alvo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 4px 0 6px; }
 .pauta-alvo .rot { margin: 0; font-weight: 600; color: var(--texto); }
 .peq { padding: 4px 10px; font-size: 12px; }
@@ -351,3 +346,5 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 body:not(.fora) #pautaEscolha { display: none; }
 #cola .mb-editor { min-height: 280px; }
 #cola > .dica { margin-top: 8px; }
+.pauta-dia { list-style: none; margin: 12px 0 0; color: var(--mudo); font-size: 12px; font-weight: 600; letter-spacing: .02em; text-transform: capitalize; }
+.pauta-dia:first-child { margin-top: 0; }

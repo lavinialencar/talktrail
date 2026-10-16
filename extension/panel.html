@@ -191,22 +191,13 @@
             <span>Reuniões</span><span id="pautasN" class="pautas-n"></span>
           </button>
           <div id="pautasPainel" hidden>
-            <p class="dica" id="pautasVazio" hidden><strong>Nenhuma reunião de hoje no Meet.</strong>Só aparecem as que têm link do Meet no convite.</p>
-            <div class="pautas-topo"><span class="rot">Hoje</span><button id="pautasAtualizar" class="sec peq" type="button">Atualizar pelo Meet</button></div>
+            <p class="dica" id="pautasVazio" hidden><strong>Nenhuma reunião nos próximos dias.</strong>Só aparecem as que têm link do Meet no convite. Toque em Atualizar pelo Meet.</p>
+            <div class="pautas-topo"><span class="rot">Agenda</span><button id="pautasAtualizar" class="sec peq" type="button">Atualizar pelo Meet</button></div>
             <p id="pautasLidaEm" class="dica" hidden></p>
-            <ul id="pautasLista" class="pautas-lista"></ul>
-            <details id="pautasProximos" class="pautas-ant" hidden><summary>Próximos dias</summary><ul id="pautasProxLista" class="pautas-lista"></ul></details>
+            <ul id="pautasLista" class="pautas-lista" aria-label="Agenda do Meet"></ul>
+            
             <details id="pautasAnteriores" class="pautas-ant" hidden><summary>Anteriores</summary><ul id="pautasAntLista" class="pautas-lista"></ul></details>
-            <details id="pautaNovo" class="pautas-novo"><summary>Adicionar reunião</summary>
-            <form id="pautaForm" class="pautas-form" autocomplete="off">
-              <input id="pautaTitulo" class="caixa" placeholder="Nome da reunião" maxlength="200" spellcheck="false">
-              <div class="pautas-linha">
-                <input id="pautaQuando" class="caixa" type="date" aria-label="Dia da reunião">
-                <input id="pautaLink" class="caixa" placeholder="Link do Meet (opcional)" aria-label="Link do Meet, opcional" spellcheck="false">
-              </div>
-              <button id="pautaAdd" class="sec" type="submit">Adicionar</button>
-            </form>
-            </details>
+            
           </div>
         </div>
         <div class="pauta-alvo"><span id="pautaRot" class="rot">Pauta</span><button id="pautaVoltar" class="sec peq" type="button" hidden>Voltar pra reunião atual</button></div>

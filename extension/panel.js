@@ -252,7 +252,6 @@ const edCola = MBEditor.create($('colaTxt'), {
 // agendaMeet: reuniões lidas da tela inicial do Meet (título, dia e hora). Tudo local, no navegador.
 const normT = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 const diaISO = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const COD_SALA = /([a-z]{3}-[a-z]{4}-[a-z]{3})/i;
 let pautas = {};
 let agendaMeet = [];
 let alvo = ''; // id escolhido na lista; vazio = a reunião em que o painel está (ou a pauta por tag)
@@ -262,7 +261,6 @@ let agendaDiag = null;
 let atualizandoAgenda = false;
 let ultimoPedido = 0;
 let pautaPintada = '';
-let pautaNovoAberto = false;
 
 const alvoExterno = () => !!alvo && alvo !== ((ultimo && ultimo.pautaId) || '');
 function rotuloQuando(data, hora) {
@@ -327,22 +325,38 @@ function itemDePauta(l) {
   return li;
 }
 const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+function tituloDoDia(data) {
+  const hoje = diaISO();
+  if (data === hoje) return 'Hoje';
+  if (data === diaISO(new Date(Date.now() + 86400000))) return 'Amanhã';
+  return new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }).replace('.', '');
+}
 function pintarPautas() {
   const hoje = diaISO();
   const todas = linhasDePautas();
-  const deHoje = todas.filter((l) => l.data === hoje);
-  const proximos = todas.filter((l) => l.data > hoje);
+  const futuras = todas.filter((l) => l.data >= hoje);
+  const deHoje = futuras.filter((l) => l.data === hoje);
   const passadas = todas.filter((l) => l.data < hoje && l.texto).reverse();
-  $('pautasLista').replaceChildren(...deHoje.map(itemDePauta));
-  $('pautasProxLista').replaceChildren(...proximos.map(itemDePauta));
-  $('pautasProximos').hidden = !proximos.length;
+  // uma pequena agenda: o título de cada dia e as reuniões dele
+  const linhas = [];
+  let dia = '';
+  for (const l of futuras) {
+    if (l.data !== dia) {
+      dia = l.data;
+      const h = document.createElement('li');
+      h.className = 'pauta-dia';
+      h.textContent = tituloDoDia(l.data);
+      linhas.push(h);
+    }
+    linhas.push(itemDePauta(l));
+  }
+  $('pautasLista').replaceChildren(...linhas);
   $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
   $('pautasAnteriores').hidden = !passadas.length;
-  $('pautasVazio').hidden = deHoje.length > 0;
-  $('pautaEscolha').textContent = deHoje.length ? 'Toque numa reunião pra escrever a pauta dela.' : 'Adicione uma reunião aqui em cima pra escrever a pauta dela.';
-  if (!deHoje.length && document.body.classList.contains('fora') && !pautaNovoAberto) { pautaNovoAberto = true; $('pautaNovo').open = true; }
-  $('pautasN').textContent = deHoje.length ? String(deHoje.length) : '';
-  // a próxima reunião de hoje (só de hoje: uma de daqui a um mês não fica cutucando)
+  $('pautasVazio').hidden = futuras.length > 0;
+  $('pautasN').textContent = futuras.length ? String(futuras.length) : '';
+  $('pautaEscolha').textContent = 'Toque numa reunião pra escrever a pauta dela.';
+  // a próxima reunião de HOJE em destaque (só de hoje: uma de daqui a um mês não fica cutucando)
   const agora = new Date();
   const min = agora.getHours() * 60 + agora.getMinutes();
   const prox = deHoje.map((l) => ({ l, t: minutosDe(l.hora) })).filter((x) => x.t !== null && x.t >= min).sort((a, b) => a.t - b.t)[0];
@@ -355,7 +369,7 @@ function pintarPautas() {
   const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   $('pautasLidaEm').hidden = !lida && !atualizandoAgenda;
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-  const vazia = agendaDiag && agendaDiag.achados === 0 ? ` A última leitura não achou reuniões${agendaDiag.vis === 'hidden' ? ' (a aba ficou escondida)' : ''}.` : '';
+  const vazia = agendaDiag && agendaDiag.achados === 0 && !futuras.length ? ` A última leitura não achou reuniões${agendaDiag.vis === 'hidden' ? ' (a aba ficou escondida)' : ''}.` : '';
   $('pautasLidaEm').textContent = atualizandoAgenda ? 'Atualizando…' : lida ? `Atualizado às ${lida}.${vazia}${versao ? ` Talktrail ${versao}.` : ''}` : '';
 }
 function rotularPauta() {
@@ -439,26 +453,6 @@ $('pautaVoltar').onclick = () => {
   pintarPautas();
   rotularPauta();
   edCola.setValue((ultimo && ultimo.cola) || '');
-};
-$('pautaQuando').value = diaISO();
-$('pautaForm').onsubmit = (ev) => {
-  ev.preventDefault();
-  const link = $('pautaLink').value.trim();
-  const cod = (link.match(COD_SALA) || [])[1] || '';
-  const titulo = $('pautaTitulo').value.trim() || cod;
-  if (!titulo) {
-    $('pautaTitulo').focus();
-    return;
-  }
-  const data = $('pautaQuando').value || diaISO();
-  const id = `${data}|${normT(titulo)}`;
-  if (!pautas[id]) pautas[id] = { titulo, data, hora: '', codigo: cod.toLowerCase(), texto: '', criada: Date.now(), atualizada: Date.now() };
-  else if (cod) pautas[id].codigo = cod.toLowerCase();
-  chrome.storage.local.set({ pautas });
-  $('pautaTitulo').value = '';
-  $('pautaLink').value = '';
-  $('pautaNovo').open = false;
-  escolherPauta(id);
 };
 carregarPautas();
 let travaEsconder = 0; // o interruptor responde na hora; o eco do estado não pode desfazer o clique

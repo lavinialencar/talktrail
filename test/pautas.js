@@ -40,11 +40,14 @@ const amanha = dia(new Date(Date.now() + 86400000));
 
   const falhou = w.eval(`(() => { try { aplicar(${JSON.stringify(estado)}); return ''; } catch (e) { return e.message; } })()`);
   t('aplicar() com um estado normal não lança erro (nenhuma variável nova esconde outra)', falhou === '', falhou);
-  t('a reunião de hoje vira item da lista', $('pautasLista').children.length === 1);
-  t('o contador mostra só as de hoje', $('pautasN').textContent === '1');
+  const itens = () => [...$('pautasLista').querySelectorAll('.pauta-item')];
+  t('a agenda mostra as reuniões de hoje e de amanhã', itens().length === 2);
+  t('cada dia tem o seu título (Hoje, Amanhã)', [...$('pautasLista').querySelectorAll('.pauta-dia')].map((x) => x.textContent).join('|') === 'Hoje|Amanhã');
+  t('o contador mostra todas as próximas', $('pautasN').textContent === '2');
+  t('a ordem é por dia e hora, hoje primeiro', /23:59/.test(itens()[0].textContent) && /um mês/.test(itens()[1].textContent));
   t('título com HTML aparece como texto, sem criar elemento', !$('pautasLista').querySelector('img') && /<img/.test($('pautasLista').textContent));
-  t('mostra "hoje" e a hora', /hoje · 23:59/.test($('pautasLista').textContent));
-  t('reunião de outro dia fica em "Próximos dias", não na lista de hoje', $('pautasProxLista').children.length === 1 && !/um mês/.test($('pautasLista').textContent) && $('pautasProximos').hidden === false);
+  t('não existe mais "adicionar reunião" (nem formulário, nem pedir link)', !$('pautaForm') && !$('pautaNovo') && !$('pautaLink'));
+  t('mostra o dia e a hora', /hoje · 23:59/.test($('pautasLista').textContent) && /amanhã · 09:00/.test($('pautasLista').textContent));
   t('a próxima de hoje aparece em destaque, com quanto falta', $('proxima').hidden === false && /Apresentação/.test($('proximaTit').textContent) && /23:59 · em/.test($('proximaQuando').textContent));
   t('com a agenda recente, não pede atualização ao abrir', !enviadas.some((m) => m.type === 'atualizar-agenda'));
 
@@ -66,28 +69,15 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await esp(50);
   t('voltar devolve a pauta da reunião atual (da tag)', editores.colaTxt.v === 'da tag' && $('pautaVoltar').hidden === true);
 
-  $('pautaTitulo').value = 'Retro do time';
-  $('pautaLink').value = 'https://meet.google.com/abc-defg-hij?authuser=0';
-  $('pautaForm').dispatchEvent(new w.Event('submit', { cancelable: true }));
-  await esp(50);
-  const nova = Object.values(loja.pautas).find((e) => e.titulo === 'Retro do time');
-  t('adicionar à mão cria a reunião com o código da sala', !!nova && nova.codigo === 'abc-defg-hij' && nova.data === hoje);
-  t('a nova reunião já abre no editor', /^Pauta: Retro do time/.test($('pautaRot').textContent));
-
-  $('pautaTitulo').value = '';
-  $('pautaLink').value = 'sem codigo';
+  const apagar = [...$('pautasLista').querySelectorAll('.apagar')][0];
   const antes = Object.keys(loja.pautas).length;
-  $('pautaForm').dispatchEvent(new w.Event('submit', { cancelable: true }));
-  await esp(30);
-  t('sem nome e sem código não cria nada', Object.keys(loja.pautas).length === antes);
-
-  const apagar = [...$('pautasLista').querySelectorAll('.apagar')].pop();
   apagar.click();
   await esp(20);
-  t('o primeiro clique só pede confirmação', Object.keys(loja.pautas).length === antes && /Apagar\?/.test($('pautasLista').textContent));
+  t('apagar uma pauta: o primeiro clique só pede confirmação', Object.keys(loja.pautas).length === antes && /Apagar\?/.test($('pautasLista').textContent));
   [...$('pautasLista').querySelectorAll('.apagar')].find((b) => /Apagar\?/.test(b.textContent)).click();
   await esp(30);
-  t('o segundo clique apaga', Object.keys(loja.pautas).length === antes - 1);
+  t('apagar uma pauta: o segundo clique apaga', Object.keys(loja.pautas).length === antes - 1);
+  t('a reunião continua na agenda, só sem pauta', itens().length === 2 && !/com pauta/.test($('pautasLista').textContent));
 
   console.log('Aviso de extensão não autorizada');
   const criadas = [];
@@ -106,7 +96,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await w.eval("cmd('estado')");
   await esp(150);
   t('sem Meet na aba, o painel entra no modo "fora"', w.document.body.classList.contains('fora'));
-  t('abre direto na aba Pauta, com a lista de reuniões aberta', $('cola').hidden === false && $('pautasPainel').hidden === false);
+  t('abre direto na aba Pauta, com a agenda aberta', $('cola').hidden === false && $('pautasPainel').hidden === false);
   await esp(80);
   t('com agenda velha, pede pro fundo atualizar pelo Meet', enviadas.some((m) => m.type === 'atualizar-agenda'));
 
@@ -152,6 +142,18 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda' });
   await m5.tick(200);
   t('atualizar abre a tela inicial das duas contas, em aba de fundo', m5.criadas.length === 2 && /authuser=0/.test(m5.criadas[0]) && /authuser=1/.test(m5.criadas[1]), JSON.stringify(m5.criadas));
+  // cada conta lê hoje, amanhã e depois de amanhã, na mesma aba, e só então fecha
+  m5.bgMensagem({ type: 'agenda-lida' }, 101);
+  await m5.tick(50);
+  t('terminou de ler hoje: a mesma aba vai para amanhã', m5.atualizadas.some((x) => x.id === 101 && /\/home\/\d{4}\/\d{2}\/\d{2}\?authuser=0/.test(x.url)) && !m5.removidas.includes(101), JSON.stringify(m5.atualizadas));
+  m5.bgMensagem({ type: 'agenda-lida' }, 101);
+  await m5.tick(50);
+  t('lê o terceiro dia', m5.atualizadas.filter((x) => x.id === 101).length === 2);
+  m5.bgMensagem({ type: 'agenda-lida' }, 101);
+  await m5.tick(50);
+  t('lidos os três dias, a aba daquela conta fecha', m5.removidas.includes(101) && !m5.removidas.includes(102), JSON.stringify(m5.removidas));
+  m5.removidas.length = 0;
+  require('vm').runInContext('abasAtualizacao.add(101); filaDias.set(101, [])', m5.bgCtx);
   require('vm').runInContext('fecharAbaAtualizacao(101)', m5.bgCtx);
   t('quando uma conta termina de ler, só a aba dela fecha', m5.removidas.length === 1 && m5.removidas[0] === 101, JSON.stringify(m5.removidas));
   require('vm').runInContext('fecharAbaAtualizacao()', m5.bgCtx);

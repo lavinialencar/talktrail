@@ -232,7 +232,9 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     chrome.tabs.update(sender.tab.id, { active: true }).catch(() => {});
   }
   if (msg.type === 'agenda-lida' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
-    fecharAbaAtualizacao(sender.tab.id);
+    const resto = filaDias.get(sender.tab.id);
+    if (resto && resto.length) chrome.tabs.update(sender.tab.id, { url: resto.shift() }).catch(() => {}); // próximo dia na mesma aba
+    else fecharAbaAtualizacao(sender.tab.id);
   }
   if (msg.type === 'open-panel' && sender.tab) {
     chrome.sidePanel.open({ tabId: sender.tab.id }).catch(() => {});
@@ -322,24 +324,34 @@ function fecharAbaAtualizacao(id) {
     clearTimeout(fechaAbas);
     abasAtualizacao.forEach((i) => chrome.tabs.remove(i).catch(() => {}));
     abasAtualizacao.clear();
+    filaDias.clear();
     devolverFoco();
     return;
   }
+  filaDias.delete(id);
   if (abasAtualizacao.delete(id)) chrome.tabs.remove(id).catch(() => {});
   if (!abasAtualizacao.size) {
     clearTimeout(fechaAbas);
     devolverFoco();
   }
 }
+const filaDias = new Map(); // aba -> endereços dos próximos dias, ainda por ler
+const DIAS_DA_AGENDA = 3; // hoje, amanhã e depois de amanhã
 async function atualizarAgenda() {
   if (abasAtualizacao.size) return; // já tem leitura em andamento
   const [ativa] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   abaAnterior = ativa ? ativa.id : null;
+  const pad = (n) => String(n).padStart(2, '0');
   for (const conta of [0, 1]) {
-    const aba = await chrome.tabs.create({ url: `https://meet.google.com/home?authuser=${conta}`, active: false });
+    const urls = Array.from({ length: DIAS_DA_AGENDA }, (_, n) => {
+      const d = new Date(Date.now() + n * 86400000);
+      return n === 0 ? `https://meet.google.com/home?authuser=${conta}` : `https://meet.google.com/home/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}?authuser=${conta}`;
+    });
+    const aba = await chrome.tabs.create({ url: urls[0], active: false });
     abasAtualizacao.add(aba.id);
+    filaDias.set(aba.id, urls.slice(1));
   }
-  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 40000); // sem login ou sem lista: não deixa aba aberta
+  fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 90000); // sem login ou sem lista: não deixa aba aberta
 }
 
 const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
