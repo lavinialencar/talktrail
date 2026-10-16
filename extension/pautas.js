@@ -216,7 +216,8 @@ function pintar() {
   const hora = lidaEm ? new Date(lidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   const ate = Object.keys(diasLidos).sort().pop();
   const ateTxt = ate ? new Date(`${ate}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : '';
-  $('status').textContent = lendo ? 'Lendo a agenda do Meet em abas de fundo, sem tirar você daqui.' : hora ? `Atualizado às ${hora}. Reuniões lidas até ${ateTxt || 'hoje'}. Dias depois disso aparecem vazios até você ler.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
+  $('status').textContent = lendo ? 'Lendo a agenda do Meet em abas de fundo.' : hora ? `Atualizado às ${hora} · lido até ${ateTxt || 'hoje'}` : 'A agenda ainda não foi lida.';
+  $('status').title = versao ? `Talktrail ${versao}` : '';
   const pt = pontoDeLeitura();
   $('atualizar').textContent = lendo ? 'Parar a leitura' : pt.rotulo;
 }

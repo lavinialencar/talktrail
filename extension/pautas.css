@@ -7,7 +7,7 @@ main.pg { display: block; flex: none; min-height: 0; background: transparent; }
 .pg-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; }
 .pg-topo .sub { margin: 0; color: var(--mudo); max-width: 52ch; font-size: 14px; line-height: 1.55; }
 .pg-acoes { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.pg-acoes .dica { margin: 0; text-align: right; max-width: 42ch; }
+.pg-acoes .dica { margin: 0; text-align: right; max-width: 42ch; text-wrap: balance; }
 .pg-cols { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 20px; align-items: start; }
 .pg .cartao-pg { background: var(--card); border: 1px solid var(--linha2); border-radius: 16px; padding: 22px; }
 .pg-dir { position: sticky; top: 24px; min-height: calc(100vh - 170px); display: flex; flex-direction: column; }

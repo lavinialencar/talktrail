@@ -47,7 +47,7 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   t('dia com reunião sem pauta mostra a bolinha vazada ("falta pauta")', !!celula(dia(0)).querySelector('.ponto.sem'));
   t('dia sem nada não mostra bolinha', !celula(dia(1)).querySelector('.ponto'));
   t('os dias do mês estão todos na grade', diasDaTela().length >= 28 && diasDaTela().length <= 31);
-  t('o status mostra a versão', /9\.9\.9/.test($('status').textContent));
+  t('o status cabe numa linha curta; a versão fica na dica ao passar o mouse', /^Atualizado às \d{2}:\d{2} · lido até/.test($('status').textContent) && $('status').textContent.length < 60 && /9\.9\.9/.test($('status').title));
 
   console.log('Dia lido e dia ainda não lido');
   celula(dia(1)).click();
@@ -114,7 +114,7 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   t('"Atualizar os próximos 14 dias" pede 14 dias ao fundo e avisa que abas vão abrir', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && !m.desde) && /abas de fundo/.test($('status').textContent) && $('atualizar').textContent === 'Parar a leitura');
   $('atualizar').click();
   await esp(20);
-  t('"Parar a leitura" cancela e o botão some', enviadas.some((m) => m.type === 'cancelar-agenda') && $('atualizar').textContent === 'Atualizar agenda' && /lidas até/.test($('status').textContent));
+  t('"Parar a leitura" cancela e o botão some', enviadas.some((m) => m.type === 'cancelar-agenda') && $('atualizar').textContent === 'Atualizar agenda' && /lido até/.test($('status').textContent));
 
   console.log(`\n${ok} ok, ${ruim} falharam`);
   process.exit(ruim ? 1 : 0);
