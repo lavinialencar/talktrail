@@ -263,6 +263,7 @@ let ultimoPedido = 0;
 let pautaPintada = '';
 
 const alvoExterno = () => !!alvo && alvo !== ((ultimo && ultimo.pautaId) || '');
+const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 function rotuloQuando(data, hora) {
   const hoje = diaISO();
   const amanha = diaISO(new Date(Date.now() + 86400000));
@@ -272,32 +273,56 @@ function rotuloQuando(data, hora) {
 }
 function linhasDePautas() {
   const por = new Map();
-  for (const a of agendaMeet) por.set(`${a.data}|${normT(a.titulo)}`, { id: `${a.data}|${normT(a.titulo)}`, titulo: a.titulo, data: a.data, hora: a.hora || '', texto: '', salva: false });
-  for (const [id, e] of Object.entries(pautas)) por.set(id, { ...(por.get(id) || {}), id, titulo: e.titulo, data: e.data, hora: e.hora || (por.get(id) || {}).hora || '', texto: e.texto || '', salva: true });
+  const ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar)$/i;
+  for (const a of agendaMeet) if (!ROTULO.test(String(a.titulo || '').trim())) por.set(`${a.data}|${normT(a.titulo)}`, { id: `${a.data}|${normT(a.titulo)}`, titulo: a.titulo, data: a.data, hora: a.hora || '', fim: a.fim || '', texto: '', salva: false });
+  for (const [id, e] of Object.entries(pautas)) por.set(id, { ...(por.get(id) || {}), id, titulo: e.titulo, data: e.data, hora: e.hora || (por.get(id) || {}).hora || '', fim: (por.get(id) || {}).fim || '', texto: e.texto || '', salva: true });
   return [...por.values()].sort((a, b) => (a.data + (a.hora || '99')).localeCompare(b.data + (b.hora || '99')));
 }
 function itemDePauta(l) {
   const li = document.createElement('li');
   li.className = 'pauta-item' + (l.id === (alvo || (ultimo && ultimo.pautaId)) ? ' on' : '');
-  const agoraMin = new Date().getHours() * 60 + new Date().getMinutes();
-  if (l.data === diaISO() && minutosDe(l.hora) !== null && minutosDe(l.hora) < agoraMin) li.classList.add('passou'); // já começou ou passou: fica apagada
+  const agora = new Date().getHours() * 60 + new Date().getMinutes();
+  const ini = minutosDe(l.hora);
+  let fim = minutosDe(l.fim);
+  if (fim !== null && ini !== null && fim < ini) fim += 1440; // termina depois da meia-noite
+  const hoje = l.data === diaISO();
+  const andando = hoje && ini !== null && fim !== null && ini <= agora && agora < fim;
+  if (hoje && ini !== null && !andando && (fim !== null ? fim <= agora : ini < agora)) li.classList.add('passou'); // acabou: fica apagada
+  if (andando) li.classList.add('andando');
   const abrir = document.createElement('button');
   abrir.type = 'button';
   abrir.className = 'abrir';
+  const hora = document.createElement('span');
+  hora.className = 'hora';
+  const ini2 = document.createElement('b');
+  ini2.textContent = l.hora || '--:--';
+  hora.append(ini2);
+  if (l.fim) {
+    const f = document.createElement('small');
+    f.textContent = l.fim;
+    hora.append(f);
+  }
+  const corpo = document.createElement('span');
+  corpo.className = 'corpo';
   const tit = document.createElement('span');
   tit.className = 'tit';
   tit.textContent = l.titulo;
-  const meta = document.createElement('span');
-  meta.className = 'meta';
-  meta.textContent = rotuloQuando(l.data, l.hora);
-  if (l.texto) {
-    const tem = document.createElement('span');
-    tem.className = 'tem';
-    tem.textContent = 'com pauta';
-    meta.append(tem);
+  const estado = document.createElement('span');
+  estado.className = 'estado';
+  if (andando) {
+    const e = document.createElement('span');
+    e.className = 'chip-agora';
+    e.textContent = 'Em andamento';
+    estado.append(e);
   }
-  abrir.append(tit, meta);
+  const p = document.createElement('span');
+  p.className = l.texto ? 'chip-pauta tem' : 'chip-pauta sem';
+  p.textContent = l.texto ? 'Pauta pronta' : 'Adicionar pauta';
+  estado.append(p);
+  corpo.append(tit, estado);
+  abrir.append(hora, corpo);
   abrir.onclick = () => escolherPauta(l.id);
+  abrir.setAttribute('aria-label', `${l.hora || ''} ${l.titulo}. ${l.texto ? 'Pauta pronta' : 'Adicionar pauta'}`);
   li.append(abrir);
   if (l.salva) {
     const x = document.createElement('button');
@@ -324,7 +349,6 @@ function itemDePauta(l) {
   }
   return li;
 }
-const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 function tituloDoDia(data) {
   const hoje = diaISO();
   if (data === hoje) return 'Hoje';
@@ -345,7 +369,11 @@ function pintarPautas() {
       dia = l.data;
       const h = document.createElement('li');
       h.className = 'pauta-dia';
-      h.textContent = tituloDoDia(l.data);
+      const nome = document.createElement('b');
+      nome.textContent = tituloDoDia(l.data);
+      const dataCurta = document.createElement('span');
+      dataCurta.textContent = new Date(`${l.data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+      h.append(nome, dataCurta);
       linhas.push(h);
     }
     linhas.push(itemDePauta(l));

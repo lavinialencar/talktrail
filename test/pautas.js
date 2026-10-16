@@ -42,12 +42,13 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('aplicar() com um estado normal não lança erro (nenhuma variável nova esconde outra)', falhou === '', falhou);
   const itens = () => [...$('pautasLista').querySelectorAll('.pauta-item')];
   t('a agenda mostra as reuniões de hoje e de amanhã', itens().length === 2);
-  t('cada dia tem o seu título (Hoje, Amanhã)', [...$('pautasLista').querySelectorAll('.pauta-dia')].map((x) => x.textContent).join('|') === 'Hoje|Amanhã');
+  t('cada dia tem o seu título (Hoje, Amanhã)', [...$('pautasLista').querySelectorAll('.pauta-dia b')].map((x) => x.textContent).join('|') === 'Hoje|Amanhã');
   t('o contador mostra todas as próximas', $('pautasN').textContent === '2');
   t('a ordem é por dia e hora, hoje primeiro', /23:59/.test(itens()[0].textContent) && /um mês/.test(itens()[1].textContent));
   t('título com HTML aparece como texto, sem criar elemento', !$('pautasLista').querySelector('img') && /<img/.test($('pautasLista').textContent));
   t('não existe mais "adicionar reunião" (nem formulário, nem pedir link)', !$('pautaForm') && !$('pautaNovo') && !$('pautaLink'));
-  t('mostra o dia e a hora', /hoje · 23:59/.test($('pautasLista').textContent) && /amanhã · 09:00/.test($('pautasLista').textContent));
+  t('a hora é o destaque de cada linha, em negrito, antes do título', itens()[0].querySelector('.hora b').textContent === '23:59' && /^Apresentação/.test(itens()[0].querySelector('.tit').textContent) && itens()[1].querySelector('.hora b').textContent === '09:00');
+  t('sem pauta, a linha convida: "Adicionar pauta"', /Adicionar pauta/.test(itens()[0].textContent));
   t('a próxima de hoje aparece em destaque, com quanto falta', $('proxima').hidden === false && /Apresentação/.test($('proximaTit').textContent) && /23:59 · em/.test($('proximaQuando').textContent));
   t('com a agenda recente, não pede atualização ao abrir', !enviadas.some((m) => m.type === 'atualizar-agenda'));
 
@@ -63,7 +64,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const salva = loja.pautas[id];
   t('digitar grava a pauta daquela reunião', !!salva && salva.texto === '- ponto A\n- ponto B', JSON.stringify(Object.keys(loja.pautas)));
   t('guarda título, dia e hora da agenda', salva && salva.data === hoje && salva.hora === '23:59' && /Apresentação/.test(salva.titulo));
-  t('o item passa a mostrar "com pauta"', /com pauta/.test($('pautasLista').textContent));
+  t('depois de escrever, a linha mostra "Pauta pronta"', /Pauta pronta/.test($('pautasLista').textContent));
 
   $('pautaVoltar').click();
   await esp(50);
@@ -77,7 +78,11 @@ const amanha = dia(new Date(Date.now() + 86400000));
   [...$('pautasLista').querySelectorAll('.apagar')].find((b) => /Apagar\?/.test(b.textContent)).click();
   await esp(30);
   t('apagar uma pauta: o segundo clique apaga', Object.keys(loja.pautas).length === antes - 1);
-  t('a reunião continua na agenda, só sem pauta', itens().length === 2 && !/com pauta/.test($('pautasLista').textContent));
+  t('a reunião continua na agenda, só sem pauta', itens().length === 2 && !/Pauta pronta/.test($('pautasLista').textContent));
+
+  // reunião que termina depois da meia-noite não aparece como "já acabou"
+  const noite = w.eval(`(() => { const l = { id: 'x', titulo: 'Plantão', data: '${hoje}', hora: '23:45', fim: '00:15', texto: '', salva: false }; return itemDePauta(l).className; })()`);
+  t('reunião que cruza a meia-noite não fica apagada antes da hora', !/passou/.test(noite) || new Date().getHours() === 23, noite);
 
   console.log('Aviso de extensão não autorizada');
   const criadas = [];
@@ -131,11 +136,17 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('item sem horário (ícone, tira de dias) não entra', !ag.some((x) => /feira|videocam/i.test(x.titulo)));
   t('guarda a hora da última leitura', typeof m3.loja.agendaLidaEm === 'number');
 
+  // o Meet marca a reunião em andamento com o rótulo "Agora": isso não é título
+  m3.w.document.body.innerHTML = '<ul><li>15:30 – 16:00\nAgora\n1:1 Marinaldo</li></ul>'; // no navegador de verdade cada bloco vira uma linha de innerText
+  await m3.tick(3200);
+  ag = m3.loja.agendaMeet || [];
+  t('o rótulo "Agora" do Meet não vira título', !ag.some((x) => /^agora$/i.test(x.titulo)) && ag.some((x) => x.titulo === '1:1 Marinaldo' && x.hora === '15:30' && x.fim === '16:00'), JSON.stringify(ag.filter((x) => x.hora === '15:30')));
+
   // segunda conta do Meet (outra lista no mesmo dia): junta, não apaga a primeira
   m3.w.document.body.innerHTML = '<ul><li><div>15:00 – 15:30</div><div>1:1 Brisas</div></li></ul>';
   await m3.tick(3200);
   ag = m3.loja.agendaMeet || [];
-  t('a leitura da segunda conta se junta à da primeira', ag.length === 2 && ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Planejamento semanal'), JSON.stringify(ag));
+  t('a leitura da segunda conta se junta à da primeira', ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Planejamento semanal'), JSON.stringify(ag));
 
   // atualizar pelo Meet: uma aba de fundo por conta, e cada uma fecha quando a leitura termina
   const m5 = await mundo();

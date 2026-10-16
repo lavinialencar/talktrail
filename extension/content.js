@@ -325,6 +325,7 @@ function iniciar() {
 
   // tela inicial do Meet: lê as reuniões do dia que está aberto (título e hora) e guarda pro painel listar
   const RE_HORA = /(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/;
+  const RE_ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar|copiar|copy)$/i; // rótulos do Meet que não são título
   let ultimaAgenda = '';
   let inicioHome = 0;
   let avisouVazio = false;
@@ -340,9 +341,10 @@ function iniciar() {
       const txt = (li.innerText || li.textContent || '').trim();
       const h = txt.match(RE_HORA);
       if (!h || txt.length > 400) return;
-      const partes = txt.replace(RE_HORA, '\n').split('\n').map((x) => x.trim()).filter((x) => x && !/^[a-z_]+$/.test(x)); // sem nome de ícone
-      const t = partes[0];
-      if (t && t.length < 200 && !achados.some((x) => x.titulo === t && x.hora === h[1])) achados.push({ titulo: t, data, hora: h[1] });
+      // o item traz o horário, o título e, às vezes, rótulos do Meet ("Agora", nome de ícone): o título é a linha mais longa que não seja um deles
+      const partes = txt.replace(RE_HORA, '\n').split('\n').map((x) => x.trim()).filter((x) => x && !/^[a-z_]+$/.test(x) && !RE_ROTULO.test(x));
+      const t = partes.sort((x, y) => y.length - x.length)[0];
+      if (t && t.length < 200 && !achados.some((x) => x.titulo === t && x.hora === h[1])) achados.push({ titulo: t, data, hora: h[1], fim: h[2] });
     });
     const vis = document.visibilityState;
     const diag = () => ({ em: Date.now(), vis, nLi: document.querySelectorAll('li').length, achados: achados.length, caminho: location.pathname });
@@ -369,7 +371,7 @@ function iniciar() {
     // une com o que já se sabia (outra conta do Meet pode ter lido o mesmo dia); só some o que já passou de dia
     const chaveDe = (x) => `${x.data}|${normTitulo(x.titulo)}|${x.hora}`;
     const mapa = new Map();
-    for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje) mapa.set(chaveDe(x), x);
+    for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje && !RE_ROTULO.test(String(x.titulo || '').trim())) mapa.set(chaveDe(x), x);
     for (const x of achados) mapa.set(chaveDe(x), x);
     await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-150), agendaLidaEm: Date.now(), agendaDiag: diag() });
     enviar({ type: 'agenda-lida' });
