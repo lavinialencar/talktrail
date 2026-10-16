@@ -110,8 +110,8 @@ O teal fica só no logo e nos detalhes, nunca como fundo (pedido dela).
 | `icone-loja-128.png` | Ícone da loja, 128×128 (arte em 96 com respiro). |
 | `tile-440x280-pt.png` / `-en.png` | Tile promocional pequeno, 440×280. |
 | `marquee-1400x560-pt.png` / `-en.png` | Marquee, 1400×560 (opcional). |
-| `captura-1` a `captura-4` | Capturas, 1280×800 (até 5). Painel real em dados fictícios. |
+| `captura-1` a `captura-5` | Capturas, 1280×800 (as 5 que a loja aceita): transcrição, arquivo .md, agenda e pauta no painel, página de Pautas com o arquivo, privacidade. Extensão real em dados fictícios (`node store/capturar.js`). |
 
 As versões `-en` só trocam o texto da arte; o painel dentro delas segue em português até a interface ser traduzida.
 
-Para regerar: servidor estático na raiz do repositório (`python3 -m http.server 8799`) e `python3 store/gerar.py marfim` (ou `grafite`).
+Para regerar: servidor estático na raiz do repositório (`python3 -m http.server 8799`) e `node store/capturar.js` (tira as imagens do painel e da página de Pautas com a extensão real) e depois `python3 store/gerar.py marfim` (ou `grafite`).

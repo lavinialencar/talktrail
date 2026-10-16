@@ -6,6 +6,18 @@
 // Simula o ambiente da extensão pra ver o painel num navegador comum.
 // Uso: servidor estático na pasta talktrail, abrir /test/panel-demo.html?tema=claro|escuro&aba=notas
 const q = new URLSearchParams(location.search);
+// agenda de mentira (nomes fictícios), sempre relativa a hoje
+const dia = (n) => { const d = new Date(); for (let k = 0; k < n;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; } return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const AGENDA = [
+  { titulo: 'Revisão do projeto Aurora', data: dia(0), hora: '14:00', fim: '14:45' },
+  { titulo: 'Alinhamento com o cliente', data: dia(0), hora: '16:30', fim: '17:00' },
+  { titulo: 'Daily de produto', data: dia(1), hora: '09:30', fim: '09:45' },
+  { titulo: 'Planejamento do trimestre', data: dia(1), hora: '15:00', fim: '16:30' },
+];
+const PAUTAS = {
+  [dia(0) + '|revisao do projeto aurora']: { titulo: 'Revisão do projeto Aurora', data: dia(0), hora: '14:00', texto: '# Pauta\n- [x] Status do protótipo\n- [ ] Quem decide o prazo?\n- [ ] Quais acessos faltam?\n- [ ] Próximos passos', criada: 1, atualizada: 2 },
+  [dia(1) + '|daily de produto']: { titulo: 'Daily de produto', data: dia(1), hora: '09:30', texto: '1. Bloqueios da semana\n2. Prioridades de hoje', criada: 1, atualizada: 2 },
+};
 const estado = {
   fase: 'gravando', titulo: 'Revisão do projeto Aurora', projeto: '', tags: ['Produto', 'Aurora'], segundos: 138,
   notes: '# Decisões\n- prazo final: **28 de novembro**\n- [x] enviar a proposta revisada\n- [x] confirmar o orçamento\n- [ ] marcar a próxima reunião\n\n**Atenção:** a entrega do protótipo depende do acesso ao ambiente.',
@@ -19,7 +31,7 @@ const estado = {
     { speaker: 'Carlos', t: 127, text: 'Se sair até sexta, a gente fecha o protótipo na segunda.' },
   ],
   marcas: [{ t: 84, texto: 'Eu: E o acesso ao ambiente de teste, saiu?' }, { t: 127, texto: 'Carlos: Se sair até sexta, a gente fecha o protótipo na segunda.' }],
-  esconderLegendas: false, legendas: q.get('legenda') !== 'off', legendasMotivo: q.get('motivo') || (q.get('legenda') === 'off' ? 'desligadas' : ''), modoSalvar: q.get('salvar') || 'extensao', salvoEm: Date.now() - 8000, id: 'demo', info: q.get('info') || '', erro: null, salvoEm: Date.now(),
+  esconderLegendas: false, legendas: q.get('legenda') !== 'off', legendasMotivo: q.get('motivo') || (q.get('legenda') === 'off' ? 'desligadas' : ''), modoSalvar: q.get('salvar') || 'extensao', salvoEm: Date.now() - 8000, id: 'demo', pautaId: dia(0) + '|revisao do projeto aurora', info: q.get('info') || '', erro: null, salvoEm: Date.now(),
 };
 const mem = {};
 window.chrome = {
@@ -27,12 +39,12 @@ window.chrome = {
   runtime: { onMessage: { addListener() {} }, sendMessage: () => Promise.resolve(), getURL: (p) => '/extension/' + p, getManifest: () => ({ version: '1.4.0' }) },
   tabs: {
     query: () => Promise.resolve([{ id: 1 }]),
-    sendMessage: (id, m) => Promise.resolve(m && m.cmd === 'diagnostico'
+    sendMessage: (id, m) => q.get('fora') ? Promise.reject(new Error('sem receptor')) : Promise.resolve(m && m.cmd === 'diagnostico'
       ? { ...estado, modoSalvar: 'extensao', diag: { naSala: true, naChamada: true, gravando: true, legendas: { ligadas: q.get('legenda') !== 'off', botao: true, desabilitado: false }, regiao: true, ultimaFalaHa: 12, linhas: 8, salvoHa: 4 } }
       : estado),
     create: (o) => console.log('abrir', o.url),
   },
-  storage: { onChanged: { addListener() {} }, local: { get: (k) => Promise.resolve({ tagsSalvas: [',,,l', 'Produto', 'Design', 'revisão', 'andamento', 'Ana'] }), set: () => Promise.resolve() } },
+  storage: { onChanged: { addListener() {} }, local: { get: (k) => Promise.resolve({ tagsSalvas: ['Produto', 'Aurora', 'Design'], agendaMeet: AGENDA, pautas: PAUTAS, agendaLidaEm: Date.now() }), set: () => Promise.resolve() } },
 };
 document.documentElement.style.colorScheme = q.get('tema') === 'claro' ? 'light' : 'dark';
 fetch('../../extension/panel.html').then((r) => r.text()).then((h) => {

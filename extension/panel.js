@@ -16,6 +16,7 @@ chrome.storage.onChanged.addListener((c) => {
 });
 // E-mail que recebe os relatos de problema. Vazio = o e-mail abre sem destinatário (a pessoa escolhe ou usa "Copiar o relatório").
 const EMAIL_SUPORTE = 'talktrail@lavinialencar.com.br';
+const URL_APOIO = ''; // página do Buy Me a Coffee; vazio esconde o bloco "Gostou do Talktrail?" dos Ajustes
 let servidorOk = true; // avisa ANTES de gravar se o servidor local não está de pé
 let pastaServidor = '';
 async function checarServidor() {
@@ -1016,6 +1017,10 @@ $('ajRelatar').onclick = async () => {
   a.remove();
 };
 $('ajRelatorioCopiar').onclick = async () => copiar($('ajRelatorioCopiar'), `Assunto: Talktrail: problema\r\n\r\n${await textoDoRelatorio()}`);
+if (URL_APOIO) {
+  $('ajApoio').hidden = false;
+  $('ajApoiar').onclick = () => abrirPagina(URL_APOIO);
+}
 if (EMAIL_SUPORTE) {
   $('ajSuporteEmail').textContent = `Ou escreva direto pra ${EMAIL_SUPORTE}.`;
   $('ajSuporteEmail').hidden = false;
