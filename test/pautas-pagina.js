@@ -108,7 +108,10 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   t('apagar: o segundo clique apaga só a pauta; a reunião continua na agenda', Object.keys(loja.pautas).length === 1 && $('lista').querySelectorAll('.pauta-item').length === 3);
   $('atualizar').click();
   await esp(20);
-  t('"Atualizar os próximos 14 dias" pede 14 dias ao fundo e avisa que abas vão abrir', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && !m.desde) && /abas do Meet/.test($('status').textContent) && $('atualizar').disabled === true);
+  t('"Atualizar os próximos 14 dias" pede 14 dias ao fundo e avisa que abas vão abrir', enviadas.some((m) => m.type === 'atualizar-agenda' && m.dias === 14 && !m.desde) && /abas de fundo/.test($('status').textContent) && $('atualizar').disabled === true && $('parar').hidden === false);
+  $('parar').click();
+  await esp(20);
+  t('"Parar a leitura" cancela e o botão some', enviadas.some((m) => m.type === 'cancelar-agenda') && $('parar').hidden === true && /lidas até/.test($('status').textContent));
 
   console.log(`\n${ok} ok, ${ruim} falharam`);
   process.exit(ruim ? 1 : 0);

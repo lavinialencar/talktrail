@@ -217,7 +217,10 @@ function pintar() {
   }
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
   const hora = lidaEm ? new Date(lidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
-  $('status').textContent = lendo ? 'Lendo a agenda do Meet: abas do Meet abrem e fecham sozinhas.' : hora ? `Atualizado às ${hora}.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
+  const ate = Object.keys(diasLidos).sort().pop();
+  const ateTxt = ate ? new Date(`${ate}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : '';
+  $('status').textContent = lendo ? 'Lendo a agenda do Meet em abas de fundo, sem tirar você daqui.' : hora ? `Atualizado às ${hora}. Reuniões lidas até ${ateTxt || 'hoje'}. Dias depois disso aparecem vazios até você ler.${versao ? ` Talktrail ${versao}.` : ''}` : 'A agenda ainda não foi lida.';
+  $('parar').hidden = !lendo;
   $('atualizar').disabled = lendo === 'tudo';
 }
 
@@ -292,5 +295,6 @@ $('mesProx').onclick = () => { mes = new Date(mes.getFullYear(), mes.getMonth() 
 $('irHoje').onclick = () => { diaSel = diaISO(); mes = new Date(new Date().getFullYear(), new Date().getMonth(), 1); pintar(); };
 $('lerDia').onclick = () => pedirLeitura(diaSel, 1, diaSel);
 $('atualizar').onclick = () => pedirLeitura('tudo', DIAS_A_FRENTE);
+$('parar').onclick = () => { lendo = ''; pintar(); chrome.runtime.sendMessage({ type: 'cancelar-agenda' }).catch(() => {}); };
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
 carregar();

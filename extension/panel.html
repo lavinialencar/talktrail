@@ -181,6 +181,13 @@
         <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço. <kbd class="tmod">Cmd</kbd> + Enter marca o momento e põe a hora.</p>
       </section>
       <section id="cola" hidden>
+        <div class="agenda-topo">
+          <p id="pautaEscolha" class="instrucao">Toque numa reunião pra escrever a pauta dela.</p>
+          <button id="pautasAtualizar" class="icone-btn" type="button" aria-label="Atualizar pelo Meet" title="Atualizar pelo Meet">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+          </button>
+        </div>
+        <p id="pautasLidaEm" class="agenda-meta" role="status" hidden></p>
         <div id="proxima" class="proxima" hidden>
           <span class="rot">Próxima reunião de hoje</span>
           <strong id="proximaTit" class="proxima-tit"></strong>
@@ -191,17 +198,13 @@
             <span>Reuniões</span><span id="pautasN" class="pautas-n"></span>
           </button>
           <div id="pautasPainel" hidden>
-            <p class="dica" id="pautasVazio" hidden><strong>Nenhuma reunião nos próximos dias.</strong>Só aparecem as que têm link do Meet no convite. Toque em Atualizar pelo Meet.</p>
-            <div class="pautas-topo"><span class="rot">Agenda</span><button id="pautasAtualizar" class="sec peq" type="button">Atualizar pelo Meet</button></div>
-            <p id="pautasLidaEm" class="dica" hidden></p>
+            <p class="dica" id="pautasVazio" hidden><strong>Nenhuma reunião nos próximos dias.</strong>Só aparecem as que têm link do Meet no convite. Toque no botão de atualizar, no topo.</p>
             <ul id="pautasLista" class="pautas-lista" aria-label="Agenda do Meet"></ul>
-            
+            <button id="pautasMostrar" class="pautas-frente leve" type="button" hidden>Mostrar todas as reuniões</button>
             <button id="pautasFrente" class="pautas-frente" type="button">Ver reuniões para frente <span aria-hidden="true">→</span></button>
             <details id="pautasAnteriores" class="pautas-ant" hidden><summary>Anteriores</summary><ul id="pautasAntLista" class="pautas-lista"></ul></details>
-            
           </div>
         </div>
-        <p id="pautaEscolha" class="topodica" hidden>Toque numa reunião pra escrever a pauta dela.</p>
         <div id="colaTxt" class="mb-editor"></div>
         <p class="dica">Lista: <code>-</code> e espaço. Numerada: <code>1.</code> e espaço. Tarefa: <code>[]</code> e espaço.</p>
       </section>

@@ -152,7 +152,7 @@ section[hidden] { display: none; }
 .mb-editor .cm-editor { height: 100%; background: transparent; color: var(--texto); font: inherit; }
 .mb-editor .cm-editor.cm-focused { outline: none; }
 .mb-editor .cm-scroller { font: inherit; line-height: 1.65; padding: 10px 6px; overflow: auto; }
-.mb-editor .cm-content { padding: 2px 8px; caret-color: var(--acento); font-size: 16px; line-height: 1.6; }
+.mb-editor .cm-content { padding: 2px 8px; caret-color: var(--acento); font-size: 14px; line-height: 1.6; }
 .mb-editor .cm-line { padding: 0; }
 .mb-editor .cm-placeholder { color: var(--fraco); display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }
 .mb-editor .cm-cursor { border-left-color: var(--acento); }
@@ -330,13 +330,12 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .peq { padding: 4px 10px; font-size: 12px; }
 
 /* fora do Meet: só reuniões de hoje e pauta */
-.fora .linharec .rec, .fora .cartao, .fora .sub, .fora footer, .fora .abas, .fora #pautasBotao, .fora .pautas-topo .rot { display: none; }
+.fora .linharec .rec, .fora .cartao, .fora .sub, .fora footer, .fora .abas, .fora #pautasBotao { display: none; }
 .fora-titulo { display: none; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .fora .fora-titulo { display: flex; }
 .fora-titulo strong { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
 .fora-titulo span { color: var(--mudo); font-size: 13px; }
 .fora .topo { padding-bottom: 4px; }
-.fora .pautas-topo { margin-top: 0; justify-content: flex-end; }
 .fora .pautas { margin-bottom: 8px; }
 .fora.sem-alvo #colaTxt, .fora.sem-alvo #cola > .dica { display: none; }
 #pautaEscolha { color: var(--mudo); }
@@ -344,14 +343,12 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .proxima .rot { margin: 0; color: var(--acento); }
 .proxima-tit { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
 .proxima-quando { color: var(--mudo); font-size: 13px; font-variant-numeric: tabular-nums; }
-.pautas-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
-.pautas-topo .rot { margin: 0; }
 .pauta-item.passou .tit { color: var(--mudo); font-weight: 500; }
 #pautasVazio strong { display: block; color: var(--texto); font-size: 14px; font-weight: 600; margin-bottom: 2px; }
 #pautasVazio { margin: 4px 0 10px; }
 
 body:not(.fora) #pautaEscolha { display: none; }
-#cola .mb-editor { flex: 1 1 340px; min-height: 340px; } /* a pauta ocupa o resto da altura */
+#cola .mb-editor { flex: 1 1 auto; min-height: 320px; } /* a pauta ocupa o resto da altura */
 #cola .pautas { flex: 0 0 auto; } /* a lista não é cortada; o painel rola inteiro quando a pauta pede espaço */
 #cola > .dica { margin-top: 8px; }
 .pauta-dia { list-style: none; margin: 16px 0 0; display: flex; align-items: baseline; gap: 8px; }
@@ -360,3 +357,17 @@ body:not(.fora) #pautaEscolha { display: none; }
 .pauta-dia span { color: var(--mudo); font-size: 12px; text-transform: capitalize; }
 .pautas-frente { display: block; width: auto; margin: 14px auto 4px; padding: 6px 10px; background: none; border: 0; color: var(--acento); font: inherit; font-weight: 600; cursor: pointer; border-radius: var(--raio); }
 .pautas-frente:hover { background: var(--card); }
+
+/* topo da agenda: a instrução à esquerda e o atualizar, só um ícone, à direita */
+.agenda-topo { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+.instrucao { flex: 1; margin: 0; color: var(--mudo); font-size: 13px; line-height: 1.4; }
+body:not(.fora) .instrucao { display: none; }
+body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
+.icone-btn { flex: none; margin-left: auto; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--linha2); border-radius: var(--raio); background: transparent; color: var(--mudo); cursor: pointer; }
+.icone-btn:hover { color: var(--texto); border-color: var(--controle); }
+.icone-btn[disabled] { opacity: .5; cursor: progress; }
+.icone-btn.girando svg { animation: gira 1s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .icone-btn.girando svg { animation: none; } }
+.agenda-meta { margin: -4px 0 10px; color: var(--mudo); font-size: 12px; }
+.pautas-frente.leve { color: var(--mudo); font-weight: 500; }

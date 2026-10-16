@@ -337,10 +337,10 @@ function iniciar() {
   let ultimaAgenda = '';
   let inicioHome = 0;
   let avisouVazio = false;
-  let pediuVisivel = false;
+  let prontoDesde = 0;
   async function lerAgendaDaHome() {
     const m = location.pathname.match(/^\/home(?:\/(\d{4})\/(\d{2})\/(\d{2}))?\/?$/);
-    if (!m) { inicioHome = 0; avisouVazio = false; pediuVisivel = false; return; }
+    if (!m) { inicioHome = 0; avisouVazio = false; prontoDesde = 0; return; }
     if (!inicioHome) inicioHome = Date.now();
     const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
     const achados = [];
@@ -357,14 +357,11 @@ function iniciar() {
     const vis = document.visibilityState;
     const diag = () => ({ em: Date.now(), vis, nLi: document.querySelectorAll('li').length, achados: achados.length, caminho: location.pathname });
     if (!achados.length) {
-      // aba escondida: o Meet pode nem montar a lista; pede pro fundo trazer a aba pra frente por alguns segundos
+      // dia sem reunião (ou página ainda carregando): conta como lido quando a lista já carregou (cabeçalhos da página) ou depois de esperar um pouco
       const passou = Date.now() - inicioHome;
-      if (vis === 'hidden' && passou > 5000 && !pediuVisivel) {
-        pediuVisivel = true;
-        enviar({ type: 'preciso-visivel' });
-      }
-      // dia sem reunião (ou página ainda carregando): só conta como lido depois de esperar bastante, sem apagar o que já se sabe
-      if (!avisouVazio && passou > (pediuVisivel ? 20000 : 7000)) {
+      const cabecalhos = document.querySelectorAll('h1, h2, h3, [role="heading"]').length;
+      if (cabecalhos >= 5 && !prontoDesde) prontoDesde = Date.now();
+      if (!avisouVazio && ((prontoDesde && Date.now() - prontoDesde > 2500) || passou > 7000)) {
         avisouVazio = true;
         chrome.storage.local.set({ agendaLidaEm: Date.now(), agendaDiag: diag() });
         marcarDiaLido(data).catch(() => {});

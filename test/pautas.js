@@ -25,10 +25,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
   let foraDoMeet = false;
   const criadasAbas = [];
   let fechou = false;
+  let painelFechado = null;
   w.chrome = {
     commands: { getAll: () => Promise.resolve([]) },
     runtime: { onMessage: { addListener() {} }, sendMessage: (m) => { enviadas.push(m); return Promise.resolve(); }, getURL: (p) => p, getManifest: () => ({ version: '1.0.0' }) },
-    tabs: { create: (o) => { criadasAbas.push(o.url); return Promise.resolve(); }, query: () => Promise.resolve([{ id: 1 }]), sendMessage: () => (foraDoMeet ? Promise.reject(new Error('sem receptor')) : Promise.resolve(estado)) },
+    tabs: { create: (o) => { criadasAbas.push(o.url); return Promise.resolve(); }, query: () => Promise.resolve([{ id: 1, windowId: 7 }]), sendMessage: () => (foraDoMeet ? Promise.reject(new Error('sem receptor')) : Promise.resolve(estado)) },
+    sidePanel: { close: (o) => { painelFechado = o; return Promise.resolve(); } },
     storage: { onChanged: { addListener() {} }, local: {
       get: (k) => Promise.resolve(Object.fromEntries([].concat(k).filter((x) => x in loja).map((x) => [x, JSON.parse(JSON.stringify(loja[x]))]))),
       set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); } } },
@@ -74,7 +76,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('o horário fica centralizado na coluna (CSS: itens centralizados, sem padding assimétrico)', /align-items:\s*center/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8').match(/\.pauta-item \.hora \{[^}]*\}/)[0]) && !/padding:\s*12px 8px 12px 14px/.test(require('fs').readFileSync(path.join(__dirname, '../extension/panel.css'), 'utf8')));
   $('pautasFrente').click();
   await esp(30);
-  t('"Ver reuniões para frente" abre a página de Pautas e fecha o painel', criadasAbas.includes('pautas.html') && fechou);
+  t('"Ver reuniões para frente" abre a página de Pautas e fecha o painel', criadasAbas.includes('pautas.html') && !!painelFechado && painelFechado.windowId === 7);
   // voltar para a reunião atual é só tocar na linha dela; sem botão extra
 
   const apagar = [...$('pautasLista').querySelectorAll('.apagar')][0];
@@ -114,6 +116,14 @@ const amanha = dia(new Date(Date.now() + 86400000));
   $('pautasAtualizar').click();
   await esp(30);
   t('mas abre quando a pessoa toca em "Atualizar pelo Meet"', enviadas.some((m) => m.type === 'atualizar-agenda'));
+  t('enquanto atualiza, o botão gira e fica desligado', $('pautasAtualizar').classList.contains('girando') && $('pautasAtualizar').disabled === true);
+  t('a frase de orientação está no topo, antes do botão de atualizar', $('pautaEscolha').hidden === false && $('pautaEscolha').compareDocumentPosition($('pautasAtualizar')) & 4);
+  $('pautasLista').querySelector('.abrir').click();
+  await esp(50);
+  t('escolhida a reunião, a lista recolhe e sobra só a escolhida', [...$('pautasLista').querySelectorAll('.pauta-item')].length === 1 && $('pautasMostrar').hidden === false && $('pautasFrente').hidden === true && $('proxima').hidden === true);
+  $('pautasMostrar').click();
+  await esp(30);
+  t('"Mostrar todas as reuniões" reabre a lista inteira', [...$('pautasLista').querySelectorAll('.pauta-item')].length === 2 && $('pautasMostrar').hidden === true && $('pautasFrente').hidden === false);
 
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');
@@ -159,8 +169,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('a leitura da segunda conta se junta à da primeira', ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Planejamento semanal'), JSON.stringify(ag));
 
   // atualizar pelo Meet: uma aba de fundo por conta, e cada uma fecha quando a leitura termina
+  const m4b = await mundo();
+  await m4b.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda' });
+  await m4b.tick(200);
+  t('sem pedir nada, a leitura cobre uma semana (6 dias na fila depois de hoje)', require('vm').runInContext('filaDias.get(101).length', m4b.bgCtx) === 6, String(require('vm').runInContext('filaDias.get(101).length', m4b.bgCtx)));
   const m5 = await mundo();
-  await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda' });
+  await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: 3 });
   await m5.tick(200);
   t('atualizar abre a tela inicial das duas contas, em aba de fundo', m5.criadas.length === 2 && /authuser=0/.test(m5.criadas[0]) && /authuser=1/.test(m5.criadas[1]), JSON.stringify(m5.criadas));
   // a página de Pautas pede mais dias: a fila de cada aba cresce
@@ -196,7 +210,8 @@ const amanha = dia(new Date(Date.now() + 86400000));
   m6.w.history.pushState({}, '', '/home');
   m6.w.document.body.innerHTML = '<p>carregando</p>';
   await m6.tick(7000);
-  t('aba escondida e sem lista: pede pra vir pra frente', m6.msgsParaBg.some((x) => x.type === 'preciso-visivel'));
+  t('aba escondida e sem lista: NÃO pede pra vir pra frente (o Meet nunca abre sozinho na frente)', !m6.msgsParaBg.some((x) => x.type === 'preciso-visivel'));
+  t('nenhuma aba é trazida pra frente em toda a leitura', !m6.atualizadas.some((x) => x.active) && !m5.atualizadas.some((x) => x.active) && m5.criadasOpts.length > 0 && m5.criadasOpts.every((x) => x.active === false));
   await m6.tick(16000);
   t('depois de esperar bastante, guarda o diagnóstico da leitura (0 reuniões, aba escondida)', m6.loja.agendaDiag && m6.loja.agendaDiag.achados === 0 && m6.loja.agendaDiag.vis === 'hidden', JSON.stringify(m6.loja.agendaDiag));
 

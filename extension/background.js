@@ -227,9 +227,9 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     atualizarAgenda(msg.dias, msg.desde).catch(() => {}); // só chega aqui quando a pessoa toca num botão de atualizar
     return false;
   }
-  if (msg.type === 'preciso-visivel' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
-    trouxeAFrente = true;
-    chrome.tabs.update(sender.tab.id, { active: true }).catch(() => {});
+  if (msg.type === 'cancelar-agenda') {
+    fecharAbaAtualizacao(); // a pessoa mandou parar: fecha as abas de leitura na hora
+    return false;
   }
   if (msg.type === 'agenda-lida' && sender.tab && abasAtualizacao.has(sender.tab.id)) {
     const resto = filaDias.get(sender.tab.id);
@@ -312,37 +312,24 @@ chrome.alarms.onAlarm.addListener((a) => {
 // e fecham sozinhas. Cada conta do Google tem a sua lista.
 const abasAtualizacao = new Set();
 let fechaAbas = null;
-let abaAnterior = null; // a aba em que a pessoa estava, pra devolver o foco
-let trouxeAFrente = false;
-function devolverFoco() {
-  if (trouxeAFrente && abaAnterior !== null) chrome.tabs.update(abaAnterior, { active: true }).catch(() => {});
-  trouxeAFrente = false;
-  abaAnterior = null;
-}
 function fecharAbaAtualizacao(id) {
   if (id === undefined) {
     clearTimeout(fechaAbas);
     abasAtualizacao.forEach((i) => chrome.tabs.remove(i).catch(() => {}));
     abasAtualizacao.clear();
     filaDias.clear();
-    devolverFoco();
     return;
   }
   filaDias.delete(id);
   if (abasAtualizacao.delete(id)) chrome.tabs.remove(id).catch(() => {});
-  if (!abasAtualizacao.size) {
-    clearTimeout(fechaAbas);
-    devolverFoco();
-  }
+  if (!abasAtualizacao.size) clearTimeout(fechaAbas);
 }
 const filaDias = new Map(); // aba -> endereços dos próximos dias, ainda por ler
-const DIAS_DA_AGENDA = 3; // padrão: hoje, amanhã e depois de amanhã (a página de Pautas pede mais)
+const DIAS_DA_AGENDA = 7; // padrão: uma semana, pra segunda e terça da semana seguinte aparecerem numa sexta (a página de Pautas pede mais)
 async function atualizarAgenda(dias = DIAS_DA_AGENDA, desde = '') {
   dias = Math.max(1, Math.min(21, Number(dias) || DIAS_DA_AGENDA));
   const base = /^\d{4}-\d{2}-\d{2}$/.test(String(desde)) ? new Date(`${desde}T12:00:00`).getTime() : 0; // um dia escolhido no calendário
   if (abasAtualizacao.size) return; // já tem leitura em andamento
-  const [ativa] = await chrome.tabs.query({ active: true, currentWindow: true }).catch(() => []);
-  abaAnterior = ativa ? ativa.id : null;
   const pad = (n) => String(n).padStart(2, '0');
   for (const conta of [0, 1]) {
     const urls = Array.from({ length: dias }, (_, n) => {
