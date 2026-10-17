@@ -25,6 +25,7 @@ t('sem cabeçalho nem H1: o título vem do nome do arquivo', A.parsear('2026-10-
 t('o LEIA-ME e arquivo sem data são ignorados', A.parsear('LEIA-ME.md', A.LEIA_ME) === null && A.parsear('qualquer.md', 'só texto') === null);
 t('data inválida no cabeçalho não passa', A.parsear('a.md', '---\ntitulo: X\ndata: amanhã\n---\nx') === null);
 
+t('o código da sala vira o campo "sala" (aceita o link inteiro) e volta pro arquivo', (() => { const r = A.parsear('a.md', '---\ntitulo: X\ndata: 2026-10-21\nsala: https://meet.google.com/str-yfrq-bjd?authuser=1\n---\nt'); return r.codigo === 'str-yfrq-bjd' && /sala: str-yfrq-bjd/.test(A.serializar({ ...r })); })());
 console.log('Mescla');
 const base = { '2026-10-20|daily': { titulo: 'Daily', data: '2026-10-20', hora: '10:00', texto: '1. do navegador', criada: 1000, atualizada: 5000 } };
 let r = A.mesclar({ pautas: J(base), arquivos: [], hoje: HOJE });
@@ -57,5 +58,7 @@ r = A.mesclar({ pautas: J(base), arquivos: [], conhecidas: ['2026-10-20|daily'],
 t('mas se a pauta foi editada no navegador depois, o arquivo é recriado em vez de apagar a pauta', r.pautas === null && r.escrever.length === 1);
 r = A.mesclar({ pautas: J(base), arquivos: [], hoje: HOJE });
 t('diz quais reuniões passam a ter arquivo (pra lembrar na próxima)', JSON.stringify(r.conhecidas) === JSON.stringify(['2026-10-20|daily']));
+r = A.mesclar({ pautas: J(base), arquivos: [{ nome: 'd.md', mtime: 9000, conteudo: A.serializar({ ...base['2026-10-20|daily'], codigo: 'abc-defg-hij' }) }], hoje: HOJE });
+t('arquivo com a sala: a pauta aprende o código sem mudar de texto nem de data de edição', r.pautas && r.pautas['2026-10-20|daily'].codigo === 'abc-defg-hij' && r.pautas['2026-10-20|daily'].atualizada === 5000 && r.escrever.length === 0);
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);

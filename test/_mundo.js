@@ -66,6 +66,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
   w.clearInterval = (id) => { if (ints[id - 1]) ints[id - 1].morto = true; };
   w.clearTimeout = (id) => { if (touts[id - 1]) touts[id - 1].feito = true; };
   w.setTimeout = (f, ms) => { touts.push({ f, em: agora + ms }); return touts.length; };
+  const aoMudarLoja = [];
   const msgsParaBg = [];
   w.chrome = {
     runtime: { id: 'x',
@@ -79,7 +80,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
         return Promise.resolve(o);
       },
       set: (o) => { Object.assign(loja, JSON.parse(JSON.stringify(o))); return Promise.resolve(); },
-    }, onChanged: { addListener() {} } },
+    }, onChanged: { addListener: (f) => aoMudarLoja.push(f) } },
   };
   w.eval(contentSrc);
   const tick = async (ms) => {
@@ -116,7 +117,7 @@ async function mundo({ ajustes = {}, loja: lojaInicial = {} } = {}) {
     const r = w.document.querySelector('[role="region"]');
     r.innerHTML = `<div><div>${quem}\n${txt}</div><div></div></div>`; // bloco: primeira linha o falante, o resto a fala (o segundo bloco vazio é como no Meet)
   };
-  return { instalar: (d) => aoInstalar && aoInstalar(d), bgMensagem: (msg, tabId) => ouveBg(msg, { tab: { id: tabId } }, () => {}), atualizadas, criadas, criadasOpts, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
+  return { mudouLoja: (c) => aoMudarLoja.forEach((f) => f(c)), instalar: (d) => aoInstalar && aoInstalar(d), bgMensagem: (msg, tabId) => ouveBg(msg, { tab: { id: tabId } }, () => {}), atualizadas, criadas, criadasOpts, removidas, badges, titulos, bgCtx: ctx, loja, tick, raiz, fab, cmdPainel, estado, conectarPainel, sairDaChamada, voltarPraChamada, reunioes, painel, msgsParaBg, salvos, comando: (c) => comando(c), fala, w };
 }
 
 module.exports = { mundo };

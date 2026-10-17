@@ -432,7 +432,8 @@ async function sincronizarPautas() {
       const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0 });
       for (const e of r.escrever) await arm.gravar(e.nome, e.conteudo);
       for (const nome of r.apagar) await arm.apagar(nome);
-      if (!arm.arquivos.some((a) => a.nome === 'LEIA-ME.md')) await arm.gravar('LEIA-ME.md', MB_PAUTAS_ARQ.LEIA_ME);
+      const leia = arm.arquivos.find((a) => a.nome === 'LEIA-ME.md');
+      if (!leia || leia.conteudo !== MB_PAUTAS_ARQ.LEIA_ME) await arm.gravar('LEIA-ME.md', MB_PAUTAS_ARQ.LEIA_ME); // mantém a explicação em dia
       const grava = { pautasSync: { modo: arm.tipo, em: Date.now() }, pautasConhecidas: r.conhecidas };
       if (r.pautas) {
         // aplica só o que veio dos arquivos em cima do que está agora (a pessoa pode ter editado durante a conversa com a pasta)

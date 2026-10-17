@@ -278,10 +278,38 @@ function iniciar() {
   const idPauta = (titulo, data) => (normTitulo(titulo) ? `${data || dia(new Date())}|${normTitulo(titulo)}` : '');
   let pautaId = '';
   let chavePauta = '';
+  let pautaAchada = false; // a sala de espera mostra título, horário e código aos poucos: enquanto não achou, tenta de novo
+  let tentativasPauta = 0;
 
   async function lerPautas() {
     const v = await chrome.storage.local.get(['pautas']);
     return (v && v.pautas) || {};
+  }
+
+  // A sala de espera de uma reunião agendada diz "Programada para seg., 19 de out. 10:00": sem o título na tela,
+  // o dia e a hora (únicos na agenda) bastam pra achar qual reunião é.
+  const MESES = { jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12, feb: 2, apr: 4, may: 5, aug: 8, sep: 9, oct: 10, dec: 12 };
+  function programadaPara() {
+    const txt = String(document.body ? document.body.innerText || document.body.textContent : '');
+    const m = txt.match(/(?:Programada para|Agendada para|Scheduled for)[\s\S]{0,40}?(\d{1,2})\s+de\s+([a-zç]{3})[a-z.]*\s+(\d{1,2}):(\d{2})/i) || txt.match(/Scheduled for[\s\S]{0,40}?([A-Za-z]{3})[a-z]*\s+(\d{1,2}),?\s+(\d{1,2}):(\d{2})/i);
+    if (!m) return null;
+    const pt = /^\d/.test(m[1]);
+    const dd = Number(pt ? m[1] : m[2]);
+    const mes = MESES[String(pt ? m[2] : m[1]).slice(0, 3).toLowerCase()];
+    if (!mes) return null;
+    const agora = new Date();
+    let ano = agora.getFullYear();
+    if (new Date(ano, mes - 1, dd).getTime() < agora.getTime() - 180 * 86400000) ano++;
+    return { data: `${ano}-${String(mes).padStart(2, '0')}-${String(dd).padStart(2, '0')}`, hora: `${String(m[3]).padStart(2, '0')}:${m[4]}` };
+  }
+  async function idPeloHorario(todas) {
+    const q = programadaPara();
+    if (!q) return '';
+    const v = await chrome.storage.local.get(['agendaMeet']);
+    const achados = new Set();
+    for (const a of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (a && a.data === q.data && a.hora === q.hora && normTitulo(a.titulo)) achados.add(`${a.data}|${normTitulo(a.titulo)}`);
+    for (const [k, e] of Object.entries(todas)) if (e && e.data === q.data && e.hora === q.hora) achados.add(k);
+    return achados.size === 1 ? [...achados][0] : ''; // só quando não há dúvida
   }
 
   // entrou na sala (ou o título do Meet carregou): acha a pauta desta reunião e traz pro painel
@@ -294,9 +322,14 @@ function iniciar() {
     if (!todas[id]) {
       const porCodigo = Object.keys(todas).filter((k) => todas[k].codigo === cod).sort((a, b) => (todas[b].atualizada || 0) - (todas[a].atualizada || 0))[0];
       if (porCodigo) id = porCodigo;
+      else {
+        const porHorario = await idPeloHorario(todas);
+        if (porHorario) id = porHorario;
+      }
     }
     pautaId = id;
     const e = todas[id];
+    pautaAchada = !!e;
     if (e) {
       if (!S.cola && e.texto) S.cola = e.texto;
       if (!S.titulo && e.titulo) S.titulo = e.titulo;
@@ -307,6 +340,9 @@ function iniciar() {
       push();
     }
   }
+
+  // a pauta chegou depois de a sala abrir (editada no arquivo, importada): liga de novo, sem esperar mudar de sala
+  chrome.storage.onChanged.addListener((c) => { if (c.pautas && codigoDaSala()) ligarPautaDaSala().catch(() => {}); });
 
   async function guardarPauta(texto) {
     const cod = codigoDaSala();
@@ -388,6 +424,11 @@ function iniciar() {
     const chave = codigoDaSala() + '|' + tituloDoMeet();
     if (chave !== chavePauta) {
       chavePauta = chave;
+      pautaAchada = false;
+      tentativasPauta = 0;
+      ligarPautaDaSala().catch(() => {});
+    } else if (!pautaAchada && codigoDaSala() && tentativasPauta < 12) {
+      tentativasPauta++;
       ligarPautaDaSala().catch(() => {});
     }
     lerAgendaDaHome().catch(() => {});

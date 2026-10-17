@@ -153,6 +153,29 @@ const amanha = dia(new Date(Date.now() + 86400000));
   const e2 = await m2.estado();
   t('sem casar o título, casa pelo código da sala', e2 && e2.cola === 'por código' && e2.pautaId === 'qualquer|outro');
 
+  // sala de espera de reunião agendada: sem título na tela, "Programada para <dia> <hora>" acha a pauta
+  const futuro = new Date(Date.now() + 3 * 86400000);
+  const isoF = `${futuro.getFullYear()}-${String(futuro.getMonth() + 1).padStart(2, '0')}-${String(futuro.getDate()).padStart(2, '0')}`;
+  const mesesPt = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const idH = `${isoF}|alinhamento sem titulo no meet`;
+  const mH = await mundo({ loja: { agendaMeet: [{ titulo: 'Alinhamento sem título no Meet', data: isoF, hora: '10:00', fim: '10:30' }], pautas: { [idH]: { titulo: 'Alinhamento sem título no Meet', data: isoF, hora: '10:00', texto: '1. pauta achada pelo horário', criada: 1, atualizada: 2 } } } });
+  mH.w.document.title = 'Reunião';
+  mH.w.document.body.insertAdjacentHTML('beforeend', `<div>Programada para</div><div>seg., ${futuro.getDate()} de ${mesesPt[futuro.getMonth()]}. 10:00</div>`);
+  await mH.tick(3200);
+  const eH = await mH.estado();
+  t('na sala de espera sem título, o dia e a hora ("Programada para ...") acham a pauta', eH && eH.cola === '1. pauta achada pelo horário' && eH.pautaId === idH, JSON.stringify(eH && [eH.cola, eH.pautaId]));
+  t('e a sala fica guardada na pauta, pra próxima vez casar pelo código', mH.loja.pautas[idH].codigo === 'abc-defg-hij');
+
+  // a pauta chega depois de a sala abrir (arquivo editado, importação): liga sozinha
+  const mT = await mundo();
+  mT.w.document.title = 'Reunião';
+  await mT.tick(3200);
+  t('sala sem pauta nenhuma: nada carregado', ((await mT.estado()) || {}).cola === '');
+  mT.loja.pautas = { 'qualquer|outra': { titulo: 'Reunião da IA', data: '2026-01-01', codigo: 'abc-defg-hij', texto: 'chegou pelo arquivo', criada: 1, atualizada: 3 } };
+  mT.mudouLoja({ pautas: { newValue: mT.loja.pautas } });
+  await mT.tick(300);
+  t('a pauta que chega depois (código da sala no arquivo) carrega sozinha', ((await mT.estado()) || {}).cola === 'chegou pelo arquivo');
+
   const m3 = await mundo();
   m3.w.history.pushState({}, '', '/home/2026/10/20');
   // a estrutura real da tela inicial do Meet: <li> com horário e título em texto, sem botão nem aria-label

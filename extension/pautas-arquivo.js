@@ -11,6 +11,7 @@
   function serializar(p) {
     const topo = ['---', `titulo: ${JSON.stringify(String(p.titulo || ''))}`, `data: ${p.data}`];
     if (p.hora) topo.push(`hora: ${p.hora}`);
+    if (p.codigo) topo.push(`sala: ${p.codigo}`);
     topo.push('---', '');
     return `${topo.join('\n')}\n${limpo(p.texto)}\n`;
   }
@@ -18,7 +19,7 @@
   // lê o arquivo; sem o cabeçalho, ainda dá pra aproveitar: data no nome (AAAA-MM-DD_...) e título na primeira linha "# ..."
   function parsear(nome, conteudo) {
     const bruto = String(conteudo || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
-    let titulo = '', data = '', hora = '', corpo = bruto;
+    let titulo = '', data = '', hora = '', sala = '', corpo = bruto;
     const m = bruto.match(/^---\n([\s\S]*?)\n---\n?/);
     if (m) {
       corpo = bruto.slice(m[0].length);
@@ -31,6 +32,7 @@
         if (k === 'titulo' || k === 'title') titulo = v;
         else if (k === 'data' || k === 'date') data = v;
         else if (k === 'hora' || k === 'time') hora = v;
+        else if (k === 'sala' || k === 'codigo' || k === 'meet' || k === 'link' || k === 'url') sala = (String(v).toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/) || [''])[0];
       }
     }
     const dn = String(nome || '').match(/^(\d{4}-\d{2}-\d{2})(?:_(\d{2})h(\d{2}))?_(.+)\.md$/);
@@ -44,7 +46,7 @@
     const h = String(hora).match(/^(\d{1,2}):(\d{2})/);
     hora = h ? `${h[1].padStart(2, '0')}:${h[2]}` : '';
     if (!titulo || !data) return null;
-    return { id: idDe(titulo, data), titulo: String(titulo).trim(), data, hora, texto: limpo(corpo) };
+    return { id: idDe(titulo, data), titulo: String(titulo).trim(), data, hora, codigo: sala, texto: limpo(corpo) };
   }
 
   // Compara as pautas do navegador com os arquivos e diz o que fazer.
@@ -73,13 +75,19 @@
       const eu = atual ? limpo(atual.texto) : '';
       if (!atual) {
         if (!f.texto) continue;
-        novas[id] = { titulo: f.titulo, data: f.data, hora: f.hora, texto: f.texto, codigo: '', criada: f.mtime, atualizada: f.mtime };
+        novas[id] = { titulo: f.titulo, data: f.data, hora: f.hora, texto: f.texto, codigo: f.codigo || '', criada: f.mtime, atualizada: f.mtime };
         mudou = true;
       } else if (eu !== f.texto && f.mtime > (atual.atualizada || atual.criada || 0) + 1500) {
-        novas[id] = { ...atual, titulo: atual.titulo || f.titulo, hora: atual.hora || f.hora, texto: f.texto, atualizada: f.mtime };
+        novas[id] = { ...atual, titulo: atual.titulo || f.titulo, hora: atual.hora || f.hora, codigo: f.codigo || atual.codigo || '', texto: f.texto, atualizada: f.mtime };
         mudou = true;
       } else if (eu !== f.texto) {
         escrever.push({ nome: f.nome, conteudo: serializar({ ...atual, texto: atual.texto }), id });
+      } else if (f.codigo && f.codigo !== atual.codigo) {
+        // só o código da sala mudou no arquivo: entra sem mexer na data de edição da pauta
+        novas[id] = { ...atual, codigo: f.codigo };
+        mudou = true;
+      } else if (atual.codigo && !f.codigo) {
+        escrever.push({ nome: f.nome, conteudo: serializar(atual), id }); // a pauta aprendeu a sala: o arquivo também passa a dizer
       }
     }
     // pauta que ainda não tem arquivo (e é recente): cria
@@ -113,6 +121,7 @@ sozinho (a cada minuto, com o navegador aberto) e a pauta aparece no painel e na
 titulo: "Daily de produto"
 data: 2026-10-20
 hora: 10:00
+sala: abc-defg-hij
 ---
 
 1. Primeiro ponto
