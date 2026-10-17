@@ -673,7 +673,7 @@ function aplicar(s) {
   if (salaDoPainel !== null && s.sala !== salaDoPainel && alvo) { alvo = ''; listaAberta = true; } // mudou de sala: a pauta escolhida na lista não segue junto
   salaDoPainel = s.sala || '';
   // numa página do Meet sem sala (a tela inicial), o painel é a agenda, como fora do Meet; o que veio da sala anterior não fica
-  if (s.semSala && s.fase === 'oculto') { semMeet(); return; }
+  if (s.semSala && s.fase !== 'gravando' && s.fase !== 'parado') { semMeet(); return; }
   modoFora(false);
   const gravando = s.fase === 'gravando';
   base = { seg: s.segundos, em: Date.now(), gravando };

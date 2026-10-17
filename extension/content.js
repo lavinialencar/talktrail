@@ -434,6 +434,7 @@ function iniciar() {
       if (trocou && (S.fase === 'oculto' || S.fase === 'oferta') && !S.id) {
         Object.assign(S, { titulo: '', projeto: '', tags: [], notes: '', cola: '' });
         pautaId = '';
+        if (S.fase === 'oferta') { S.fase = 'oculto'; desenhar(); } // a oferta de transcrever era da sala que ficou pra trás
       }
       // o painel recebe a sala nova de uma vez só, já com a pauta (ou vazio), sem piscar o estado vazio no meio
       ligarPautaDaSala().catch(() => {}).then(() => { if (trocou) push(true); });

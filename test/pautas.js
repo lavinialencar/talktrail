@@ -113,6 +113,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
     t('entrou numa sala: volta ao painel normal', !w.document.body.classList.contains('fora'));
     foraDoMeet = antes;
   }
+  {
+    w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: false, fase: 'oferta' })})`);
+    w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: true, fase: 'oferta' })})`);
+    t('tela inicial do Meet com a oferta da sala anterior ainda no ar: o painel vira agenda mesmo assim', w.document.body.classList.contains('fora'));
+    w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: false })})`);
+  }
   console.log('Painel fora do Meet');
   foraDoMeet = true;
   loja.agendaLidaEm = Date.now() - 3 * 3600 * 1000; // agenda velha
