@@ -423,9 +423,17 @@ function iniciar() {
   setInterval(() => {
     const chave = codigoDaSala() + '|' + tituloDoMeet();
     if (chave !== chavePauta) {
+      const salaAntes = chavePauta.split('|')[0];
       chavePauta = chave;
       pautaAchada = false;
       tentativasPauta = 0;
+      // o Meet troca de sala sem recarregar a página (tela inicial, outra sala de espera): o que era da sala anterior sai,
+      // senão a pauta e o nome da primeira reunião ficam grudados na seguinte. Gravando, nada muda.
+      if (salaAntes !== codigoDaSala() && (S.fase === 'oculto' || S.fase === 'oferta') && !S.id && (S.cola || S.titulo || S.notes || S.tags.length)) {
+        Object.assign(S, { titulo: '', projeto: '', tags: [], notes: '', cola: '' });
+        pautaId = '';
+        push();
+      }
       ligarPautaDaSala().catch(() => {});
     } else if (!pautaAchada && codigoDaSala() && tentativasPauta < 12) {
       tentativasPauta++;
@@ -456,6 +464,7 @@ function iniciar() {
 
   function snap() {
     return {
+      semSala: !codigoDaSala(), // tela inicial do Meet ou outra página sem sala: o painel mostra a agenda
       fase: S.fase,
       id: S.id,
       titulo: S.titulo,

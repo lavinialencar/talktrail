@@ -482,6 +482,10 @@ function modoFora(ligado) {
   if (document.body.classList.contains('fora') === ligado) return;
   document.body.classList.toggle('fora', ligado);
   if (!ligado) {
+    alvo = ''; // entrou numa sala: a pauta que vale é a dela, não a da reunião que estava aberta na agenda
+    listaAberta = true;
+    pintarPautas();
+    rotularPauta();
     $('pautasPainel').hidden = true; // dentro da reunião a lista de reuniões começa recolhida: a pauta é o que importa
     $('pautasBotao').setAttribute('aria-expanded', 'false');
     return;
@@ -653,8 +657,13 @@ function chips(sel) {
   }
 }
 
+let salaDoPainel = null;
 function aplicar(s) {
   ultimo = s;
+  if (salaDoPainel !== null && s.sala !== salaDoPainel && alvo) { alvo = ''; listaAberta = true; } // mudou de sala: a pauta escolhida na lista não segue junto
+  salaDoPainel = s.sala || '';
+  // numa página do Meet sem sala (a tela inicial), o painel é a agenda, como fora do Meet; o que veio da sala anterior não fica
+  if (s.semSala && s.fase === 'oculto') { semMeet(); return; }
   modoFora(false);
   const gravando = s.fase === 'gravando';
   base = { seg: s.segundos, em: Date.now(), gravando };

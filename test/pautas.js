@@ -104,6 +104,15 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('o botão abre a página do servidor local', criadas.includes('http://127.0.0.1:8787/'), JSON.stringify(criadas));
   w.eval(`aplicar(${JSON.stringify(estado)})`);
 
+  console.log('Painel na tela inicial do Meet');
+  {
+    const antes = foraDoMeet;
+    w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: true })})`);
+    t('estado "semSala" (tela inicial do Meet): o painel vira agenda, sem editor da sala anterior', w.document.body.classList.contains('fora') && w.document.body.classList.contains('sem-alvo'));
+    w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: false })})`);
+    t('entrou numa sala: volta ao painel normal', !w.document.body.classList.contains('fora'));
+    foraDoMeet = antes;
+  }
   console.log('Painel fora do Meet');
   foraDoMeet = true;
   loja.agendaLidaEm = Date.now() - 3 * 3600 * 1000; // agenda velha
@@ -131,6 +140,11 @@ const amanha = dia(new Date(Date.now() + 86400000));
   $('pautasLista').querySelectorAll('.abrir')[1].click();
   await esp(40);
   t('dá pra escolher outra reunião em seguida', !w.document.body.classList.contains('sem-alvo') && /um mês/.test($('pautasLista').textContent));
+  w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: false, sala: 'abc-defg-hij', pautaId: 'x|y' })})`);
+  await esp(40);
+  t('entrar numa sala descarta a reunião escolhida na agenda: vale a pauta da sala', !w.document.body.classList.contains('fora') && w.document.body.classList.contains('sem-alvo'));
+  w.eval(`aplicar(${JSON.stringify({ ...estado, semSala: true, sala: '' })})`);
+  await esp(40);
 
   // ---------------- script da página ----------------
   console.log('Script da página: sala, título e agenda da tela inicial');
@@ -175,6 +189,25 @@ const amanha = dia(new Date(Date.now() + 86400000));
   mT.mudouLoja({ pautas: { newValue: mT.loja.pautas } });
   await mT.tick(300);
   t('a pauta que chega depois (código da sala no arquivo) carrega sozinha', ((await mT.estado()) || {}).cola === 'chegou pelo arquivo');
+
+  // troca de sala sem recarregar (tela inicial do Meet, outra sala de espera): a pauta acompanha
+  const mS = await mundo({ loja: { pautas: {
+    'qualquer|a': { titulo: 'Reunião A', data: '2026-01-01', codigo: 'abc-defg-hij', texto: 'pauta da sala A', criada: 1, atualizada: 2 },
+    'qualquer|b': { titulo: 'Reunião B', data: '2026-01-01', codigo: 'xyz-wxyz-xyz', texto: 'pauta da sala B', criada: 1, atualizada: 2 } } } });
+  mS.w.document.title = 'Reunião';
+  await mS.tick(3200);
+  t('sala A: carrega a pauta A', ((await mS.estado()) || {}).cola === 'pauta da sala A');
+  mS.w.history.pushState({}, '', '/home');
+  await mS.tick(3200);
+  const eHome = await mS.estado();
+  t('foi pra tela inicial: a pauta da sala anterior sai e o painel entra em modo agenda', eHome && eHome.cola === '' && eHome.semSala === true && eHome.pautaId === '', JSON.stringify(eHome && [eHome.cola, eHome.semSala]));
+  mS.w.history.pushState({}, '', '/xyz-wxyz-xyz');
+  await mS.tick(3200);
+  const eB = await mS.estado();
+  t('abriu outra sala: carrega a pauta B, não a A', eB && eB.cola === 'pauta da sala B' && eB.semSala === false, JSON.stringify(eB && eB.cola));
+  mS.w.history.pushState({}, '', '/qqq-qqqq-qqq');
+  await mS.tick(3200);
+  t('sala sem pauta nenhuma: fica vazia, sem a da sala anterior', ((await mS.estado()) || {}).cola === '');
 
   const m3 = await mundo();
   m3.w.history.pushState({}, '', '/home/2026/10/20');
