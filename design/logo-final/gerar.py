@@ -73,13 +73,23 @@ def mini(com_onda):
     a += f'<path d="M30 96 L40 78 H88 L98 96" fill="{CARV}" stroke-width="7"/>'
     return adesivo(sil, a, rot=0, sombra=5, halo=12, traco=8)
 
+def barra():
+    # mais alto que o cassete do logo (108x92): num quadrado de 16 px, ocupa mais área e lê melhor
+    sil = '<rect x="10" y="12" width="108" height="92" rx="15"/>'
+    a = f'<rect x="10" y="12" width="108" height="92" rx="15" fill="{TEAL}"/>'
+    a += f'<rect x="24" y="22" width="80" height="48" rx="9" fill="{MARF}" stroke-width="7"/>'
+    a += f'<rect x="34" y="32" width="60" height="28" rx="14" fill="{CARV}" stroke="none"/>'
+    a += dots([(49, 46, 9), (79, 46, 9)], MARF) + dots([(49, 46, 3.4), (79, 46, 3.4)])
+    a += f'<path d="M30 104 L40 84 H88 L98 104" fill="{CARV}" stroke-width="7"/>'
+    return adesivo(sil, a, rot=0, sombra=0, halo=8, traco=8)
+
 VB_QUAD = "-8 -8 144 144"
 arquivos = {"completo": (completo(), VB_QUAD), "medio": (medio(), VB_QUAD),
-            "mini": (mini(False), "-4 8 136 112")}
+            "mini": (mini(False), "-4 8 136 112"), "barra": (barra(), "3 -2 122 122")}
 for k, (corpo, vb) in arquivos.items():
     open(f"fita-{k}.svg", "w").write(svg(corpo, vb))
 os.makedirs("../../extension/icons", exist_ok=True)
-for tam, k in ((128, "completo"), (48, "medio"), (32, "mini"), (16, "mini")):
+for tam, k in ((128, "completo"), (48, "medio"), (32, "barra"), (24, "barra"), (16, "barra")):
     subprocess.run(["rsvg-convert", "-w", str(tam), "-h", str(tam), "-a", "-b", "none", f"fita-{k}.svg",
                     "-o", f"../../extension/icons/icon-{tam}.png"], check=True)
 print("ok")
