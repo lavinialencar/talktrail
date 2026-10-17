@@ -42,5 +42,6 @@ const html = fs.readFileSync(path.join(__dirname, '../extension/panel.html'), 'u
 t('os Ajustes têm o grupo Cópia de segurança com Exportar e Importar', /<h3>Cópia de segurança<\/h3>/.test(html) && /id="ajExportar"/.test(html) && /id="ajImportar"/.test(html) && /<script src="backup\.js">/.test(html));
 
 t('Ajustes explicam que as pautas também ficam em arquivos (Pautas/) editáveis por IA', /id="ajPautasArq"/.test(html) && /Pautas\//.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')));
+t('o bloco de apoio dos Ajustes aponta pro Buy Me a Coffee', /const URL_APOIO = 'https:\/\/buymeacoffee\.com\/lavinialencar'/.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')) && /id="ajApoio"/.test(html));
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);
