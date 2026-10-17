@@ -337,7 +337,7 @@ function iniciar() {
         e.codigo = cod;
         chrome.storage.local.set({ pautas: todas });
       }
-      push();
+      push(true);
     }
   }
 
@@ -420,27 +420,34 @@ function iniciar() {
     enviar({ type: 'agenda-lida' });
   }
 
-  setInterval(() => {
+  // Sala ou título mudou? (o Meet troca de sala sem recarregar a página). Chamada na hora que a página avisa da
+  // navegação, a cada 300 ms (só compara texto) e no ciclo de 1,5 s, por garantia.
+  function checarSala() {
     const chave = codigoDaSala() + '|' + tituloDoMeet();
     if (chave !== chavePauta) {
       const salaAntes = chavePauta.split('|')[0];
+      const trocou = salaAntes !== codigoDaSala();
       chavePauta = chave;
       pautaAchada = false;
       tentativasPauta = 0;
-      // o Meet troca de sala sem recarregar a página (tela inicial, outra sala de espera): o que era da sala anterior sai,
-      // senão a pauta e o nome da primeira reunião ficam grudados na seguinte. Gravando, nada muda.
-      if (salaAntes !== codigoDaSala() && (S.fase === 'oculto' || S.fase === 'oferta') && !S.id && (S.cola || S.titulo || S.notes || S.tags.length)) {
+      // o que era da sala anterior sai, senão a pauta e o nome da primeira reunião ficam grudados na seguinte. Gravando, nada muda.
+      if (trocou && (S.fase === 'oculto' || S.fase === 'oferta') && !S.id) {
         Object.assign(S, { titulo: '', projeto: '', tags: [], notes: '', cola: '' });
         pautaId = '';
-        push();
       }
-      ligarPautaDaSala().catch(() => {});
+      // o painel recebe a sala nova de uma vez só, já com a pauta (ou vazio), sem piscar o estado vazio no meio
+      ligarPautaDaSala().catch(() => {}).then(() => { if (trocou) push(true); });
     } else if (!pautaAchada && codigoDaSala() && tentativasPauta < 12) {
       tentativasPauta++;
       ligarPautaDaSala().catch(() => {});
     }
+  }
+  setInterval(() => {
+    checarSala();
     lerAgendaDaHome().catch(() => {});
   }, 1500);
+  setInterval(() => { if (codigoDaSala() + '|' + tituloDoMeet() !== chavePauta) checarSala(); }, 300);
+  if (window.navigation && window.navigation.addEventListener) window.navigation.addEventListener('navigatesuccess', () => checarSala());
 
   const seg = () => (S.inicio ? (Date.now() - S.inicio) / 1000 : 0);
 
@@ -489,7 +496,12 @@ function iniciar() {
   }
 
   let pushPendente = false;
-  function push() {
+  function push(agora = false) {
+    if (agora) { // troca de sala: o painel tem que mudar na hora, sem esperar o agrupamento de 350 ms
+      pushPendente = false;
+      enviar({ type: 'state', state: snap() });
+      return;
+    }
     if (pushPendente) return;
     pushPendente = true;
     setTimeout(() => {

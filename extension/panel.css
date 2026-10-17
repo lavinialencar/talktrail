@@ -389,3 +389,8 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 /* o botão de atualizar carrega o estado: uma bolinha quando a lista pode estar velha */
 .icone-btn { position: relative; }
 .icone-btn.velha::after { content: ""; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--acento); box-shadow: 0 0 0 2px var(--fundo); }
+
+/* troca de sala: a pauta e o nome entram suaves */
+@keyframes entra-suave { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.troca { animation: entra-suave .24s ease-out; }
+@media (prefers-reduced-motion: reduce) { .troca { animation: none; } }

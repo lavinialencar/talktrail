@@ -208,6 +208,12 @@ const amanha = dia(new Date(Date.now() + 86400000));
   mS.w.history.pushState({}, '', '/qqq-qqqq-qqq');
   await mS.tick(3200);
   t('sala sem pauta nenhuma: fica vazia, sem a da sala anterior', ((await mS.estado()) || {}).cola === '');
+  // rapidez: a troca de sala chega no painel em menos de meio segundo
+  mS.w.history.pushState({}, '', '/abc-defg-hij');
+  const antesN = mS.msgsParaBg.length;
+  await mS.tick(500);
+  const envios = mS.msgsParaBg.slice(antesN).filter((x) => x.type === 'state');
+  t('a troca de sala chega no painel em até 0,5 s, já com a pauta nova', envios.length > 0 && envios[envios.length - 1].state.cola === 'pauta da sala A', JSON.stringify(envios.map((x) => x.state.cola)));
 
   const m3 = await mundo();
   m3.w.history.pushState({}, '', '/home/2026/10/20');

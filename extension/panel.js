@@ -658,8 +658,18 @@ function chips(sel) {
 }
 
 let salaDoPainel = null;
+// trocou de sala: o conteúdo da pauta e o nome entram com um fade curto em vez de trocar seco
+function suave() {
+  for (const el of [$('cola'), $('titulo')]) {
+    if (!el) continue;
+    el.classList.remove('troca');
+    void el.offsetWidth; // reinicia a animação
+    el.classList.add('troca');
+  }
+}
 function aplicar(s) {
   ultimo = s;
+  if (salaDoPainel !== null && (s.sala || '') !== salaDoPainel) suave();
   if (salaDoPainel !== null && s.sala !== salaDoPainel && alvo) { alvo = ''; listaAberta = true; } // mudou de sala: a pauta escolhida na lista não segue junto
   salaDoPainel = s.sala || '';
   // numa página do Meet sem sala (a tela inicial), o painel é a agenda, como fora do Meet; o que veio da sala anterior não fica
