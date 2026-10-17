@@ -1,5 +1,7 @@
 # Talktrail: texto da listagem na Chrome Web Store
 
+Passo a passo de envio: `store/PUBLICAR.md`.
+
 Rascunho para colar no painel do desenvolvedor. Nada foi enviado nem publicado.
 
 ## Nome
