@@ -53,7 +53,19 @@ t('nomes de arquivo não colidem', new Set(r.escrever.map((e) => e.nome)).size =
 t('lixo no conteúdo não quebra', A.mesclar({ pautas: {}, arquivos: [{ nome: 'x.md', mtime: 1, conteudo: null }, { nome: 5, mtime: 1, conteudo: '---' }], hoje: HOJE }).pautas === null);
 
 r = A.mesclar({ pautas: J(base), arquivos: [], conhecidas: ['2026-10-20|daily'], ultimoSync: 8000, hoje: HOJE });
-t('o arquivo existia e sumiu: a pauta (parada desde a última conversa) sai também', r.pautas && !r.pautas['2026-10-20|daily'] && r.removidas.includes('2026-10-20|daily') && r.escrever.length === 0);
+t('o arquivo sumiu pela primeira vez: a pauta NÃO sai ainda (só marca como ausente)', r.pautas === null && r.removidas.length === 0 && r.ausentes.includes('2026-10-20|daily') && r.conhecidas.includes('2026-10-20|daily'));
+r = A.mesclar({ pautas: J(base), arquivos: [], conhecidas: ['2026-10-20|daily'], ultimoSync: 8000, hoje: HOJE, ausentesAntes: ['2026-10-20|daily'] });
+t('sumiu de novo na conversa seguinte: aí a pauta sai também', r.pautas && !r.pautas['2026-10-20|daily'] && r.removidas.includes('2026-10-20|daily') && r.escrever.length === 0);
+r = A.mesclar({ pautas: J(base), arquivos: [], conhecidas: ['2026-10-20|daily'], ultimoSync: 8000, hoje: HOJE, ausentesAntes: ['2026-10-20|daily'], confiavel: false });
+t('listagem sem o LEIA-ME (disco que não montou, servidor com erro): nada é removido', r.pautas === null && r.removidas.length === 0 && r.ausentes.length === 0);
+r = A.mesclar({ pautas: J(base), arquivos: [{ nome: 'd.md', mtime: 4000, conteudo: A.serializar(base['2026-10-20|daily']) }, { nome: 'd2.md', mtime: 3000, conteudo: A.serializar(base['2026-10-20|daily']) }], apagadas: { '2026-10-20|daily': 6000 }, hoje: HOJE, confiavel: false });
+t('listagem sem confiança: nem tombstone nem cópia duplicada apagam arquivo', r.apagar.length === 0);
+{
+  const muitas = {}; const ids = [];
+  for (let i = 0; i < 5; i++) { const id = `2026-10-2${i}|r${i}`; muitas[id] = { titulo: 'r' + i, data: `2026-10-2${i}`, texto: 'x', criada: 1, atualizada: 2 }; ids.push(id); }
+  r = A.mesclar({ pautas: J(muitas), arquivos: [], conhecidas: ids, ultimoSync: 9000, hoje: HOJE, ausentesAntes: ids });
+  t('sumiço em massa (mais de 2 de uma vez) é tratado como falha: nenhuma pauta é removida', r.pautas === null && r.removidas.length === 0);
+}
 r = A.mesclar({ pautas: J(base), arquivos: [], conhecidas: ['2026-10-20|daily'], ultimoSync: 4000, hoje: HOJE });
 t('mas se a pauta foi editada no navegador depois, o arquivo é recriado em vez de apagar a pauta', r.pautas === null && r.escrever.length === 1);
 r = A.mesclar({ pautas: J(base), arquivos: [], hoje: HOJE });

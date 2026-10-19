@@ -484,12 +484,18 @@ def nome_pauta_ok(nome):
 
 
 def listar_pautas():
+    """Lista os .md de Pautas/. Devolve None se a pasta de reuniões não está acessível (disco que não montou, Drive fora):
+    uma listagem ruim NUNCA pode parecer "não tem pauta nenhuma", senão o sincronizador entende que tudo foi apagado."""
     d = pasta_pautas()
     saida = []
+    if not os.path.isdir(OUT):
+        return None
     try:
         nomes = sorted(n for n in os.listdir(d) if n.endswith(".md") and nome_pauta_ok(n))
+    except FileNotFoundError:
+        return saida  # a pasta de reuniões existe e ainda não tem Pautas/: vazio de verdade
     except OSError:
-        return saida
+        return None
     for n in nomes[:MAX_PAUTAS]:
         caminho = os.path.join(d, n)
         try:
@@ -796,7 +802,10 @@ class H(BaseHTTPRequestHandler):
                 return self._json(403, {"ok": False, "erro": "extensão não pareada", "parear": True})
             if caminho == "/pautas/listar":
                 with TRAVA:
-                    return self._json(200, {"ok": True, "arquivos": listar_pautas()})
+                    lista = listar_pautas()
+                if lista is None:
+                    return self._json(503, {"ok": False, "erro": "a pasta de reuniões não está acessível agora"})
+                return self._json(200, {"ok": True, "arquivos": lista})
             d, erro = self._corpo_json()
             if erro:
                 return self._json(*erro)
@@ -808,7 +817,10 @@ class H(BaseHTTPRequestHandler):
                     try:
                         alvo = os.path.join(pasta_pautas(), nome)
                         if os.path.isfile(alvo) and not os.path.islink(alvo):
-                            os.remove(alvo)
+                            # nunca apaga de vez: vai pra Pautas/_apagadas (dá pra recuperar)
+                            lixo = os.path.join(pasta_pautas(True), "_apagadas")
+                            os.makedirs(lixo, exist_ok=True)
+                            substituir(alvo, os.path.join(lixo, f"{int(time.time() * 1000)}_{nome}"))
                     except OSError:
                         pass
                 return self._json(200, {"ok": True})

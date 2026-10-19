@@ -26,6 +26,7 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
 
   console.log('Sincronização');
   await bg('sincronizarPautas()');
+  await new Promise((r) => setTimeout(r, 1700)); // a pasta nova pede uma segunda conversa, já com o LEIA-ME
   const nomes = [...arquivos.keys()];
   t('a pauta do navegador vira arquivo em Pautas/ e a pasta ganha o LEIA-ME', nomes.includes(`${dia(2)}_10h00_daily-de-produto.md`) && nomes.includes('LEIA-ME.md'), JSON.stringify(nomes));
   t('o arquivo tem o cabeçalho certo', /titulo: "Daily de produto"/.test(arquivos.get(`${dia(2)}_10h00_daily-de-produto.md`).conteudo));
@@ -52,12 +53,33 @@ const dia = (n) => { const d = new Date(Date.now() + n * 86400000); return `${d.
   await new Promise((r) => setTimeout(r, 20));
   await bg('sincronizarPautas()');
   v = await store();
-  t('arquivo apagado: a pauta sai do navegador', !v.pautas[`${dia(3)}|planejamento semanal`] && !!v.pautas[id]);
+  t('arquivo sumiu uma vez só: a pauta ainda fica (pode ser falha momentânea do disco)', !!v.pautas[`${dia(3)}|planejamento semanal`]);
+  await bg('sincronizarPautas()');
+  v = await store();
+  t('sumiu nas duas conversas seguidas: aí a pauta sai do navegador', !v.pautas[`${dia(3)}|planejamento semanal`] && !!v.pautas[id]);
+  t('a pauta removida pelo sincronizador fica guardada na lixeira da extensão', Array.isArray(v.pautasLixeira) && v.pautasLixeira.some((x) => x.id === `${dia(3)}|planejamento semanal`));
 
   // pauta apagada no navegador (tombstone): o arquivo sai
   await bg(`chrome.storage.local.set({ pautas: {}, pautasApagadas: { '${id}': ${Date.now() + 100} } })`);
   await bg('sincronizarPautas()');
   t('pauta apagada no navegador: o arquivo é apagado e não volta', !arquivos.has(nome));
+
+  // disco que não montou: a listagem volta vazia (sem nem o LEIA-ME). Nada pode ser apagado, de nenhum lado.
+  await bg(`chrome.storage.local.set({ pautas: { '${id}': { titulo: 'Daily de produto', data: '${dia(2)}', hora: '10:00', texto: '1. importante', criada: 1, atualizada: 5 }, '${dia(2)}|outra': { titulo: 'Outra', data: '${dia(2)}', texto: 'x', criada: 1, atualizada: 5 } }, pautasApagadas: {}, pautasAusentes: [], pautasConhecidas: ['${id}', '${dia(2)}|outra'] })`);
+  const guardados = new Map(arquivos);
+  arquivos.clear();
+  for (let i = 0; i < 4; i++) await bg('sincronizarPautas()');
+  v = await store();
+  t('listagem vazia e sem LEIA-ME (disco fora do ar) por 4 conversas: nenhuma pauta some', !!v.pautas[id] && !!v.pautas[`${dia(2)}|outra`]);
+  for (const [n, a] of guardados) arquivos.set(n, a);
+
+  // servidor responde erro (pasta não acessível): é "sem armazém", nunca "lista vazia"
+  const fetchBom = m.bgCtx.fetch;
+  m.bgCtx.fetch = async (url, op) => (url.endsWith('/pautas/listar') ? { ok: false, status: 503, json: async () => ({ ok: false }) } : fetchBom(url, op));
+  for (let i = 0; i < 4; i++) await bg('sincronizarPautas()');
+  v = await store();
+  t('servidor com erro de pasta (503) por 4 conversas: as pautas ficam como estão', !!v.pautas[id] && !!v.pautas[`${dia(2)}|outra`]);
+  m.bgCtx.fetch = fetchBom;
 
   // sem servidor nem pasta: não faz nada e não quebra
   const m2 = await mundo();

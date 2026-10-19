@@ -392,7 +392,21 @@ class Seguranca(unittest.TestCase):
         self.assertEqual(st, 400)
         st, r = post({}, path="/pautas/listar", headers=h)
         self.assertEqual([a["nome"] for a in r["arquivos"]], ["2026-10-20_daily.md"])
-        os.remove(os.path.join(TMP, "Pautas", "2026-10-20_daily.md"))
+        # apagar nunca apaga de vez: o arquivo vai pra Pautas/_apagadas
+        st, _ = post({"nome": "2026-10-20_daily.md"}, path="/pautas/apagar", headers=h)
+        self.assertEqual(st, 200)
+        guardados = os.listdir(os.path.join(TMP, "Pautas", "_apagadas"))
+        self.assertTrue(any(n.endswith("_2026-10-20_daily.md") for n in guardados), guardados)
+        # a pasta de reuniões fora do ar (disco que não montou) é erro, nunca "lista vazia"
+        original = m.OUT
+        try:
+            m.OUT = os.path.join(TMP, "nao-existe")
+            st, r = post({}, path="/pautas/listar", headers=h)
+            self.assertEqual(st, 503, r)
+        finally:
+            m.OUT = original
+        st, r = post({}, path="/pautas/listar", headers=h)
+        self.assertEqual((st, r.get("arquivos")), (200, []))
 
     def test_reset_so_da_propria_pagina(self):
         for o in ["https://evil.com", "null", ORIGEM, "chrome-extension://zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"]:

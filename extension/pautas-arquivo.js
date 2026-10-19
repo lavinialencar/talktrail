@@ -52,7 +52,10 @@
   // Compara as pautas do navegador com os arquivos e diz o que fazer.
   //  pautas: {id: {titulo,data,hora,texto,criada,atualizada}}   arquivos: [{nome, mtime, conteudo}]
   //  apagadas: {id: quando}   hoje: 'AAAA-MM-DD' (só as de uma semana pra cá vão pra arquivo)
-  function mesclar({ pautas, arquivos, apagadas = {}, hoje, conhecidas = [], ultimoSync = 0 }) {
+  // Regras de segurança (uma listagem ruim, de um disco que ainda não montou, nunca pode apagar pauta):
+  //  - `confiavel`: a listagem tem o LEIA-ME.md (a extensão sempre grava um). Sem ele, nada é apagado, de nenhum lado.
+  //  - uma pauta só sai por "o arquivo sumiu" se faltou em DUAS conversas seguidas (`ausentesAntes`) e no máximo 2 de uma vez.
+  function mesclar({ pautas, arquivos, apagadas = {}, hoje, conhecidas = [], ultimoSync = 0, confiavel = true, ausentesAntes = [] }) {
     const novas = { ...(pautas || {}) };
     let mudou = false;
     const escrever = [], apagar = [], reapareceu = [], removidas = [];
@@ -63,14 +66,14 @@
       if (!p) continue; // LEIA-ME e qualquer arquivo sem título e dia
       const antes = porId.get(p.id);
       if (!antes || a.mtime > antes.mtime) {
-        if (antes) apagar.push(antes.nome); // duas cópias da mesma reunião: fica a mais nova
+        if (antes && confiavel) apagar.push(antes.nome); // duas cópias da mesma reunião: fica a mais nova
         porId.set(p.id, { ...p, nome: a.nome, mtime: a.mtime });
-      } else apagar.push(a.nome);
+      } else if (confiavel) apagar.push(a.nome);
     }
     for (const [id, f] of porId) {
       const atual = novas[id];
       const quandoApagou = apagadas[id] || 0;
-      if (quandoApagou && f.mtime <= quandoApagou) { apagar.push(f.nome); continue; } // foi apagada no navegador: o arquivo sai
+      if (quandoApagou && f.mtime <= quandoApagou) { if (confiavel) apagar.push(f.nome); continue; } // foi apagada no navegador: o arquivo sai
       if (quandoApagou) reapareceu.push(id); // o arquivo foi editado depois: a pauta volta
       const eu = atual ? limpo(atual.texto) : '';
       if (!atual) {
@@ -93,20 +96,24 @@
     // pauta que ainda não tem arquivo (e é recente): cria
     const limite = (() => { const d = new Date(`${hoje}T12:00:00`); d.setDate(d.getDate() - 7); const p2 = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; })();
     const usados = new Set([...porId.values()].map((f) => f.nome));
-    for (const id of Object.keys(novas)) {
-      // o arquivo existia na última conversa e sumiu: a pessoa (ou a IA) apagou o arquivo, então a pauta sai também
-      if (!porId.has(id) && tinham.has(id) && (novas[id].atualizada || novas[id].criada || 0) <= ultimoSync) { delete novas[id]; removidas.push(id); mudou = true; }
-    }
+    // o arquivo existia na última conversa e sumiu: a pessoa (ou a IA) apagou o arquivo, então a pauta sai também.
+    // Só com listagem confiável, confirmado em duas conversas seguidas e nunca em massa.
+    const ausentes = confiavel ? Object.keys(novas).filter((id) => !porId.has(id) && tinham.has(id) && (novas[id].atualizada || novas[id].criada || 0) <= ultimoSync) : [];
+    const confirmadas = ausentes.filter((id) => ausentesAntes.includes(id));
+    if (confirmadas.length <= 2) for (const id of confirmadas) { delete novas[id]; removidas.push(id); mudou = true; }
     for (const [id, p] of Object.entries(novas)) {
-      if (porId.has(id) || !limpo(p.texto) || !p.data || p.data < limite) continue;
+      if (porId.has(id) || ausentes.includes(id) || !limpo(p.texto) || !p.data || p.data < limite) continue; // ausente: espera a confirmação, não recria na hora
       let nome = nomeDe(p);
       for (let n = 2; usados.has(nome); n++) nome = nomeDe(p).replace(/\.md$/, `-${n}.md`);
       usados.add(nome);
       escrever.push({ nome, conteudo: serializar(p), id });
     }
+    if (!confiavel) escrever.length = 0; // listagem duvidosa: não grava por cima de nada (a próxima conversa, já com o LEIA-ME, grava)
     const naPasta = new Set([...porId.keys()].filter((id) => !(apagadas[id] && porId.get(id).mtime <= apagadas[id])));
     escrever.forEach((e) => { if (e.id) naPasta.add(e.id); });
-    return { pautas: mudou ? novas : null, escrever, apagar: [...new Set(apagar)], reapareceu, removidas, conhecidas: [...naPasta].filter((id) => novas[id]) };
+    const conhecidasFim = new Set([...naPasta].filter((id) => novas[id]));
+    ausentes.forEach((id) => { if (novas[id]) conhecidasFim.add(id); }); // continua "conhecida" até a remoção ser confirmada
+    return { pautas: mudou ? novas : null, escrever, apagar: [...new Set(apagar)], reapareceu, removidas, ausentes: ausentes.filter((id) => novas[id]), conhecidas: [...conhecidasFim] };
   }
 
   const LEIA_ME = `# Pautas do Talktrail

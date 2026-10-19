@@ -409,11 +409,16 @@ async function armazemDePautas() {
   }
   const alvo = await MB_PASTA.ler().catch(() => null);
   if (alvo && (await MB_PASTA.permissao(alvo, false).catch(() => false))) {
+    const arquivosDaPasta = await MB_PASTA.listarPautas(alvo);
     return {
       tipo: 'pasta',
-      arquivos: await MB_PASTA.listarPautas(alvo),
+      arquivos: arquivosDaPasta,
       gravar: (nome, conteudo) => MB_PASTA.escrever(alvo, `Pautas/${nome}`, conteudo),
-      apagar: (nome) => MB_PASTA.apagar(alvo, `Pautas/${nome}`),
+      apagar: async (nome) => { // nunca apaga de vez: o arquivo vai pra Pautas/_apagadas
+        const velho = arquivosDaPasta.find((a) => a.nome === nome);
+        if (velho) await MB_PASTA.escrever(alvo, `Pautas/_apagadas/${Date.now()}_${nome}`, velho.conteudo);
+        await MB_PASTA.apagar(alvo, `Pautas/${nome}`);
+      },
     };
   }
   return null;
@@ -427,14 +432,15 @@ async function sincronizarPautas() {
     try {
       const arm = await armazemDePautas();
       if (!arm) { await chrome.storage.local.set({ pautasSync: { modo: '', em: Date.now() } }); return; }
-      const v = await chrome.storage.local.get(['pautas', 'pautasApagadas', 'pautasConhecidas', 'pautasSync']);
+      const v = await chrome.storage.local.get(['pautas', 'pautasApagadas', 'pautasConhecidas', 'pautasSync', 'pautasAusentes', 'pautasLixeira']);
       const original = v.pautas || {};
-      const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0 });
+      const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0, confiavel: arm.arquivos.some((a) => a.nome === 'LEIA-ME.md'), ausentesAntes: v.pautasAusentes || [] });
       for (const e of r.escrever) await arm.gravar(e.nome, e.conteudo);
       for (const nome of r.apagar) await arm.apagar(nome);
       const leia = arm.arquivos.find((a) => a.nome === 'LEIA-ME.md');
       if (!leia || leia.conteudo !== MB_PAUTAS_ARQ.LEIA_ME) await arm.gravar('LEIA-ME.md', MB_PAUTAS_ARQ.LEIA_ME); // mantém a explicação em dia
-      const grava = { pautasSync: { modo: arm.tipo, em: Date.now() }, pautasConhecidas: r.conhecidas };
+      if (!leia) sincPendente = true; // pasta nova (ou listagem duvidosa): com o LEIA-ME no lugar, a próxima conversa já é confiável
+      const grava = { pautasSync: { modo: arm.tipo, em: Date.now() }, pautasConhecidas: r.conhecidas, pautasAusentes: r.ausentes };
       if (r.pautas) {
         // aplica só o que veio dos arquivos em cima do que está agora (a pessoa pode ter editado durante a conversa com a pasta)
         const agora = (await chrome.storage.local.get('pautas')).pautas || {};
@@ -442,7 +448,14 @@ async function sincronizarPautas() {
         for (const id of Object.keys(r.pautas)) {
           if (r.pautas[id] !== original[id] && (!agora[id] || JSON.stringify(agora[id]) === JSON.stringify(original[id]) || (agora[id].atualizada || 0) <= ((original[id] || {}).atualizada || 0))) juntas[id] = r.pautas[id];
         }
-        for (const id of r.removidas) if (JSON.stringify(agora[id]) === JSON.stringify(original[id])) delete juntas[id]; // só se ninguém mexeu nela enquanto isso
+        const lixeira = [...(v.pautasLixeira || [])];
+        for (const id of r.removidas) {
+          if (JSON.stringify(agora[id]) !== JSON.stringify(original[id])) continue; // só se ninguém mexeu nela enquanto isso
+          lixeira.push({ id, em: Date.now(), pauta: agora[id] }); // rede de segurança: a pauta removida pelo sincronizador fica guardada
+          removidosPelaSync.add(id);
+          delete juntas[id];
+        }
+        if (r.removidas.length) grava.pautasLixeira = lixeira.slice(-60);
         grava.pautas = juntas;
       }
       if (r.reapareceu.length) {
@@ -461,12 +474,14 @@ async function sincronizarPautas() {
   return sincronizando;
 }
 let tSincPautas = null;
+const removidosPelaSync = new Set(); // remoções feitas pelo próprio sincronizador não viram "pauta apagada pela pessoa"
 chrome.storage.onChanged.addListener((c) => {
   if (!c.pautas) return;
   // pauta apagada no navegador: anota, pro arquivo dela sair em vez de a pauta voltar
   const antes = c.pautas.oldValue || {};
   const depois = c.pautas.newValue || {};
-  const sumiram = Object.keys(antes).filter((id) => !(id in depois));
+  const sumiram = Object.keys(antes).filter((id) => !(id in depois) && !removidosPelaSync.has(id));
+  setTimeout(() => removidosPelaSync.clear(), 5000);
   if (sumiram.length) {
     chrome.storage.local.get('pautasApagadas').then(({ pautasApagadas }) => {
       const ap = { ...(pautasApagadas || {}) };
