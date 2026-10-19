@@ -392,6 +392,9 @@ class Seguranca(unittest.TestCase):
         self.assertEqual(st, 400)
         st, r = post({}, path="/pautas/listar", headers=h)
         self.assertEqual([a["nome"] for a in r["arquivos"]], ["2026-10-20_daily.md"])
+        # uma cópia por dia fica em Pautas/_copias/AAAA-MM-DD
+        copias = os.path.join(TMP, "Pautas", "_copias", time.strftime("%Y-%m-%d"))
+        self.assertTrue(os.path.isfile(os.path.join(copias, "2026-10-20_daily.md")), os.listdir(os.path.join(TMP, "Pautas")))
         # apagar nunca apaga de vez: o arquivo vai pra Pautas/_apagadas
         st, _ = post({"nome": "2026-10-20_daily.md"}, path="/pautas/apagar", headers=h)
         self.assertEqual(st, 200)

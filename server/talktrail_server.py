@@ -483,6 +483,34 @@ def nome_pauta_ok(nome):
     return not re.search("[\x00-\x1f\x7f:*?\"<>|]", nome)
 
 
+def copia_diaria_pautas():
+    """Uma vez por dia, guarda uma cópia dos .md de Pautas/ em Pautas/_copias/AAAA-MM-DD (as 14 últimas ficam).
+    É a última rede de segurança: mesmo que alguma coisa apague arquivo, o dia anterior continua lá."""
+    try:
+        d = pasta_pautas()
+        hoje = time.strftime("%Y-%m-%d")
+        destino = os.path.join(d, "_copias", hoje)
+        if os.path.isdir(destino):
+            return
+        nomes = [n for n in os.listdir(d) if n.endswith(".md") and n != "LEIA-ME.md" and nome_pauta_ok(n) and os.path.isfile(os.path.join(d, n))]
+        if not nomes:
+            return
+        os.makedirs(destino, exist_ok=True)
+        for n in nomes:
+            with open(os.path.join(d, n), "rb") as f:
+                dados = f.read()
+            with open(os.path.join(destino, n), "wb") as f:
+                f.write(dados)
+        base = os.path.join(d, "_copias")
+        for velha in sorted(x for x in os.listdir(base) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", x))[:-14]:
+            pasta_velha = os.path.join(base, velha)
+            for arq in os.listdir(pasta_velha):
+                os.remove(os.path.join(pasta_velha, arq))
+            os.rmdir(pasta_velha)
+    except OSError:
+        pass
+
+
 def listar_pautas():
     """Lista os .md de Pautas/. Devolve None se a pasta de reuniões não está acessível (disco que não montou, Drive fora):
     uma listagem ruim NUNCA pode parecer "não tem pauta nenhuma", senão o sincronizador entende que tudo foi apagado."""
@@ -492,6 +520,7 @@ def listar_pautas():
         return None
     try:
         nomes = sorted(n for n in os.listdir(d) if n.endswith(".md") and nome_pauta_ok(n))
+        copia_diaria_pautas()
     except FileNotFoundError:
         return saida  # a pasta de reuniões existe e ainda não tem Pautas/: vazio de verdade
     except OSError:
