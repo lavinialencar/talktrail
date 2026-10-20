@@ -225,10 +225,16 @@ select.caixa { appearance: auto; }
 textarea.caixa { resize: vertical; font-weight: 400; }
 
 /* "Algo não funcionou?": mesma cor de acento das ações, bem suave, pra se destacar sem alarmar */
-.ajajuda { background: color-mix(in srgb, var(--acento) 9%, var(--card)); border-color: color-mix(in srgb, var(--acento) 38%, var(--linha)); }
-.ajajuda h3 { color: var(--acento); }
-.ajajuda .sec { border-color: color-mix(in srgb, var(--acento) 45%, var(--linha2)); }
-.ajajuda .sec:hover { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, var(--card)); }
+.ajajuda { background: color-mix(in srgb, var(--rec) 8%, var(--card)); border-color: color-mix(in srgb, var(--rec) 40%, var(--linha)); }
+.ajajuda h3 { color: var(--rec); }
+.ajajuda .sec { border-color: color-mix(in srgb, var(--rec) 45%, var(--linha2)); }
+.ajajuda .sec:hover { border-color: var(--rec); background: color-mix(in srgb, var(--rec) 12%, var(--card)); }
+.ajajuda .email-suporte { color: var(--rec); }
+/* "Gostou do Talktrail?": o verde-água de destaque, no lugar que o "Algo não funcionou?" ocupava */
+#ajApoio { background: color-mix(in srgb, var(--acento) 9%, var(--card)); border-color: color-mix(in srgb, var(--acento) 38%, var(--linha)); }
+#ajApoio h3 { color: var(--acento); }
+#ajApoio .sec { border-color: color-mix(in srgb, var(--acento) 45%, var(--linha2)); }
+#ajApoio .sec:hover { border-color: var(--acento); background: color-mix(in srgb, var(--acento) 12%, var(--card)); }
 
 /* aviso neutro (informação, não erro) */
 .aviso.neutro { background: var(--campo); color: var(--texto); border: 1px solid var(--controle); box-shadow: none; }
