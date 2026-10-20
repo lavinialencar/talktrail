@@ -58,9 +58,9 @@ async function lerPastaNavegador() {
   }
   pintarPasta();
 }
-// Onde baixar o complemento quando o instalador não vem dentro da extensão (pacote da loja).
-// Preencher com a página de releases do GitHub quando o repositório existir.
-const URL_COMPLEMENTO = '';
+// Onde baixar o complemento quando o instalador não vem dentro da extensão (pacote da loja): um zip por sistema,
+// anexado a cada Release do GitHub pelo fluxo de publicação (tools/empacotar_complemento.py). "latest" sempre aponta pra mais nova.
+const URL_COMPLEMENTO = 'https://github.com/lavinialencar/talktrail/releases/latest/download/Talktrail-complemento-';
 // O instalador só vem embutido no build de desenvolvimento (version_name com "dev"); o pacote da loja usa o link.
 const instaladorEmbutido = /dev/.test(chrome.runtime.getManifest().version_name || '');
 const instalavel = instaladorEmbutido || !!URL_COMPLEMENTO;
@@ -132,38 +132,45 @@ let timerDiag = null;
 // seletor de pasta do próprio sistema (o servidor abre a janela); ninguém precisa digitar caminho
 // Baixa um zip com o instalador do complemento (a pasta ao vivo em Documentos/Talktrail) já pronto pro sistema da pessoa.
 async function baixarComplemento() {
-  if (!instaladorEmbutido) {
-    if (URL_COMPLEMENTO) chrome.tabs.create({ url: URL_COMPLEMENTO });
-    return;
-  }
   const sistema = `${navigator.platform || ''} ${navigator.userAgent || ''}`;
   const so = /Win/i.test(sistema) ? 'windows' : /Mac/i.test(sistema) ? 'mac' : 'linux';
-  const instalador = {
-    mac: { de: 'instalar-mac.command', nome: 'Instalar Talktrail.command', modo: 0o755 },
-    windows: { de: 'instalar-windows.bat', nome: 'Instalar Talktrail.bat', modo: 0o644 },
-    linux: { de: 'instalar-linux.sh', nome: 'instalar-talktrail.sh', modo: 0o755 },
+  const arquivo = instaladorEmbutido ? 'Talktrail-complemento.zip' : `Talktrail-complemento-${so}.zip`;
+  const passos = {
+    mac: `Baixei o arquivo ${arquivo}. 1) Em Downloads, dê dois cliques nele. 2) Abra "Instalar Talktrail" (na primeira vez: botão direito, Abrir). 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.`,
+    windows: `Baixei o arquivo ${arquivo}. 1) Em Downloads, botão direito nele, Extrair tudo. 2) Abra "Instalar Talktrail" (se o Windows avisar: Mais informações, Executar assim mesmo). 3) Espere terminar: o Talktrail passa a salvar em Documentos\\Talktrail.`,
+    linux: `Baixei o arquivo ${arquivo}. 1) Extraia. 2) Abra um terminal na pasta e rode: bash instalar-talktrail.sh. 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.`,
   }[so];
-  const ler = async (arq) => new Uint8Array(await (await fetch(chrome.runtime.getURL('complemento/' + arq))).arrayBuffer());
-  try {
-    let bytes = await ler(instalador.de);
-    if (so === 'windows') bytes = new TextEncoder().encode(new TextDecoder().decode(bytes).replace(/\r?\n/g, '\r\n')); // o .bat quer CRLF
-    const zip = MB_ZIP.criar([
-      { nome: instalador.nome, bytes, modo: instalador.modo },
-      { nome: 'talktrail_server.py', bytes: await ler('talktrail_server.py'), modo: 0o644 },
-      { nome: 'LEIA-ME.txt', bytes: await ler('LEIA-ME.txt'), modo: 0o644 },
-    ]);
+  const baixar = (href, nome) => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
-    a.download = 'Talktrail-complemento.zip';
+    a.href = href;
+    if (nome) a.download = nome;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 15000);
-    const passos = {
-      mac: 'Baixei o arquivo Talktrail-complemento.zip. 1) Em Downloads, dê dois cliques nele. 2) Abra "Instalar Talktrail" (na primeira vez: botão direito, Abrir). 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.',
-      windows: 'Baixei o arquivo Talktrail-complemento.zip. 1) Em Downloads, botão direito nele, Extrair tudo. 2) Abra "Instalar Talktrail" (se o Windows avisar: Mais informações, Executar assim mesmo). 3) Espere terminar: o Talktrail passa a salvar em Documentos\\Talktrail.',
-      linux: 'Baixei o arquivo Talktrail-complemento.zip. 1) Extraia. 2) Abra um terminal na pasta e rode: bash instalar-talktrail.sh. 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.',
-    }[so];
+  };
+  try {
+    if (!instaladorEmbutido) {
+      // pacote da loja: o instalador mora na Release do GitHub (responde como anexo, então só baixa e a aba some).
+      // Aba em segundo plano, não o próprio painel: se o arquivo faltar, o painel não vira uma página de erro.
+      await chrome.tabs.create({ url: URL_COMPLEMENTO + so + '.zip', active: false });
+    } else {
+      const instalador = {
+        mac: { de: 'instalar-mac.command', nome: 'Instalar Talktrail.command', modo: 0o755 },
+        windows: { de: 'instalar-windows.bat', nome: 'Instalar Talktrail.bat', modo: 0o644 },
+        linux: { de: 'instalar-linux.sh', nome: 'instalar-talktrail.sh', modo: 0o755 },
+      }[so];
+      const ler = async (arq) => new Uint8Array(await (await fetch(chrome.runtime.getURL('complemento/' + arq))).arrayBuffer());
+      let bytes = await ler(instalador.de);
+      if (so === 'windows') bytes = new TextEncoder().encode(new TextDecoder().decode(bytes).replace(/\r?\n/g, '\r\n')); // o .bat quer CRLF
+      const zip = MB_ZIP.criar([
+        { nome: instalador.nome, bytes, modo: instalador.modo },
+        { nome: 'talktrail_server.py', bytes: await ler('talktrail_server.py'), modo: 0o644 },
+        { nome: 'LEIA-ME.txt', bytes: await ler('LEIA-ME.txt'), modo: 0o644 },
+      ]);
+      const href = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+      baixar(href, arquivo);
+      setTimeout(() => URL.revokeObjectURL(href), 15000);
+    }
     $('ajInstalarDica').textContent = passos;
     $('ajInstalarDica').hidden = false;
   } catch (e) {

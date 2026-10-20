@@ -3,6 +3,8 @@
 #   2. git tag v1.21.7 && git push origin v1.21.7
 # O fluxo roda os testes, confere que a tag bate com o manifest, monta o pacote, anexa o zip numa Release do GitHub
 # e envia pra loja já pedindo a revisão. A revisão da Google continua acontecendo a cada versão.
+# A Release também leva os três zips do complemento (servidor local): o botão "Instalar o complemento" do painel baixa
+# pelo endereço fixo releases/latest/download/Talktrail-complemento-<sistema>.zip.
 # Sem as credenciais da loja (segredos do repositório), ele só monta e anexa o zip, e não envia nada.
 # Passo a passo das credenciais: store/AUTOMACAO.md
 name: Publicar na Chrome Web Store
@@ -56,20 +58,25 @@ jobs:
       - name: Montar o pacote
         run: python3 tools/empacotar.py
 
+      - name: Montar o complemento (servidor local, um zip por sistema)
+        run: python3 tools/empacotar_complemento.py
+
       - name: Guardar o zip
         uses: actions/upload-artifact@v4
         with:
           name: talktrail-${{ steps.versao.outputs.versao }}
-          path: dist/talktrail-${{ steps.versao.outputs.versao }}.zip
+          path: |
+            dist/talktrail-${{ steps.versao.outputs.versao }}.zip
+            dist/Talktrail-complemento-*.zip
 
       - name: Release no GitHub com o zip
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" \
+          gh release create "${GITHUB_REF_NAME}" "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" dist/Talktrail-complemento-*.zip \
             --title "Talktrail ${{ steps.versao.outputs.versao }}" \
-            --notes "Pacote da Chrome Web Store. Instale pela loja: https://chromewebstore.google.com/detail/talktrail/${EXTENSION_ID}" \
+            --notes "Pacote da Chrome Web Store. Instale pela loja: https://chromewebstore.google.com/detail/talktrail/${EXTENSION_ID}. Os arquivos Talktrail-complemento-*.zip são o instalador do servidor local (opcional), baixado pelo botão do painel." \
             || echo "Release já existe, seguindo."
 
       - name: Enviar pra Chrome Web Store
