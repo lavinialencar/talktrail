@@ -36,6 +36,7 @@ const casos = [
   { ...base, titulo: 'a‮b​c d\u0000e', transcript: [{ t: 1, speaker: 'x‮', text: 'f\u0000g h' }] },
   { ...base, transcript: [{ t: 1, speaker: 'Ana', text: 'é café reunião' }], titulo: 'Reunião de ação' },
 ];
+casos.push(...casos.map((c) => ({ ...c, idioma: 'en' }))); // o mesmo arquivo em inglês: os dois lados também têm que dar texto idêntico
 
 function js() {
   return casos.map((c) => {

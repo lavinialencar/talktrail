@@ -131,13 +131,13 @@ def sem_acento(s):
     return "".join(c for c in d if unicodedata.category(c) != "Mn").casefold()
 
 
-def slug(s, max_bytes=100):
+def slug(s, max_bytes=100, vazio="reuniao"):
     """Nome de arquivo a partir do título: letras e números de qualquer alfabeto, nunca passa de max_bytes."""
     s = sem_acento(linha_unica(s, 200))
     s = re.sub(r"[\W_]+", "-", s).strip("-")
     while len(s.encode("utf-8")) > max_bytes:  # corta por bytes sem partir um caractere
         s = s[:-1]
-    return s.strip("-") or "reuniao"
+    return s.strip("-") or vazio
 
 
 def quebrar(conteudo, limite=300):
@@ -213,7 +213,33 @@ def tags_limpas(brutas):
     return saida[:20]
 
 
+# Textos do arquivo por idioma (o payload traz "idioma"; sem ele, português). A extensão (md.js) tem a mesma tabela (LANG).
+LANG = {
+    "pt": dict(
+        tipo="tipo", reuniao="reuniao", sessao="sessao", titulo="titulo", projeto="projeto", tags="tags", data="data", inicio="inicio", duracao="duracao_min",
+        fonte="fonte", legendas="legendas-do-meet", participantes="participantes", url="url", status="status", cru="cru",
+        sem_titulo="Reunião sem título", corte="\n\n_(texto cortado: passou de 500 mil caracteres)_",
+        resumo="Resumo", resumo_vazio="_(resumo, a preencher depois da reunião)_", pauta="Pauta", notas="Notas", sem_notas="_(sem notas)_",
+        momentos="Momentos marcados", nenhum="_(nenhum)_", sem_fala="(sem fala neste momento)", chat="Chat da reunião", chat_quem="Chat",
+        estrutura="estrutura do chat (sem texto)", transcricao="Transcrição", vazia="_(vazia)_", slug="reuniao",
+    ),
+    "en": dict(
+        tipo="type", reuniao="meeting", sessao="session", titulo="title", projeto="project", tags="tags", data="date", inicio="start", duracao="duration_min",
+        fonte="source", legendas="meet-captions", participantes="participants", url="url", status="status", cru="raw",
+        sem_titulo="Untitled meeting", corte="\n\n_(text cut: it went over 500 thousand characters)_",
+        resumo="Summary", resumo_vazio="_(summary, to fill in after the meeting)_", pauta="Agenda", notas="Notes", sem_notas="_(no notes)_",
+        momentos="Marked moments", nenhum="_(none)_", sem_fala="(no speech at this moment)", chat="Meeting chat", chat_quem="Chat",
+        estrutura="chat structure (no text)", transcricao="Transcript", vazia="_(empty)_", slug="meeting",
+    ),
+}
+
+
+def idioma_de(p):
+    return "en" if isinstance(p, dict) and p.get("idioma") == "en" else "pt"
+
+
 def render(p):
+    L = LANG[idioma_de(p)]
     ini = parse_iso(p["startedAt"]).astimezone()
     dur = ""
     try:
@@ -229,84 +255,85 @@ def render(p):
         nome = re.sub(r"[*_`\[\]<>]", "", linha_unica(l.get("speaker"), 80)) or "?"
         linhas.append({"t": numero(l.get("t")), "speaker": nome, "text": texto(l.get("text"), MAX_FALA)})
     nomes = sorted({l["speaker"] for l in linhas if l["speaker"] not in ("?", "Talktrail")})[:50]
-    titulo = linha_unica(p.get("titulo"), 200) or "Reunião sem título"
+    titulo = linha_unica(p.get("titulo"), 200) or L["sem_titulo"]
     tags = tags_limpas(p.get("tags"))
     projeto = linha_unica(p.get("projeto"), 60) or (tags[0] if tags else "")
     q = lambda v: json.dumps(v, ensure_ascii=False)
     sessao = re.sub(r"[^A-Za-z0-9_.:-]", "", texto(p.get("id"), 80))
     notas, pauta = texto(p.get("notes"), MAX_TEXTO + 1), texto(p.get("cola"), MAX_TEXTO + 1)
-    corte = "\n\n_(texto cortado: passou de 500 mil caracteres)_"
+    corte = L["corte"]
     notas = notas[:MAX_TEXTO] + corte if len(notas) > MAX_TEXTO else notas
     pauta = pauta[:MAX_TEXTO] + corte if len(pauta) > MAX_TEXTO else pauta
     fm = [
         "---",
-        "tipo: reuniao",
-        f"sessao: {q(sessao)}",
-        f"titulo: {q(titulo)}",
-        f"projeto: {q(projeto)}",
-        f"tags: {q(tags)}",
-        f"data: {ini:%Y-%m-%d}",
-        f"inicio: {ini:%H:%M}",
-        f"duracao_min: {dur}",
-        "fonte: legendas-do-meet",
-        f"participantes: {q(nomes)}",
-        f"url: {q(linha_unica(p.get('url'), 300))}",
-        "status: cru",
+        f'{L["tipo"]}: {L["reuniao"]}',
+        f'{L["sessao"]}: {q(sessao)}',
+        f'{L["titulo"]}: {q(titulo)}',
+        f'{L["projeto"]}: {q(projeto)}',
+        f'{L["tags"]}: {q(tags)}',
+        f'{L["data"]}: {ini:%Y-%m-%d}',
+        f'{L["inicio"]}: {ini:%H:%M}',
+        f'{L["duracao"]}: {dur}',
+        f'{L["fonte"]}: {L["legendas"]}',
+        f'{L["participantes"]}: {q(nomes)}',
+        f'{L["url"]}: {q(linha_unica(p.get("url"), 300))}',
+        f'{L["status"]}: {L["cru"]}',
         'notion: ""',
         "---",
         "",
         f"# {titulo}",
         "",
-        "## Resumo",
+        f'## {L["resumo"]}',
         "",
-        "_(resumo, a preencher depois da reunião)_",
+        L["resumo_vazio"],
         "",
-        "## Pauta",
+        f'## {L["pauta"]}',
         "",
-        como_lista(pauta) or "_(vazia)_",
+        como_lista(pauta) or L["vazia"],
         "",
-        "## Notas",
+        f'## {L["notas"]}',
         "",
-        como_lista(notas) or "_(sem notas)_",
+        como_lista(notas) or L["sem_notas"],
         "",
-        "## Momentos marcados",
+        f'## {L["momentos"]}',
         "",
     ]
     marcas = p.get("marcas")
     marcas = [m for m in (marcas if isinstance(marcas, list) else [])[:500] if isinstance(m, dict)]
-    fm += [f"- [{mmss(m.get('t'))}] {escapar_estrutura(linha_unica(m.get('texto'), 400)) or '(sem fala neste momento)'}" for m in marcas] or ["_(nenhum)_"]
+    fm += [f"- [{mmss(m.get('t'))}] {escapar_estrutura(linha_unica(m.get('texto'), 400)) or L['sem_fala']}" for m in marcas] or [L["nenhum"]]
     chat_bruto = p.get("chat")
     chat = []
     for m in (chat_bruto if isinstance(chat_bruto, list) else [])[:2000]:
         if isinstance(m, dict) and linha_unica(m.get("text"), 2000):
-            quem = re.sub(r"[*_`\[\]<>]", "", linha_unica(m.get("speaker"), 80)) or "Chat"
+            quem = re.sub(r"[*_`\[\]<>]", "", linha_unica(m.get("speaker"), 80)) or L["chat_quem"]
             chat.append(f"- [{mmss(m.get('t'))}] {quem}: {escapar_estrutura(linha_unica(m.get('text'), 2000))}")
     if chat:
-        fm += ["", "## Chat da reunião", ""] + chat
+        fm += ["", f'## {L["chat"]}', ""] + chat
         estrutura = linha_unica(p.get("chatEstrutura"), 1400).replace("-->", "").replace("--", "-")
         if estrutura:
-            fm += ["", f"<!-- estrutura do chat (sem texto): {estrutura} -->"]
-    fm += ["", "## Transcrição", ""]
+            fm += ["", f'<!-- {L["estrutura"]}: {estrutura} -->']
+    fm += ["", f'## {L["transcricao"]}', ""]
     for l in linhas:
         partes = quebrar(l["text"])
         fm.append(f"**[{mmss(l['t'])}] {l['speaker']}:** {partes[0]}")
         fm += [escapar_estrutura(x) for x in partes[1:]]
         fm.append("")
     if not linhas:
-        fm.append("_(vazia)_")
+        fm.append(L["vazia"])
     return ini, "\n".join(fm) + "\n"
 
 
 def achar_da_sessao(sessao):
     """Depois de um reinício do servidor, reencontra o arquivo da reunião em andamento pelo cabeçalho."""
-    marca = f'sessao: "{sessao}"'.encode("utf-8")
+    marcas = [f'{LANG[i]["sessao"]}: "{sessao}"'.encode("utf-8") for i in LANG]
     try:
         pastas = [OUT] + [os.path.join(OUT, d) for d in os.listdir(OUT) if re.fullmatch(r"\d{4}-\d{2}", d)]
         for pasta in pastas:
             for f in os.listdir(pasta):
                 if f.endswith(".md"):
                     with open(os.path.join(pasta, f), "rb") as fh:
-                        if marca in fh.read(700):
+                        cab = fh.read(700)
+                        if any(m in cab for m in marcas):
                             return os.path.join(pasta, f)
     except OSError:
         pass
@@ -344,13 +371,15 @@ def arquivo_sem_conteudo(caminho):
     except OSError:
         return False
 
+    L = LANG["en"] if re.search(r"^type: meeting$", t[:400], re.M) else LANG["pt"]  # o arquivo diz em que idioma foi escrito
+
     def secao(nome):
         m = re.search(r"^## " + re.escape(nome) + r"\n\n(.*?)(?=^## |\Z)", t, re.S | re.M)
         return m.group(1).strip() if m else None
-    chat = secao("Chat da reunião")
+    chat = secao(L["chat"])
     chat_so_aviso = chat is None or all(l.lower().lstrip("- []0123456789:").strip().startswith(tuple("chat: " + a for a in AVISOS_CHAT)) or l.startswith("<!--") or not l.strip() for l in chat.split("\n"))
-    return (secao("Transcrição") == "_(vazia)_" and secao("Notas") == "_(sem notas)_" and secao("Pauta") == "_(vazia)_"
-            and secao("Momentos marcados") == "_(nenhum)_" and chat_so_aviso)
+    return (secao(L["transcricao"]) == L["vazia"] and secao(L["notas"]) == L["sem_notas"] and secao(L["pauta"]) == L["vazia"]
+            and secao(L["momentos"]) == L["nenhum"] and chat_so_aviso)
 
 
 def salvar(p):
@@ -364,7 +393,8 @@ def salvar(p):
                 os.remove(atual)
                 caminhos.pop(sessao, None)
         return None
-    nome = f"{ini:%Y-%m-%d}_{ini:%Hh%M}_{slug(p.get('titulo') or 'reuniao')}.md"
+    padrao = LANG[idioma_de(p)]["slug"]
+    nome = f"{ini:%Y-%m-%d}_{ini:%Hh%M}_{slug(p.get('titulo') or padrao, 100, padrao)}.md"
     with TRAVA:
         pasta = os.path.join(OUT, f"{ini:%Y-%m}") if ORGANIZAR == "mes" else OUT
         os.makedirs(pasta, exist_ok=True)
@@ -467,8 +497,20 @@ MAX_PAUTA = 200_000
 MAX_PAUTAS = 500
 
 
-def pasta_pautas(criar=False):
-    d = os.path.join(OUT, "Pautas")
+PASTAS_PAUTAS = ("Pautas", "Agendas")  # a mesma pasta, em português ou em inglês; os arquivos de explicação: LEIA-ME.md ou README.md
+EXPLICACOES = ("LEIA-ME.md", "README.md")
+
+
+def nome_pasta_pautas(idioma="pt"):
+    """Qual subpasta usar: a que já existe (Pautas antes de Agendas, pra ninguém perder o que já tem); senão, a do idioma de quem pede."""
+    for n in PASTAS_PAUTAS:
+        if os.path.isdir(os.path.join(OUT, n)):
+            return n
+    return "Agendas" if idioma == "en" else "Pautas"
+
+
+def pasta_pautas(criar=False, idioma="pt"):
+    d = os.path.join(OUT, nome_pasta_pautas(idioma))
     if criar:
         os.makedirs(d, exist_ok=True)
     return d
@@ -483,16 +525,16 @@ def nome_pauta_ok(nome):
     return not re.search("[\x00-\x1f\x7f:*?\"<>|]", nome)
 
 
-def copia_diaria_pautas():
+def copia_diaria_pautas(idioma="pt"):
     """Uma vez por dia, guarda uma cópia dos .md de Pautas/ em Pautas/_copias/AAAA-MM-DD (as 14 últimas ficam).
     É a última rede de segurança: mesmo que alguma coisa apague arquivo, o dia anterior continua lá."""
     try:
-        d = pasta_pautas()
+        d = pasta_pautas(idioma=idioma)
         hoje = time.strftime("%Y-%m-%d")
         destino = os.path.join(d, "_copias", hoje)
         if os.path.isdir(destino):
             return
-        nomes = [n for n in os.listdir(d) if n.endswith(".md") and n != "LEIA-ME.md" and nome_pauta_ok(n) and os.path.isfile(os.path.join(d, n))]
+        nomes = [n for n in os.listdir(d) if n.endswith(".md") and n not in EXPLICACOES and nome_pauta_ok(n) and os.path.isfile(os.path.join(d, n))]
         if not nomes:
             return
         os.makedirs(destino, exist_ok=True)
@@ -511,16 +553,16 @@ def copia_diaria_pautas():
         pass
 
 
-def listar_pautas():
+def listar_pautas(idioma="pt"):
     """Lista os .md de Pautas/. Devolve None se a pasta de reuniões não está acessível (disco que não montou, Drive fora):
     uma listagem ruim NUNCA pode parecer "não tem pauta nenhuma", senão o sincronizador entende que tudo foi apagado."""
-    d = pasta_pautas()
+    d = pasta_pautas(idioma=idioma)
     saida = []
     if not os.path.isdir(OUT):
         return None
     try:
         nomes = sorted(n for n in os.listdir(d) if n.endswith(".md") and nome_pauta_ok(n))
-        copia_diaria_pautas()
+        copia_diaria_pautas(idioma)
     except FileNotFoundError:
         return saida  # a pasta de reuniões existe e ainda não tem Pautas/: vazio de verdade
     except OSError:
@@ -829,25 +871,29 @@ class H(BaseHTTPRequestHandler):
         if caminho in ("/pautas/listar", "/pautas/gravar", "/pautas/apagar"):
             if not self._autorizado():
                 return self._json(403, {"ok": False, "erro": "extensão não pareada", "parear": True})
-            if caminho == "/pautas/listar":
-                with TRAVA:
-                    lista = listar_pautas()
-                if lista is None:
-                    return self._json(503, {"ok": False, "erro": "a pasta de reuniões não está acessível agora"})
-                return self._json(200, {"ok": True, "arquivos": lista})
             d, erro = self._corpo_json()
             if erro:
-                return self._json(*erro)
+                if caminho != "/pautas/listar":
+                    return self._json(*erro)
+                d = {}  # listar não precisa de corpo
+            idioma = "en" if isinstance(d, dict) and d.get("idioma") == "en" else "pt"
+            if caminho == "/pautas/listar":
+                with TRAVA:
+                    lista = listar_pautas(idioma)
+                    pasta_nome = nome_pasta_pautas(idioma)
+                if lista is None:
+                    return self._json(503, {"ok": False, "erro": "a pasta de reuniões não está acessível agora"})
+                return self._json(200, {"ok": True, "arquivos": lista, "pasta": pasta_nome})
             nome = d.get("nome")
             if not nome_pauta_ok(nome):
                 return self._json(400, {"ok": False, "erro": "nome de arquivo inválido"})
             if caminho == "/pautas/apagar":
                 with TRAVA:
                     try:
-                        alvo = os.path.join(pasta_pautas(), nome)
+                        alvo = os.path.join(pasta_pautas(idioma=idioma), nome)
                         if os.path.isfile(alvo) and not os.path.islink(alvo):
                             # nunca apaga de vez: vai pra Pautas/_apagadas (dá pra recuperar)
-                            lixo = os.path.join(pasta_pautas(True), "_apagadas")
+                            lixo = os.path.join(pasta_pautas(True, idioma), "_apagadas")
                             os.makedirs(lixo, exist_ok=True)
                             substituir(alvo, os.path.join(lixo, f"{int(time.time() * 1000)}_{nome}"))
                     except OSError:
@@ -859,7 +905,7 @@ class H(BaseHTTPRequestHandler):
             conteudo = texto(conteudo)
             with TRAVA:
                 try:
-                    pasta = pasta_pautas(True)
+                    pasta = pasta_pautas(True, idioma)
                     alvo = os.path.join(pasta, nome)
                     if os.path.islink(alvo):
                         return self._json(400, {"ok": False, "erro": "nome de arquivo inválido"})

@@ -50,10 +50,10 @@
   const bytes = (s) => new TextEncoder().encode(s).length;
 
   // Nome de arquivo: letras e números de qualquer alfabeto, nunca passa de maxBytes.
-  function slug(s, maxBytes = 100) {
+  function slug(s, maxBytes = 100, vazio = 'reuniao') {
     let r = semAcento(linhaUnica(s, 200)).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
     while (bytes(r) > maxBytes) r = cp(r).slice(0, -1).join('');
-    return r.replace(/^-+|-+$/g, '') || 'reuniao';
+    return r.replace(/^-+|-+$/g, '') || vazio;
   }
 
   // Frase longa em blocos de até ~limite letras, nas fronteiras de frase.
@@ -130,7 +130,29 @@
 
   const dois = (n) => String(n).padStart(2, '0');
 
+  // Textos do arquivo por idioma (o payload traz `idioma`; sem ele, português). O servidor Python tem a mesma tabela (LANG).
+  const LANG = {
+    pt: {
+      tipo: 'tipo', reuniao: 'reuniao', sessao: 'sessao', titulo: 'titulo', projeto: 'projeto', tags: 'tags', data: 'data', inicio: 'inicio', duracao: 'duracao_min',
+      fonte: 'fonte', legendas: 'legendas-do-meet', participantes: 'participantes', url: 'url', status: 'status', cru: 'cru',
+      semTitulo: 'Reunião sem título', corte: '\n\n_(texto cortado: passou de 500 mil caracteres)_',
+      resumo: 'Resumo', resumoVazio: '_(resumo, a preencher depois da reunião)_', pauta: 'Pauta', notas: 'Notas', semNotas: '_(sem notas)_',
+      momentos: 'Momentos marcados', nenhum: '_(nenhum)_', semFala: '(sem fala neste momento)', chat: 'Chat da reunião', chatQuem: 'Chat',
+      estrutura: 'estrutura do chat (sem texto)', transcricao: 'Transcrição', vazia: '_(vazia)_', slug: 'reuniao',
+    },
+    en: {
+      tipo: 'type', reuniao: 'meeting', sessao: 'session', titulo: 'title', projeto: 'project', tags: 'tags', data: 'date', inicio: 'start', duracao: 'duration_min',
+      fonte: 'source', legendas: 'meet-captions', participantes: 'participants', url: 'url', status: 'status', cru: 'raw',
+      semTitulo: 'Untitled meeting', corte: '\n\n_(text cut: it went over 500 thousand characters)_',
+      resumo: 'Summary', resumoVazio: '_(summary, to fill in after the meeting)_', pauta: 'Agenda', notas: 'Notes', semNotas: '_(no notes)_',
+      momentos: 'Marked moments', nenhum: '_(none)_', semFala: '(no speech at this moment)', chat: 'Meeting chat', chatQuem: 'Chat',
+      estrutura: 'chat structure (no text)', transcricao: 'Transcript', vazia: '_(empty)_', slug: 'meeting',
+    },
+  };
+  const idiomaDe = (p) => (p && p.idioma === 'en' ? 'en' : 'pt');
+
   function render(p) {
+    const L = LANG[idiomaDe(p)];
     const ini = parseIso(p.startedAt);
     let dur = '';
     try {
@@ -145,74 +167,74 @@
       linhas.push({ t: numero(l.t), speaker: nome, text: texto(l.text, MAX_FALA) });
     }
     const nomes = [...new Set(linhas.map((l) => l.speaker).filter((n) => n !== '?' && n !== 'Talktrail'))].sort(comparar).slice(0, 50);
-    const titulo = linhaUnica(p.titulo, 200) || 'Reunião sem título';
+    const titulo = linhaUnica(p.titulo, 200) || L.semTitulo;
     const tags = tagsLimpas(p.tags);
     const projeto = linhaUnica(p.projeto, 60) || tags[0] || '';
     const q = (v) => (Array.isArray(v) ? '[' + v.map((x) => JSON.stringify(x)).join(', ') + ']' : JSON.stringify(v)); // mesmo espaçamento do Python
     const sessao = texto(p.id, 80).replace(/[^A-Za-z0-9_.:-]/g, '');
-    const corte = '\n\n_(texto cortado: passou de 500 mil caracteres)_';
+    const corte = L.corte;
     let notas = texto(p.notes, MAX_TEXTO + 1);
     let pauta = texto(p.cola, MAX_TEXTO + 1);
     notas = cp(notas).length > MAX_TEXTO ? cortar(notas, MAX_TEXTO) + corte : notas;
     pauta = cp(pauta).length > MAX_TEXTO ? cortar(pauta, MAX_TEXTO) + corte : pauta;
     const fm = [
       '---',
-      'tipo: reuniao',
-      `sessao: ${q(sessao)}`,
-      `titulo: ${q(titulo)}`,
-      `projeto: ${q(projeto)}`,
-      `tags: ${q(tags)}`,
-      `data: ${ini.getFullYear()}-${dois(ini.getMonth() + 1)}-${dois(ini.getDate())}`,
-      `inicio: ${dois(ini.getHours())}:${dois(ini.getMinutes())}`,
-      `duracao_min: ${dur}`,
-      'fonte: legendas-do-meet',
-      `participantes: ${q(nomes)}`,
-      `url: ${q(linhaUnica(p.url, 300))}`,
-      'status: cru',
+      `${L.tipo}: ${L.reuniao}`,
+      `${L.sessao}: ${q(sessao)}`,
+      `${L.titulo}: ${q(titulo)}`,
+      `${L.projeto}: ${q(projeto)}`,
+      `${L.tags}: ${q(tags)}`,
+      `${L.data}: ${ini.getFullYear()}-${dois(ini.getMonth() + 1)}-${dois(ini.getDate())}`,
+      `${L.inicio}: ${dois(ini.getHours())}:${dois(ini.getMinutes())}`,
+      `${L.duracao}: ${dur}`,
+      `${L.fonte}: ${L.legendas}`,
+      `${L.participantes}: ${q(nomes)}`,
+      `${L.url}: ${q(linhaUnica(p.url, 300))}`,
+      `${L.status}: ${L.cru}`,
       'notion: ""',
       '---',
       '',
       `# ${titulo}`,
       '',
-      '## Resumo',
+      `## ${L.resumo}`,
       '',
-      '_(resumo, a preencher depois da reunião)_',
+      L.resumoVazio,
       '',
-      '## Pauta',
+      `## ${L.pauta}`,
       '',
-      comoLista(pauta) || '_(vazia)_',
+      comoLista(pauta) || L.vazia,
       '',
-      '## Notas',
+      `## ${L.notas}`,
       '',
-      comoLista(notas) || '_(sem notas)_',
+      comoLista(notas) || L.semNotas,
       '',
-      '## Momentos marcados',
+      `## ${L.momentos}`,
       '',
     ];
     const marcas = (Array.isArray(p.marcas) ? p.marcas : []).slice(0, 500).filter((m) => m && typeof m === 'object' && !Array.isArray(m));
     if (marcas.length) {
-      for (const m of marcas) fm.push(`- [${mmss(m.t)}] ${escaparEstrutura(linhaUnica(m.texto, 400)) || '(sem fala neste momento)'}`);
+      for (const m of marcas) fm.push(`- [${mmss(m.t)}] ${escaparEstrutura(linhaUnica(m.texto, 400)) || L.semFala}`);
     } else {
-      fm.push('_(nenhum)_');
+      fm.push(L.nenhum);
     }
     const chat = [];
     for (const m of (Array.isArray(p.chat) ? p.chat : []).slice(0, 2000)) {
       if (m && typeof m === 'object' && !Array.isArray(m) && linhaUnica(m.text, 2000)) {
-        const quem = linhaUnica(m.speaker, 80).replace(/[*_`\[\]<>]/g, '') || 'Chat';
+        const quem = linhaUnica(m.speaker, 80).replace(/[*_`\[\]<>]/g, '') || L.chatQuem;
         chat.push(`- [${mmss(m.t)}] ${quem}: ${escaparEstrutura(linhaUnica(m.text, 2000))}`);
       }
     }
-    if (chat.length) fm.push('', '## Chat da reunião', '', ...chat);
+    if (chat.length) fm.push('', `## ${L.chat}`, '', ...chat);
     const estrutura = linhaUnica(p.chatEstrutura, 1400).replace(/-->/g, '').replace(/--/g, '-');
-    if (chat.length && estrutura) fm.push('', `<!-- estrutura do chat (sem texto): ${estrutura} -->`);
-    fm.push('', '## Transcrição', '');
+    if (chat.length && estrutura) fm.push('', `<!-- ${L.estrutura}: ${estrutura} -->`);
+    fm.push('', `## ${L.transcricao}`, '');
     for (const l of linhas) {
       const partes = quebrar(l.text);
       fm.push(`**[${mmss(l.t)}] ${l.speaker}:** ${partes[0]}`);
       for (const x of partes.slice(1)) fm.push(escaparEstrutura(x));
       fm.push('');
     }
-    if (!linhas.length) fm.push('_(vazia)_');
+    if (!linhas.length) fm.push(L.vazia);
     return { ini, texto: fm.join('\n') + '\n' };
   }
 
@@ -222,7 +244,7 @@
   };
   const nomeArquivo = (p) => {
     const d = parseIso(p.startedAt);
-    return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}_${dois(d.getHours())}h${dois(d.getMinutes())}_${slug(p.titulo || 'reuniao')}.md`;
+    return `${d.getFullYear()}-${dois(d.getMonth() + 1)}-${dois(d.getDate())}_${dois(d.getHours())}h${dois(d.getMinutes())}_${slug(p.titulo || LANG[idiomaDe(p)].slug, 100, LANG[idiomaDe(p)].slug)}.md`;
   };
 
   // Reunião sem nada: nem fala, nem marcador, nem nota, nem pauta, nem chat de verdade (o aviso da extensão não conta).

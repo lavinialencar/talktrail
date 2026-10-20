@@ -618,6 +618,91 @@ class Vazias(unittest.TestCase):
         self.assertFalse(os.path.exists(destino))
 
 
+class Ingles(unittest.TestCase):
+    """O mesmo arquivo em inglês (payload com idioma=en): títulos e chaves em inglês, e tudo que reencontra o arquivo funciona nos dois idiomas."""
+
+    def test_reuniao_em_ingles(self):
+        r = novo(titulo="Weekly sync", idioma="en", tags=["Product"], transcript=[{"t": 1, "speaker": "Ana", "text": "Hello everyone."}])
+        st, resp = post(r)
+        self.assertEqual(st, 200, resp)
+        nome = [f for f in arquivos() if "weekly-sync" in f][0]
+        texto = ler(nome)
+        self.assertIn("type: meeting\n", texto)
+        self.assertIn('title: "Weekly sync"', texto)
+        self.assertIn("source: meet-captions", texto)
+        h2 = [l for l in texto.split("\n") if l.startswith("## ")]
+        self.assertEqual(h2, ["## Summary", "## Agenda", "## Notes", "## Marked moments", "## Transcript"])
+        self.assertNotIn("Transcrição", texto)
+
+    def test_sem_titulo_em_ingles(self):
+        st, _ = post(novo(titulo="", idioma="en", notes="a note"))
+        self.assertEqual(st, 200)
+        self.assertTrue([f for f in arquivos() if f.endswith("_meeting.md")], arquivos())
+
+    def test_servidor_reiniciado_acha_o_arquivo_em_ingles(self):
+        a = novo(titulo="Before restart", idioma="en", transcript=[{"t": 1, "speaker": "Ana", "text": "hi there everyone"}])
+        post(a)
+        m.caminhos.clear()
+        post(dict(a, titulo="After restart"))
+        fs = [f for f in arquivos() if "restart" in f.lower()]
+        self.assertEqual(len(fs), 1, fs)
+        self.assertIn("after-restart", fs[0])
+
+    def test_reuniao_em_ingles_que_acabou_vazia_apaga_o_comeco_vazio(self):
+        a = novo(titulo="Empty one", idioma="en")
+        post(dict(a, notes="x"))  # cria
+        antes = [f for f in arquivos() if "empty-one" in f]
+        self.assertEqual(len(antes), 1)
+        # o arquivo só passa a ser "sem conteúdo" se o texto de verdade sumir: o servidor confere o próprio arquivo, nos dois idiomas
+        caminho = os.path.join(TMP, antes[0])
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write(m.render(dict(a))[1])
+        self.assertTrue(m.arquivo_sem_conteudo(caminho))
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write(m.render(dict(a, notes="algo"))[1])
+        self.assertFalse(m.arquivo_sem_conteudo(caminho))
+
+    def test_pasta_das_pautas_segue_a_que_existe_e_senao_o_idioma(self):
+        import shutil
+        original = m.OUT
+        h = {"X-Meet-Token": TOKEN}
+        try:
+            for idioma, existente, esperado in [("en", None, "Agendas"), ("pt", None, "Pautas"), ("en", "Pautas", "Pautas"), ("pt", "Agendas", "Agendas")]:
+                base = tempfile.mkdtemp(prefix="talktrail-pautas-")
+                m.OUT = base
+                if existente:
+                    os.makedirs(os.path.join(base, existente))
+                st, r = post({"idioma": idioma}, path="/pautas/listar", headers=h)
+                self.assertEqual((st, r.get("pasta")), (200, esperado), (idioma, existente, r))
+                st, r = post({"idioma": idioma, "nome": "2026-10-20_daily.md", "conteudo": "---\ntitle: Daily\ndate: 2026-10-20\n---\n1. a\n"}, path="/pautas/gravar", headers=h)
+                self.assertEqual(st, 200, r)
+                self.assertTrue(os.path.isfile(os.path.join(base, esperado, "2026-10-20_daily.md")), os.listdir(base))
+                # depois que a pasta existe, o idioma de quem pede não troca mais a pasta
+                outro = "pt" if idioma == "en" else "en"
+                st, r = post({"idioma": outro}, path="/pautas/listar", headers=h)
+                self.assertEqual(r.get("pasta"), esperado)
+                self.assertEqual([a["nome"] for a in r["arquivos"]], ["2026-10-20_daily.md"])
+                st, _ = post({"idioma": outro, "nome": "2026-10-20_daily.md"}, path="/pautas/apagar", headers=h)
+                self.assertEqual(st, 200)
+                self.assertTrue(os.listdir(os.path.join(base, esperado, "_apagadas")))
+                shutil.rmtree(base)
+        finally:
+            m.OUT = original
+
+    def test_arquivo_de_explicacao_em_ingles_nao_vai_pra_copia_diaria(self):
+        original = m.OUT
+        h = {"X-Meet-Token": TOKEN}
+        try:
+            m.OUT = tempfile.mkdtemp(prefix="talktrail-readme-")
+            post({"idioma": "en", "nome": "README.md", "conteudo": "# Talktrail agendas"}, path="/pautas/gravar", headers=h)
+            post({"idioma": "en", "nome": "2026-10-20_a.md", "conteudo": "---\ntitle: A\ndate: 2026-10-20\n---\nx"}, path="/pautas/gravar", headers=h)
+            post({"idioma": "en"}, path="/pautas/listar", headers=h)
+            copias = os.path.join(m.OUT, "Agendas", "_copias", time.strftime("%Y-%m-%d"))
+            self.assertEqual(sorted(os.listdir(copias)), ["2026-10-20_a.md"])
+        finally:
+            m.OUT = original
+
+
 class Portabilidade(unittest.TestCase):
     """Windows e Linux: o que dá pra conferir sem estar neles (comandos, arquivos de início e tentativas)."""
 

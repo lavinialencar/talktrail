@@ -47,6 +47,7 @@ function caminhoCurto(caminho) {
   const partes = String(caminho || '').split(/[\\/]+/).filter(Boolean);
   return partes.length > 3 ? '…/' + partes.slice(-2).join('/') : String(caminho || '');
 }
+let nomePautas = MB_IDIOMA.en ? 'Agendas' : 'Pautas'; // a subpasta das pautas: a real vem de pautasSync.pasta
 let pastaNavegador = null; // pasta escolhida pelo navegador (sem o servidor): { name }
 let pastaPendente = false; // o navegador precisa de um clique pra liberar a pasta de novo
 const rotuloDe = (id, texto) => ($(id).querySelector('span') || $(id)).replaceChildren(texto);
@@ -66,9 +67,10 @@ const instaladorEmbutido = /dev/.test(chrome.runtime.getManifest().version_name 
 const instalavel = instaladorEmbutido || !!URL_COMPLEMENTO;
 function pintarPasta() {
   const ao_vivo = servidorOk && !!pastaServidor;
-  $('ajPautasArq').textContent = ao_vivo || pastaNavegador
+  // o nome real da subpasta (Pautas/ ou Agendas/) vem da última conversa com a pasta; o texto traduzido fala em Pautas/
+  $('ajPautasArq').textContent = (ao_vivo || pastaNavegador
     ? trad('As pautas também ficam em arquivos, na subpasta Pautas/. Uma IA pode editar esses arquivos e a mudança aparece aqui em até 1 minuto, com o navegador aberto.')
-    : trad('Escolhendo uma pasta, as pautas também passam a ficar em arquivos (subpasta Pautas/) que uma IA pode editar.');
+    : trad('Escolhendo uma pasta, as pautas também passam a ficar em arquivos (subpasta Pautas/) que uma IA pode editar.')).replace('Pautas/', nomePautas + '/');
   // com o complemento: escolher a pasta ao vivo e copiar o caminho. Sem ele: escolher uma pasta pelo navegador
   $('ajAbrir').hidden = false;
   $('ajInstalar').hidden = ao_vivo || !instalavel; // com o complemento já rodando, ou sem instalador à mão, não mostra
@@ -108,6 +110,8 @@ function pintarAjustes() {
     cresce($('ajPalavras'));
   }
 }
+chrome.storage.local.get('pautasSync').then((v) => { if (v.pautasSync && v.pautasSync.pasta) { nomePautas = v.pautasSync.pasta; pintarPasta(); } });
+chrome.storage.onChanged.addListener((c) => { if (c.pautasSync && c.pautasSync.newValue && c.pautasSync.newValue.pasta && c.pautasSync.newValue.pasta !== nomePautas) { nomePautas = c.pautasSync.newValue.pasta; pintarPasta(); } });
 chrome.storage.local.get('ajustes').then((v) => {
   if (v.ajustes && typeof v.ajustes === 'object') AJ = { ...AJ, ...v.ajustes };
   if (AJ.avisoChat === true) AJ.avisoChat = 'sempre';

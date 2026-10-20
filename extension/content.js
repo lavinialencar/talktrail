@@ -634,6 +634,7 @@ function iniciar() {
       marcas: S.marcas,
       chat: S.chat,
       chatEstrutura: S.chatEstrutura || undefined,
+      idioma: MB_IDIOMA.en ? 'en' : 'pt', // o idioma do arquivo .md (títulos e chaves)
     };
     const r = await enviar({ type: 'save', payload });
     if (r && r.ok) {

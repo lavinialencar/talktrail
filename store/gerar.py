@@ -78,12 +78,14 @@ M = {"pt": dict(aurora="Revisão do projeto Aurora", tag1="Produto", eu="Eu", l1
         l2a="Testei na terça. Gostaram do fluxo,", l2b="mas pediram para simplificar a tela.", l3a="Dá para cortar dois campos sem", l3b="perder nada. Eu ajusto hoje.",
         fn="2026-10-13_14h02_revisao-aurora.md", tri="Planejamento do trimestre", m1="Metas do trimestre", m2="Prioridades por time", m3="Riscos e dependências",
         comb="Combinados", c1="Fechar o orçamento", c2="Definir responsáveis", fn4="15h00_planejamento", riscadas=("conta", "nuvem", "telemetria"),
-        b1="A chamada que você já usa.", b2="Lê as legendas e monta o texto na sua máquina.", b3t="Sua pasta", b3="Um arquivo .md por reunião.", fn5="2026-10-13_revisao-aurora.md"),
+        b1="A chamada que você já usa.", b2="Lê as legendas e monta o texto na sua máquina.", b3t="Sua pasta", b3="Um arquivo .md por reunião.", fn5="2026-10-13_revisao-aurora.md",
+        k_tipo="tipo", v_tipo="reuniao", k_titulo="titulo", k_data="data", k_dur="duracao_min", k_part="participantes", h_transc="Transcrição", k_hora="hora", dir="Pautas"),
      "en": dict(aurora="Aurora project review", tag1="Product", eu="Me", l1a="Let's start with the prototype. Has Ana", l1b="tested it with the client yet?",
-        l2a="I tested it on Tuesday. They liked the flow,", l2b="but asked us to simplify the screen.", l3a="We can cut two fields without", l3b="losing anything. I will adjust it today.",
+        l2a="I tested it Tuesday. They liked the", l2b="flow, but want the screen simpler.", l3a="We can cut two fields without", l3b="losing anything. I will adjust it today.",
         fn="2026-10-13_14h02_aurora-project-review.md", tri="Quarter planning", m1="Quarter goals", m2="Priorities by team", m3="Risks and dependencies",
         comb="Agreements", c1="Close the budget", c2="Assign owners", fn4="15h00_quarter-planning", riscadas=("account", "cloud", "telemetry"),
-        b1="The call you already use.", b2="Reads the captions and builds the text on your machine.", b3t="Your folder", b3="One .md file per meeting.", fn5="2026-10-13_aurora-review.md")}
+        b1="The call you already use.", b2="Reads the captions and builds the text on your machine.", b3t="Your folder", b3="One .md file per meeting.", fn5="2026-10-13_aurora-review.md",
+        k_tipo="type", v_tipo="meeting", k_titulo="title", k_data="date", k_dur="duration_min", k_part="participants", h_transc="Transcript", k_hora="time", dir="Agendas")}
 def capturas(lg):
     t = T[lg]; X = M[lg]
     sfx = "" if lg == "pt" else "-en"
@@ -105,11 +107,11 @@ def capturas(lg):
       <img class="painel" src="{P('texto')}" style="left:850px;top:60px;width:350px;height:665px;object-fit:cover">
       {texto(t['s1'], t['s1b'])}""")
     # 2 arquivo .md
-    md = f"""<div style="color:#8c8a7e">---</div><div><span style="color:{TEAL}">tipo:</span> reuniao</div><div><span style="color:{TEAL}">titulo:</span> "{X['aurora']}"</div>
-    <div><span style="color:{TEAL}">tags:</span> [{X['tag1']}, Aurora]</div><div><span style="color:{TEAL}">data:</span> 2026-10-13</div><div><span style="color:{TEAL}">duracao_min:</span> 38</div>
-    <div><span style="color:{TEAL}">participantes:</span> [{X['eu']}, Ana, Carlos]</div><div style="color:#8c8a7e">---</div><div style="height:12px"></div>
+    md = f"""<div style="color:#8c8a7e">---</div><div><span style="color:{TEAL}">{X['k_tipo']}:</span> {X['v_tipo']}</div><div><span style="color:{TEAL}">{X['k_titulo']}:</span> "{X['aurora']}"</div>
+    <div><span style="color:{TEAL}">tags:</span> [{X['tag1']}, Aurora]</div><div><span style="color:{TEAL}">{X['k_data']}:</span> 2026-10-13</div><div><span style="color:{TEAL}">{X['k_dur']}:</span> 38</div>
+    <div><span style="color:{TEAL}">{X['k_part']}:</span> [{X['eu']}, Ana, Carlos]</div><div style="color:#8c8a7e">---</div><div style="height:12px"></div>
     <div style="color:{MARF};font-weight:600"># {X['aurora']}</div><div style="height:10px"></div>
-    <div style="color:{MARF};font-weight:600">## Transcrição</div><div style="height:10px"></div>
+    <div style="color:{MARF};font-weight:600">## {X['h_transc']}</div><div style="height:10px"></div>
     <div><b style="color:{MARF}">[00:12] {X['eu']}:</b> {X['l1a']}</div><div style="padding-left:2ch">{X['l1b']}</div><div style="height:6px"></div>
     <div><b style="color:{MARF}">[00:31] Ana:</b> {X['l2a']}</div><div style="padding-left:2ch">{X['l2b']}</div><div style="height:6px"></div>
     <div><b style="color:{MARF}">[00:58] Carlos:</b> {X['l3a']}</div><div style="padding-left:2ch">{X['l3b']}</div>"""
@@ -133,8 +135,8 @@ def capturas(lg):
             d += datetime.timedelta(days=1)
             if d.weekday() < 5: k += 1
         return d.isoformat()
-    md4 = f"""<div style="color:#8c8a7e">---</div><div><span style="color:{TEAL}">titulo:</span> "{X['tri']}"</div>
-    <div><span style="color:{TEAL}">data:</span> {util(1)}</div><div><span style="color:{TEAL}">hora:</span> 15:00</div><div style="color:#8c8a7e">---</div><div style="height:8px"></div>
+    md4 = f"""<div style="color:#8c8a7e">---</div><div><span style="color:{TEAL}">{X['k_titulo']}:</span> "{X['tri']}"</div>
+    <div><span style="color:{TEAL}">{X['k_data']}:</span> {util(1)}</div><div><span style="color:{TEAL}">{X['k_hora']}:</span> 15:00</div><div style="color:#8c8a7e">---</div><div style="height:8px"></div>
     <div>1. {X['m1']}</div><div>2. {X['m2']}</div><div>3. {X['m3']}</div><div style="height:8px"></div>
     <div>{X['comb']}</div><div>- [ ] {X['c1']}</div><div>- [ ] {X['c2']}</div>"""
     pagina("captura-4-pautas" + sfx, 1280, 800, f"""
@@ -144,7 +146,7 @@ def capturas(lg):
         <p style="font-size:23px;line-height:1.4;color:#cfc9b6;margin-top:24px;max-width:400px;text-wrap:balance">{t['s3xb']}</p></div>
       <img class="painel" src="{P('pautas-pagina')}" style="left:540px;top:70px;width:690px;height:477px;object-fit:cover;object-position:top left;transform:rotate(1.2deg)">
       <div style="position:absolute;left:566px;top:468px;width:410px;background:{CARV};border-radius:14px;border:2px solid {CARV};box-shadow:10px 10px 0 {CARV};transform:rotate(-2deg);overflow:hidden">
-        <div style="background:{GRAF};padding:11px 16px;font:500 13px 'IBM Plex Mono';color:#cfc9b6;display:flex;gap:9px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:{TEAL}"></span>Pautas/{util(1)}_{X['fn4']}.md</div>
+        <div style="background:{GRAF};padding:11px 16px;font:500 13px 'IBM Plex Mono';color:#cfc9b6;display:flex;gap:9px;align-items:center"><span style="width:10px;height:10px;border-radius:50%;background:{TEAL}"></span>{X['dir']}/{util(1)}_{X['fn4']}.md</div>
         <div style="padding:16px 18px 18px;font:500 14px/1.5 'IBM Plex Mono',monospace;color:#cfc9b6;white-space:nowrap">{md4}</div></div>
     """)
     # 4 privacidade: fluxo

@@ -37,10 +37,17 @@
       if ((await handle.queryPermission(opcoes)) === 'granted') return true;
       return pedir && (await handle.requestPermission(opcoes)) === 'granted';
     },
-    // arquivos .md da subpasta Pautas (sem criar a pasta): nome, data de modificação e texto
-    async listarPautas(handle) {
+    // qual subpasta das pautas usar: a que já existe (Pautas antes de Agendas, pra ninguém perder o que tem); senão a do idioma
+    async nomeDasPautas(handle, idioma) {
+      for (const n of ['Pautas', 'Agendas']) {
+        try { await handle.getDirectoryHandle(n); return n; } catch (e) {}
+      }
+      return idioma === 'en' ? 'Agendas' : 'Pautas';
+    },
+    // arquivos .md da subpasta das pautas (sem criar a pasta): nome, data de modificação e texto
+    async listarPautas(handle, nomeDaPasta = 'Pautas') {
       let dir;
-      try { dir = await handle.getDirectoryHandle('Pautas'); } catch (e) { return []; }
+      try { dir = await handle.getDirectoryHandle(nomeDaPasta); } catch (e) { return []; }
       const saida = [];
       for await (const [nome, h] of dir.entries()) {
         if (h.kind !== 'file' || !nome.endsWith('.md')) continue;

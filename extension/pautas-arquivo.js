@@ -8,10 +8,13 @@
   const nomeDe = (p) => `${p.data}${/^\d{1,2}:\d{2}$/.test(p.hora || '') ? '_' + p.hora.replace(':', 'h').padStart(5, '0') : ''}_${slug(p.titulo)}.md`;
   const limpo = (t) => String(t || '').replace(/\r\n?/g, '\n').trim();
 
-  function serializar(p) {
-    const topo = ['---', `titulo: ${JSON.stringify(String(p.titulo || ''))}`, `data: ${p.data}`];
-    if (p.hora) topo.push(`hora: ${p.hora}`);
-    if (p.codigo) topo.push(`sala: ${p.codigo}`);
+  // chaves do cabeçalho por idioma (a leitura aceita as duas, em qualquer pasta)
+  const CHAVES = { pt: { titulo: 'titulo', data: 'data', hora: 'hora', sala: 'sala' }, en: { titulo: 'title', data: 'date', hora: 'time', sala: 'room' } };
+  function serializar(p, idioma = 'pt') {
+    const K = CHAVES[idioma === 'en' ? 'en' : 'pt'];
+    const topo = ['---', `${K.titulo}: ${JSON.stringify(String(p.titulo || ''))}`, `${K.data}: ${p.data}`];
+    if (p.hora) topo.push(`${K.hora}: ${p.hora}`);
+    if (p.codigo) topo.push(`${K.sala}: ${p.codigo}`);
     topo.push('---', '');
     return `${topo.join('\n')}\n${limpo(p.texto)}\n`;
   }
@@ -32,7 +35,7 @@
         if (k === 'titulo' || k === 'title') titulo = v;
         else if (k === 'data' || k === 'date') data = v;
         else if (k === 'hora' || k === 'time') hora = v;
-        else if (k === 'sala' || k === 'codigo' || k === 'meet' || k === 'link' || k === 'url') sala = (String(v).toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/) || [''])[0];
+        else if (k === 'sala' || k === 'room' || k === 'codigo' || k === 'meet' || k === 'link' || k === 'url') sala = (String(v).toLowerCase().match(/[a-z]{3}-[a-z]{4}-[a-z]{3}/) || [''])[0];
       }
     }
     const dn = String(nome || '').match(/^(\d{4}-\d{2}-\d{2})(?:_(\d{2})h(\d{2}))?_(.+)\.md$/);
@@ -53,9 +56,9 @@
   //  pautas: {id: {titulo,data,hora,texto,criada,atualizada}}   arquivos: [{nome, mtime, conteudo}]
   //  apagadas: {id: quando}   hoje: 'AAAA-MM-DD' (só as de uma semana pra cá vão pra arquivo)
   // Regras de segurança (uma listagem ruim, de um disco que ainda não montou, nunca pode apagar pauta):
-  //  - `confiavel`: a listagem tem o LEIA-ME.md (a extensão sempre grava um). Sem ele, nada é apagado, de nenhum lado.
+  //  - `confiavel`: a listagem tem o LEIA-ME.md ou o README.md (a extensão sempre grava um). Sem ele, nada é apagado, de nenhum lado.
   //  - uma pauta só sai por "o arquivo sumiu" se faltou em DUAS conversas seguidas (`ausentesAntes`) e no máximo 2 de uma vez.
-  function mesclar({ pautas, arquivos, apagadas = {}, hoje, conhecidas = [], ultimoSync = 0, confiavel = true, ausentesAntes = [] }) {
+  function mesclar({ pautas, arquivos, apagadas = {}, hoje, conhecidas = [], ultimoSync = 0, confiavel = true, ausentesAntes = [], idioma = 'pt' }) {
     const novas = { ...(pautas || {}) };
     let mudou = false;
     const escrever = [], apagar = [], reapareceu = [], removidas = [];
@@ -84,13 +87,13 @@
         novas[id] = { ...atual, titulo: atual.titulo || f.titulo, hora: atual.hora || f.hora, codigo: f.codigo || atual.codigo || '', texto: f.texto, atualizada: f.mtime };
         mudou = true;
       } else if (eu !== f.texto) {
-        escrever.push({ nome: f.nome, conteudo: serializar({ ...atual, texto: atual.texto }), id });
+        escrever.push({ nome: f.nome, conteudo: serializar({ ...atual, texto: atual.texto }, idioma), id });
       } else if (f.codigo && f.codigo !== atual.codigo) {
         // só o código da sala mudou no arquivo: entra sem mexer na data de edição da pauta
         novas[id] = { ...atual, codigo: f.codigo };
         mudou = true;
       } else if (atual.codigo && !f.codigo) {
-        escrever.push({ nome: f.nome, conteudo: serializar(atual), id }); // a pauta aprendeu a sala: o arquivo também passa a dizer
+        escrever.push({ nome: f.nome, conteudo: serializar(atual, idioma), id }); // a pauta aprendeu a sala: o arquivo também passa a dizer
       }
     }
     // pauta que ainda não tem arquivo (e é recente): cria
@@ -106,7 +109,7 @@
       let nome = nomeDe(p);
       for (let n = 2; usados.has(nome); n++) nome = nomeDe(p).replace(/\.md$/, `-${n}.md`);
       usados.add(nome);
-      escrever.push({ nome, conteudo: serializar(p), id });
+      escrever.push({ nome, conteudo: serializar(p, idioma), id });
     }
     if (!confiavel) escrever.length = 0; // listagem duvidosa: não grava por cima de nada (a próxima conversa, já com o LEIA-ME, grava)
     const naPasta = new Set([...porId.keys()].filter((id) => !(apagadas[id] && porId.get(id).mtime <= apagadas[id])));
@@ -145,5 +148,39 @@ Combinados
 - O texto depois do cabeçalho é Markdown simples: listas, listas numeradas e tarefas \`- [ ]\`.
 `;
 
-  raiz.MB_PAUTAS_ARQ = { normT, idDe, slug, nomeDe, serializar, parsear, mesclar, LEIA_ME };
+  const README_EN = `# Talktrail agendas
+
+Each meeting has a \`.md\` file in this folder. Edit it by hand or ask an AI: Talktrail reads the files by itself
+(every minute, while the browser is open) and the agenda shows up in the panel and on the Agendas page. Whoever edited last wins.
+
+## Format
+
+\`\`\`
+---
+title: "Product daily"
+date: 2026-10-20
+time: 10:00
+room: abc-defg-hij
+---
+
+1. First point
+2. Second point
+
+Agreements
+- [ ] A task
+\`\`\`
+
+- \`title\` and \`date\` (YYYY-MM-DD) are required. \`time\` (HH:MM) is optional.
+- Use the SAME title as the meeting in your Meet schedule: agendas are matched to meetings by title and day, and load by themselves in the room.
+- File name: \`YYYY-MM-DD_HHhMM_title.md\` (just a suggestion: what is inside the file is what counts).
+- To create a new agenda, just create the file. To delete one, delete the file.
+- The text after the header is simple Markdown: lists, numbered lists and tasks \`- [ ]\`. The Portuguese keys (\`titulo\`, \`data\`, \`hora\`, \`sala\`) also work.
+`;
+
+  // A pasta e o arquivo de explicação seguem o idioma de quem criou a pasta: Pautas/ + LEIA-ME.md, ou Agendas/ + README.md.
+  const explicacao = (idioma) => (idioma === 'en' ? { nome: 'README.md', texto: README_EN } : { nome: 'LEIA-ME.md', texto: LEIA_ME });
+  const ehExplicacao = (nome) => nome === 'LEIA-ME.md' || nome === 'README.md';
+  const idiomaDaPasta = (nomeDaPasta) => (nomeDaPasta === 'Agendas' ? 'en' : 'pt');
+
+  raiz.MB_PAUTAS_ARQ = { normT, idDe, slug, nomeDe, serializar, parsear, mesclar, LEIA_ME, README_EN, explicacao, ehExplicacao, idiomaDaPasta };
 })(typeof self !== 'undefined' ? self : globalThis);

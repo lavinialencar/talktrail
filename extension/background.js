@@ -387,17 +387,19 @@ atualizarContagem().catch(() => {});
 // Pasta Pautas/ dentro da pasta de reuniões: um .md por reunião. Quem editou por último ganha (ver pautas-arquivo.js).
 // Usa o servidor local, se estiver pareado; senão a pasta escolhida no navegador, se a permissão estiver ativa.
 async function armazemDePautas() {
+  const idioma = MB_IDIOMA.en ? 'en' : 'pt'; // só decide o nome da pasta quando ela ainda não existe (Pautas/ ou Agendas/)
   const { pareamento } = await chrome.storage.local.get('pareamento');
   if (pareamento && Date.now() >= servidorForaAte) {
     try {
       const chamar = async (caminho, corpo) => {
-        const r = await fetch(SERVER + caminho, { method: 'POST', headers: await cabecalhos(pareamento), body: JSON.stringify(corpo) });
+        const r = await fetch(SERVER + caminho, { method: 'POST', headers: await cabecalhos(pareamento), body: JSON.stringify({ idioma, ...corpo }) });
         return r.json().catch(() => ({ ok: false }));
       };
       const l = await chamar('/pautas/listar', {});
       if (l && l.ok) {
         return {
           tipo: 'servidor',
+          pasta: l.pasta || 'Pautas',
           arquivos: l.arquivos || [],
           gravar: (nome, conteudo) => chamar('/pautas/gravar', { nome, conteudo }),
           apagar: (nome) => chamar('/pautas/apagar', { nome }),
@@ -409,15 +411,17 @@ async function armazemDePautas() {
   }
   const alvo = await MB_PASTA.ler().catch(() => null);
   if (alvo && (await MB_PASTA.permissao(alvo, false).catch(() => false))) {
-    const arquivosDaPasta = await MB_PASTA.listarPautas(alvo);
+    const pasta = await MB_PASTA.nomeDasPautas(alvo, idioma);
+    const arquivosDaPasta = await MB_PASTA.listarPautas(alvo, pasta);
     return {
       tipo: 'pasta',
+      pasta,
       arquivos: arquivosDaPasta,
-      gravar: (nome, conteudo) => MB_PASTA.escrever(alvo, `Pautas/${nome}`, conteudo),
-      apagar: async (nome) => { // nunca apaga de vez: o arquivo vai pra Pautas/_apagadas
+      gravar: (nome, conteudo) => MB_PASTA.escrever(alvo, `${pasta}/${nome}`, conteudo),
+      apagar: async (nome) => { // nunca apaga de vez: o arquivo vai pra _apagadas, dentro da própria pasta
         const velho = arquivosDaPasta.find((a) => a.nome === nome);
-        if (velho) await MB_PASTA.escrever(alvo, `Pautas/_apagadas/${Date.now()}_${nome}`, velho.conteudo);
-        await MB_PASTA.apagar(alvo, `Pautas/${nome}`);
+        if (velho) await MB_PASTA.escrever(alvo, `${pasta}/_apagadas/${Date.now()}_${nome}`, velho.conteudo);
+        await MB_PASTA.apagar(alvo, `${pasta}/${nome}`);
       },
     };
   }
@@ -434,13 +438,14 @@ async function sincronizarPautas() {
       if (!arm) { await chrome.storage.local.set({ pautasSync: { modo: '', em: Date.now() } }); return; }
       const v = await chrome.storage.local.get(['pautas', 'pautasApagadas', 'pautasConhecidas', 'pautasSync', 'pautasAusentes', 'pautasLixeira']);
       const original = v.pautas || {};
-      const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0, confiavel: arm.arquivos.some((a) => a.nome === 'LEIA-ME.md'), ausentesAntes: v.pautasAusentes || [] });
+      const r = MB_PAUTAS_ARQ.mesclar({ pautas: original, arquivos: arm.arquivos, apagadas: v.pautasApagadas || {}, hoje: diaLocal(new Date()), conhecidas: v.pautasConhecidas || [], ultimoSync: (v.pautasSync && v.pautasSync.em) || 0, confiavel: arm.arquivos.some((a) => MB_PAUTAS_ARQ.ehExplicacao(a.nome)), ausentesAntes: v.pautasAusentes || [], idioma: MB_PAUTAS_ARQ.idiomaDaPasta(arm.pasta) });
       for (const e of r.escrever) await arm.gravar(e.nome, e.conteudo);
       for (const nome of r.apagar) await arm.apagar(nome);
-      const leia = arm.arquivos.find((a) => a.nome === 'LEIA-ME.md');
-      if (!leia || leia.conteudo !== MB_PAUTAS_ARQ.LEIA_ME) await arm.gravar('LEIA-ME.md', MB_PAUTAS_ARQ.LEIA_ME); // mantém a explicação em dia
-      if (!leia) sincPendente = true; // pasta nova (ou listagem duvidosa): com o LEIA-ME no lugar, a próxima conversa já é confiável
-      const grava = { pautasSync: { modo: arm.tipo, em: Date.now() }, pautasConhecidas: r.conhecidas, pautasAusentes: r.ausentes };
+      const expl = MB_PAUTAS_ARQ.explicacao(MB_PAUTAS_ARQ.idiomaDaPasta(arm.pasta));
+      const leia = arm.arquivos.find((a) => a.nome === expl.nome);
+      if (!leia || leia.conteudo !== expl.texto) await arm.gravar(expl.nome, expl.texto); // mantém a explicação em dia
+      if (!arm.arquivos.some((a) => MB_PAUTAS_ARQ.ehExplicacao(a.nome))) sincPendente = true; // pasta nova (ou listagem duvidosa): com o LEIA-ME no lugar, a próxima conversa já é confiável
+      const grava = { pautasSync: { modo: arm.tipo, em: Date.now(), pasta: arm.pasta }, pautasConhecidas: r.conhecidas, pautasAusentes: r.ausentes };
       if (r.pautas) {
         // aplica só o que veio dos arquivos em cima do que está agora (a pessoa pode ter editado durante a conversa com a pasta)
         const agora = (await chrome.storage.local.get('pautas')).pautas || {};

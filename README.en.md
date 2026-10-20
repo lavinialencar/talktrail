@@ -11,14 +11,14 @@
 
 **A free Chrome extension that turns Google Meet captions into a Markdown file on your computer.** No account, no cloud, no telemetry. It reads the captions Meet already shows, keeps the live text in a side panel, and saves each meeting as a `.md` file you can open in Obsidian, search, or hand to an AI.
 
-> The interface follows your browser's language: English, or Portuguese if your browser is in Portuguese. The saved `.md` files keep Portuguese section headings (`## Resumo`, `## Pauta`, `## Transcrição`) for now, so scripts and AI tools can rely on a fixed format.
+> The interface follows your browser's language: English, or Portuguese if your browser is in Portuguese. The `.md` files and the agenda folder follow it too: a new install in English gets `## Summary`, `## Agenda`, `## Transcript` and an `Agendas/` folder; in Portuguese you get `## Resumo`, `## Pauta`, `## Transcrição` and `Pautas/`. Both formats are stable, so scripts and AI tools can rely on them.
 
 ## What it does
 
 - **Google Meet transcript, live.** When you join a call it offers to transcribe and turns captions on for you. The text shows up in a side panel, with who spoke and when.
 - **One Markdown file per meeting**, with title, tags, date, duration and participants, then the transcript by speaker. If you rename the meeting, the file is renamed, not duplicated.
 - **Meeting notes and agendas in the same panel.** Each meeting has its own agenda. An Agendas page lists your upcoming meetings (they come from the Meet home page), and the agenda loads by itself when you enter the room. The toolbar icon counts down to the next meeting.
-- **Agendas as files an AI can edit.** With a folder chosen, each agenda also becomes a `.md` file in `Pautas/`. Edit it by hand or ask an AI to rewrite it, and the change shows up in the extension within a minute. The other direction works too.
+- **Agendas as files an AI can edit.** With a folder chosen, each agenda also becomes a `.md` file in an `Agendas/` subfolder (`Pautas/` in Portuguese, or if you already had it). Edit it by hand or ask an AI to rewrite it, and the change shows up in the extension within a minute. The other direction works too.
 - **Mark moments** with a keyboard shortcut, tag meetings, and export or import everything (meetings, agendas, settings) in a single backup file.
 - **Words that must never be recorded**: list them in Settings and they are left out.
 
@@ -54,7 +54,7 @@ The extension picks automatically: if the local server answers, it uses the live
 
 **Is it a free alternative to Otter, Fireflies or Tactiq?** It covers the transcript-to-file part for Google Meet, for free and locally. It does not summarize with AI by itself. The Markdown file is meant to be handed to the AI you already use.
 
-**How can an AI edit my meeting agenda?** With a folder chosen, each agenda is a `.md` file in `Pautas/`, with a `LEIA-ME.md` explaining the format. Point an AI tool at that folder, ask for the change, and the agenda updates in the extension within about a minute.
+**How can an AI edit my meeting agenda?** With a folder chosen, each agenda is a `.md` file in the `Agendas/` subfolder, with a `README.md` explaining the format (`Pautas/` and `LEIA-ME.md` if you use Portuguese or already had the folder). Point an AI tool at that folder, ask for the change, and the agenda updates in the extension within about a minute.
 
 **Does it work offline?** The extension and the files are local. You still need the Meet call itself, since the captions come from it.
 

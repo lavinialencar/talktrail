@@ -55,7 +55,7 @@ What it does
 • Notes and agenda in the same panel. An Agendas page lists your upcoming meetings in a calendar: pick a meeting, write its agenda, and it loads by itself when you join the room. Meetings come from the Meet home page, and the icon shows the countdown to the next one. It also works outside Meet.
 • Keyboard shortcut to mark moments.
 • Saves each meeting as a .md file with title, tags, date, duration and participants.
-• Agendas as files: with a folder chosen, each agenda also becomes a .md file in the Pautas/ subfolder. You or an AI edit the file and the agenda updates in the extension, and the other way around.
+• Agendas as files: with a folder chosen, each agenda also becomes a .md file in the Agendas/ subfolder. You or an AI edit the file and the agenda updates in the extension, and the other way around.
 • Backup: export and import meetings, agendas and settings in a single file.
 
 Privacy
