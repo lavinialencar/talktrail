@@ -455,9 +455,9 @@ li code{display:inline-block;margin-top:4px}
 <input id="pasta" value="__PASTA__" spellcheck="false" readonly>
 <button id="escolher">Escolher a pasta…</button><span id="msg" class="msg"></span></section>
 <section><h2><span class="n">2</span>Instalar a extensão no navegador</h2>
-<ul><li>Abra <code>chrome://extensions</code> e ligue <b>Modo do desenvolvedor</b>.</li>
-<li>Clique em <b>Carregar sem compactação</b> e escolha esta pasta:<br><code>__EXT__</code></li>
-<li>Entre numa reunião do Meet e clique em <b>Gravar</b> no aviso.</li></ul></section>
+<ul><li>Instale o Talktrail pela <a href="https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak" target="_blank" rel="noopener">Chrome Web Store</a>.</li>
+<li>Entre numa reunião do Meet e clique em <b>Transcrever</b> no aviso.</li>
+<li>Versão de desenvolvimento: abra <code>chrome://extensions</code>, ligue <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e escolha esta pasta:<br><code>__EXT__</code></li></ul></section>
 <section><h2><span class="n">3</span>Conexão com a extensão: <span class="__PCLASSE__">__PAREADO__</span></h2>
 <p class="mu">__PTEXTO__</p>
 <button id="reparear">Parear de novo</button><span id="msg2" class="msg"></span></section>
@@ -482,14 +482,89 @@ document.getElementById('reparear').onclick = async () => {
 </script></html>"""
 
 
-def pagina_config():
+# Inglês da página de configuração e das mensagens de erro (o idioma vem do Accept-Language do navegador; sem ele, português).
+PAGINA_EN = [
+    ('<html lang="pt-BR">', '<html lang="en">'),
+    ("Talktrail, configuração", "Talktrail, settings"),
+    ("Transcrição do Google Meet, 100% no seu computador.", "Google Meet transcripts, 100% on your computer."),
+    ("O servidor está funcionando", "The server is running"),
+    ("Ele fica rodando em segundo plano e é quem grava os arquivos. Você só precisa mexer aqui na primeira vez.", "It runs in the background and writes the files. You only need to touch this page the first time."),
+    ("Onde salvar as reuniões", "Where to save your meetings"),
+    ("Cada reunião vira um arquivo Markdown, em subpastas por mês (<code>AAAA-MM</code>).", "Each meeting becomes a Markdown file, in one subfolder per month (<code>YYYY-MM</code>)."),
+    ("Escolher a pasta…", "Choose the folder…"),
+    ("Instalar a extensão no navegador", "Install the extension in your browser"),
+    ("Instale o Talktrail pela ", "Install Talktrail from the "),
+    ("Entre numa reunião do Meet e clique em <b>Transcrever</b> no aviso.", "Join a Meet call and click <b>Transcribe</b> on the prompt."),
+    ("Versão de desenvolvimento: abra <code>chrome://extensions</code>, ligue <b>Modo do desenvolvedor</b>, clique em <b>Carregar sem compactação</b> e escolha esta pasta:", "Development version: open <code>chrome://extensions</code>, turn on <b>Developer mode</b>, click <b>Load unpacked</b> and choose this folder:"),
+    ("Conexão com a extensão: ", "Connection to the extension: "),
+    ("Parear de novo", "Pair again"),
+    ("Escolha a pasta na janela que abriu...", "Choose the folder in the window that opened..."),
+    ("Pronto. As próximas reuniões vão pra lá.", "Done. The next meetings will go there."),
+    ("Nenhuma pasta escolhida.", "No folder chosen."),
+    ("Não consegui abrir o seletor de pasta.", "I could not open the folder picker."),
+    ("Pronto. A próxima gravação pareia sozinha.", "Done. The next recording pairs by itself."),
+    ("Não consegui.", "I could not."),
+]
+ERROS_EN = {
+    "negado": "denied", "corpo vazio": "empty body", "só a extensão pode parear": "only the extension can pair",
+    "já pareado com outra extensão. Abra http://127.0.0.1:8787/ e clique em Parear de novo.": "already paired with another extension. Open http://127.0.0.1:8787/ and click Pair again.",
+    "não achei o arquivo dessa reunião": "I could not find this meeting's file",
+    "não consegui abrir o gerenciador de arquivos": "I could not open the file manager",
+    "extensão não pareada": "extension not paired",
+    "a pasta de reuniões não está acessível agora": "the meetings folder is not reachable right now",
+    "nome de arquivo inválido": "invalid file name", "conteúdo inválido": "invalid content",
+    "dados inválidos: esperado um objeto": "invalid data: an object was expected",
+    "data inválida": "invalid date", "data fora do intervalo": "date out of range", "faltando id ou startedAt": "missing id or startedAt",
+    "use o caminho completo da pasta, sem ..": "use the folder's full path, without ..",
+    "escolha uma pasta dentro da sua pasta pessoal": "choose a folder inside your home folder",
+    "sem permissão pra gravar nessa pasta": "no permission to write to that folder",
+}
+PREFIXOS_EN = [("dados inválidos: ", "invalid data: "), ("não consegui gravar na pasta: ", "could not write to the folder: "), ("não consegui gravar: ", "could not write: "),
+               ("dados grandes demais (acima de ", "data too large (over ")]
+
+
+def erro_en(txt):
+    if txt in ERROS_EN:
+        return ERROS_EN[txt]
+    for pt, en in PREFIXOS_EN:
+        if txt.startswith(pt):
+            return en + txt[len(pt):].replace(" MB)", " MB)")
+    return txt
+
+
+def sistema_em_portugues():
+    """O terminal de quem instala está em português? (sem saber, inglês)"""
+    import locale
+    ids = [os.environ.get(v) for v in ("LC_ALL", "LC_MESSAGES", "LANG")]
+    try:
+        ids.append(locale.getlocale()[0])
+    except (ValueError, TypeError):
+        pass
+    for i in ids:
+        if i:
+            return i.lower().startswith("pt")
+    return False
+
+
+def dizer(pt, en):
+    return pt if sistema_em_portugues() else en
+
+
+def pagina_config(en=False):
     p = parear_atual()
     pareado = bool(p.get("token"))
-    return (PAGINA.replace("__PASTA__", html.escape(OUT, quote=True)).replace("__EXT__", html.escape(EXT_DIR))
-            .replace("__PAREADO__", "pareada" if pareado else "aguardando")
+    pagina = PAGINA
+    if en:
+        for pt, ingles in PAGINA_EN:
+            pagina = pagina.replace(pt, ingles)
+    pareado_txt = ("paired" if en else "pareada") if pareado else ("waiting" if en else "aguardando")
+    ptexto = (("The extension is connected and is the only one allowed to write." if en else "A extensão já está conectada e é a única que pode gravar.") if pareado
+              else ("Install the extension (step 2). The first one to connect becomes the only one allowed to write." if en
+                    else "Instale a extensão (passo 2). A primeira que conectar passa a ser a única autorizada a gravar."))
+    return (pagina.replace("__PASTA__", html.escape(OUT, quote=True)).replace("__EXT__", html.escape(EXT_DIR))
+            .replace("__PAREADO__", pareado_txt)
             .replace("__PCLASSE__", "ok" if pareado else "mu")
-            .replace("__PTEXTO__", "A extensão já está conectada e é a única que pode gravar." if pareado
-                     else "Instale a extensão (passo 2). A primeira que conectar passa a ser a única autorizada a gravar."))
+            .replace("__PTEXTO__", ptexto))
 
 
 # ---- Pautas em arquivo: OUT/Pautas/*.md, um por reunião. O servidor só lê e grava texto; quem entende o formato é a extensão.
@@ -686,7 +761,7 @@ def instalar_outros(plataforma):
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(2)
     webbrowser.open(f"http://127.0.0.1:{PORT}/")
-    print("Pronto. O servidor sobe sozinho quando você entra no computador. A página de configuração abriu no navegador.")
+    print(dizer("Pronto. O servidor sobe sozinho quando você entra no computador. A página de configuração abriu no navegador.", "Done. The server starts by itself when you log in to the computer. The settings page opened in your browser."))
     return 0
 
 
@@ -702,11 +777,11 @@ def instalar():
     subprocess.run(["launchctl", "bootout", f"gui/{uid}/com.talktrail.server"], capture_output=True)
     r = subprocess.run(["launchctl", "bootstrap", f"gui/{uid}", destino], capture_output=True, text=True)
     if r.returncode:
-        print("Não consegui ligar o servidor:", r.stderr.strip())
+        print(dizer("Não consegui ligar o servidor:", "I could not start the server:"), r.stderr.strip())
         return 1
     time.sleep(2)
     subprocess.run(["open", f"http://127.0.0.1:{PORT}/"])
-    print("Pronto. O servidor sobe sozinho com o computador. A página de configuração abriu no navegador.")
+    print(dizer("Pronto. O servidor sobe sozinho com o computador. A página de configuração abriu no navegador.", "Done. The server starts by itself with the computer. The settings page opened in your browser."))
     return 0
 
 
@@ -716,7 +791,14 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
+    def _en(self):
+        """Quem pediu usa o navegador em inglês (ou outro idioma que não o português)? Sem o cabeçalho, português."""
+        al = (self.headers.get("Accept-Language") or "").strip().lower()
+        return bool(al) and not al.startswith("pt")
+
     def _json(self, code, obj):
+        if isinstance(obj, dict) and isinstance(obj.get("erro"), str) and self._en():
+            obj = dict(obj, erro=erro_en(obj["erro"]))
         b = json.dumps(obj, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -749,7 +831,7 @@ class H(BaseHTTPRequestHandler):
             return self._json(403, {"ok": False})
         caminho = self.path.split("?")[0]
         if caminho == "/":
-            b = pagina_config().encode("utf-8")
+            b = pagina_config(self._en()).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(b)))
@@ -947,7 +1029,7 @@ if __name__ == "__main__":
             os.remove(os.path.join(ESTADO, "pareamento.json"))
         except OSError:
             pass
-        print("Pareamento apagado. A próxima extensão que conectar passa a valer.")
+        print(dizer("Pareamento apagado. A próxima extensão que conectar passa a valer.", "Pairing erased. The next extension that connects becomes the paired one."))
         sys.exit(0)
     try:
         srv = ThreadingHTTPServer(("127.0.0.1", PORT), H)

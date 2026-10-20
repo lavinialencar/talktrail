@@ -15,3 +15,24 @@ Pra desinstalar: apague a pasta "Talktrail" de
   Mac:      ~/Library/Application Support   e   ~/Library/LaunchAgents/com.talktrail.server.plist
   Windows:  %LOCALAPPDATA%   e o atalho Talktrail.vbs da pasta Inicializar
   Linux:    ~/.local/share/talktrail   e   ~/.config/autostart/talktrail.desktop
+
+----------------------------------------------------------------------
+
+Talktrail: live folder add-on (English)
+=======================================
+
+What it is: a small local program that saves each meeting to Documents/Talktrail
+in real time, with one subfolder per month. Everything stays on your computer.
+It is optional: the extension also works without it.
+
+How to install (once):
+  Mac:      open "instalar-mac.command" (right-click > Open, the first time)
+  Windows:  open "instalar-windows.bat" (if Windows warns you, "More info" > "Run anyway")
+  Linux:    run "bash instalar-linux.sh"
+
+It needs Python 3; the installer tells you and opens the download page if it is missing.
+
+To uninstall, delete the "Talktrail" folder from
+  Mac:      ~/Library/Application Support   and   ~/Library/LaunchAgents/com.talktrail.server.plist
+  Windows:  %LOCALAPPDATA%   and the Talktrail.vbs shortcut in the Startup folder
+  Linux:    ~/.local/share/talktrail   and   ~/.config/autostart/talktrail.desktop

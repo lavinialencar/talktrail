@@ -689,6 +689,31 @@ class Ingles(unittest.TestCase):
         finally:
             m.OUT = original
 
+    def test_pagina_de_configuracao_em_ingles_e_em_portugues(self):
+        st, pt = get("/")
+        self.assertEqual(st, 200)
+        self.assertIn("Onde salvar as reuniões", pt.decode())
+        for al in ("en-US,en;q=0.9", "de-DE", "ja"):
+            st, en = get("/", headers={"Accept-Language": al})
+            self.assertEqual(st, 200)
+            texto = en.decode()
+            self.assertIn("Where to save your meetings", texto, al)
+            self.assertIn('<html lang="en">', texto)
+            self.assertNotIn("Onde salvar", texto)
+            self.assertIn("chromewebstore.google.com/detail/talktrail/", texto)
+        st, pt2 = get("/", headers={"Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8"})
+        self.assertIn("Onde salvar as reuniões", pt2.decode())
+
+    def test_mensagens_de_erro_no_idioma_de_quem_pede(self):
+        st, r = post({}, path="/pautas/listar", headers={"X-Meet-Token": "errado", "Accept-Language": "en-US"})
+        self.assertEqual((st, r.get("erro")), (403, "extension not paired"))
+        st, r = post({}, path="/pautas/listar", headers={"X-Meet-Token": "errado"})
+        self.assertEqual((st, r.get("erro")), (403, "extensão não pareada"))
+        st, r = post({"nome": "../x.md", "conteudo": "x"}, path="/pautas/gravar", headers={"X-Meet-Token": TOKEN, "Accept-Language": "en"})
+        self.assertEqual((st, r.get("erro")), (400, "invalid file name"))
+        st, r = post({"nome": "../x.md", "conteudo": "x"}, path="/pautas/gravar", headers={"X-Meet-Token": TOKEN})
+        self.assertEqual((st, r.get("erro")), (400, "nome de arquivo inválido"))
+
     def test_arquivo_de_explicacao_em_ingles_nao_vai_pra_copia_diaria(self):
         original = m.OUT
         h = {"X-Meet-Token": TOKEN}

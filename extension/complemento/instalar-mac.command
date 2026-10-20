@@ -3,7 +3,7 @@
 cd "$(dirname "$0")" || exit 1
 DEST="$HOME/Library/Application Support/Talktrail"
 echo ""
-echo "Instalando o complemento do Talktrail..."
+echo "Instalando o complemento do Talktrail... / Installing the Talktrail add-on..."
 echo ""
 
 PY=""
@@ -15,11 +15,11 @@ for c in /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3 pytho
 done
 
 if [ -z "$PY" ]; then
-  echo "Falta o Python 3 neste Mac. Vou abrir a página pra baixar."
-  echo "Instale, e depois abra este arquivo de novo."
+  echo "Falta o Python 3 neste Mac. Vou abrir a página pra baixar. Instale, e depois abra este arquivo de novo."
+  echo "Python 3 is missing on this Mac. I will open the download page. Install it, then open this file again."
   open "https://www.python.org/downloads/"
   echo ""
-  read -n 1 -s -r -p "Tecle qualquer tecla pra fechar."
+  read -n 1 -s -r -p "Tecle qualquer tecla pra fechar. / Press any key to close."
   exit 1
 fi
 
@@ -28,4 +28,5 @@ cp -f talktrail_server.py "$DEST/talktrail_server.py" || exit 1
 "$PY" "$DEST/talktrail_server.py" --instalar
 echo ""
 echo "Pronto. Volte pro navegador: o Talktrail já salva em Documentos/Talktrail."
-read -n 1 -s -r -p "Tecle qualquer tecla pra fechar."
+echo "Done. Go back to your browser: Talktrail now saves to Documents/Talktrail."
+read -n 1 -s -r -p "Tecle qualquer tecla pra fechar. / Press any key to close."
