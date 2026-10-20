@@ -3,7 +3,6 @@
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak"><img src="docs/btn-loja.svg" height="40" alt="Instalar o Talktrail na Chrome Web Store" /></a>
   <a href="https://buymeacoffee.com/talktrail"><img src="docs/btn-cafe.svg" height="40" alt="Pague um café" /></a>
-  <a href="https://github.com/lavinialencar/talktrail"><img src="docs/btn-codigo.svg" height="40" alt="Ver o código no GitHub" /></a>
 </p>
 
 # Talktrail
