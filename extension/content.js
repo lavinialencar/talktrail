@@ -514,8 +514,27 @@ function iniciar() {
   }
 
   // ---------- legendas ----------
+  // O Meet escreve os nomes dos botões no idioma da pessoa, mas os ícones são de uma fonte de ligaduras: o texto do <i> é o nome
+  // do ícone ("closed_caption", "call_end"), igual em qualquer idioma. Por isso o que importa é achar pelo ícone; o nome do botão
+  // (português e inglês) fica só de reserva. Conferido num Meet de verdade: legendas = closed_caption_off (desligadas) / closed_caption (ligadas),
+  // sair = call_end, chat = chat / chat_bubble, e a caixa de legendas é a região que tem o botão "ir para o fim" (jsname Xke7ne).
+  const ICONE_MEET = /^[a-z][a-z0-9]*(_[a-z0-9]+)*$/;
+  function iconesDe(el) {
+    const r = [];
+    for (const n of el.querySelectorAll('i, span')) {
+      if (n.firstElementChild) continue;
+      const t = (n.textContent || '').trim();
+      if (t && t.length < 30 && ICONE_MEET.test(t)) r.push(t);
+    }
+    return r;
+  }
+  const temIcone = (el, ...nomes) => iconesDe(el).some((i) => nomes.includes(i));
+  const todosBotoes = () => [...document.querySelectorAll('button, [role="button"]')];
+
   function achaRegiao() {
-    return document.querySelector('[role="region"][aria-label*="egenda" i], [role="region"][aria-label*="aption" i]');
+    const porBotao = document.querySelector('[role="region"] [jsname="Xke7ne"]');
+    if (porBotao) return porBotao.closest('[role="region"]');
+    return document.querySelector('[role="region"][aria-label*="egenda" i], [role="region"][aria-label*="aption" i], [role="region"][aria-label*="ubt\u00edtulo" i], [role="region"][aria-label*="ous-titre" i], [role="region"][aria-label*="ntertitel" i], [role="region"][aria-label*="ottotitol" i]');
   }
 
   function rotulo(el) {
@@ -527,7 +546,13 @@ function iniciar() {
   function estadoLegendas() {
     let achou = false;
     let travado = false;
-    for (const b of document.querySelectorAll('button, [role="button"]')) {
+    for (const b of todosBotoes()) { // pelo ícone: vale em qualquer idioma do Meet
+      const ic = iconesDe(b);
+      if (!ic.includes('closed_caption_off') && !ic.includes('closed_caption')) continue;
+      const off = !!b.disabled || b.getAttribute('aria-disabled') === 'true';
+      return { ligadas: !ic.includes('closed_caption_off'), botao: true, desabilitado: off };
+    }
+    for (const b of todosBotoes()) {
       const l = rotulo(b);
       if (!/legenda|caption/i.test(l)) continue;
       achou = true;
@@ -546,10 +571,10 @@ function iniciar() {
   function ligarLegendas(forcarTecla = false) {
     const estado = legendasLigadas();
     if (estado === true || (estado === null && achaRegiao())) return true;
-    const cand = [...document.querySelectorAll('button, [role="button"]')];
-    // "Ativar legendas", nunca "Desativar legendas" (já estão ligadas)
+    const cand = todosBotoes();
+    // pelo ícone "legendas desligadas" (vale em qualquer idioma); senão o nome: "Ativar legendas", nunca "Desativar legendas" (já estão ligadas)
     const ligar = /(?<![a-zà-ú])(ativar|ligar|turn on|show)\b.{0,25}(legenda|caption)/i;
-    const alvo = cand.find((b) => ligar.test(rotulo(b)));
+    const alvo = cand.find((b) => temIcone(b, 'closed_caption_off')) || cand.find((b) => ligar.test(rotulo(b)));
     if (alvo) {
       alvo.click();
       return true;
@@ -565,7 +590,7 @@ function iniciar() {
   // esconde a faixa de legendas do Meet (continua no DOM, só fica invisível)
   const estiloLegendas = document.createElement('style');
   estiloLegendas.textContent =
-    '[role="region"][aria-label*="egenda" i],[role="region"][aria-label*="aption" i]{opacity:0!important;pointer-events:none!important}';
+    '[role="region"][aria-label*="egenda" i],[role="region"][aria-label*="aption" i],[role="region"]:has([jsname="Xke7ne"]){opacity:0!important;pointer-events:none!important}';
   function aplicarEstiloLegendas() {
     const quer = S.fase === 'gravando' && S.esconderLegendas;
     if (quer && !estiloLegendas.isConnected) document.documentElement.appendChild(estiloLegendas);
@@ -585,6 +610,7 @@ function iniciar() {
     const presentes = new Set();
     if (r) {
       for (const b of blocos(r)) {
+        if (b.querySelector && b.querySelector('button, [role="button"], select, [role="listbox"], [role="combobox"]')) continue; // controles do Meet (ir pro fim, idioma), não fala
         const d = lerBloco(b.innerText || b.textContent || '');
         if (!d) continue;
         presentes.add(b);
@@ -784,7 +810,8 @@ function iniciar() {
     ligueiLegendas = false;
     if (!emChamada() || legendasLigadas() !== true) return;
     const desligar = /(desativar|desligar|turn off|hide).{0,25}(legenda|caption)/i;
-    const alvo = [...document.querySelectorAll('button, [role="button"]')].find((b) => desligar.test(rotulo(b)));
+    const alvos = todosBotoes();
+    const alvo = alvos.find((b) => temIcone(b, 'closed_caption') && !temIcone(b, 'closed_caption_off')) || alvos.find((b) => desligar.test(rotulo(b)));
     if (alvo) alvo.click();
   }
 
@@ -819,10 +846,11 @@ function iniciar() {
   // Experimental: o Meet muda a tela às vezes. Tenta abrir o chat, escrever e enviar; se não conseguir, só avisa no painel.
   async function avisarNoChat(msg) {
     const espera = (ms) => new Promise((r) => setTimeout(r, ms));
-    const botoes = () => [...document.querySelectorAll('button, [role="button"]')];
+    const botoes = () => todosBotoes();
     const campo = () =>
       [...document.querySelectorAll('textarea, [contenteditable="true"]')].find((e) => /mensage|message/i.test(e.getAttribute('aria-label') || e.getAttribute('placeholder') || ''));
     const alternador = () =>
+      botoes().find((b) => temIcone(b, 'chat', 'chat_bubble')) || // pelo ícone: vale em qualquer idioma
       botoes().find((b) => /(chat|conversa|bate-papo|mensagens)/i.test(rotulo(b)) && !/(emoji|rea[cç][aã]o|reaction)/i.test(rotulo(b)));
     try {
       let abriuAgora = false;
@@ -843,7 +871,7 @@ function iniciar() {
       }
       c.dispatchEvent(new Event('input', { bubbles: true }));
       await espera(250);
-      const enviar = botoes().find((b) => /(enviar|send)/i.test(rotulo(b)) && !b.disabled && b !== alternador());
+      const enviar = botoes().find((b) => (b.getAttribute('jsname') === 'LgbsSe' || temIcone(b, 'send') || /(enviar|send)/i.test(rotulo(b))) && !b.disabled && b !== alternador());
       if (!enviar) throw new Error(trad('sem botão de enviar'));
       enviar.click();
       await espera(300);
@@ -1320,8 +1348,9 @@ function iniciar() {
 
   // ---------- detecção da chamada ----------
   function emChamada() {
-    return !!document.querySelector(
-      'button[aria-label*="Leave call" i], button[aria-label*="Sair da chamada" i], button[aria-label*="Sair da reuni" i]'
+    return (
+      !!document.querySelector('button[jsname="CQylAd"], button[aria-label*="Leave call" i], button[aria-label*="Sair da chamada" i], button[aria-label*="Sair da reuni" i]') ||
+      todosBotoes().some((b) => temIcone(b, 'call_end')) // o ícone de desligar vale em qualquer idioma
     );
   }
   // telas de fim do Meet: "Você saiu da reunião", "Você encerrou a reunião para todos", "Voltar à tela inicial"

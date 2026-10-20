@@ -62,7 +62,7 @@ The extension picks automatically: if the local server answers, it uses the live
 
 ## Known limits
 
-- Google Meet itself must be set to English or Portuguese. The extension finds the captions box and buttons by their English or Portuguese names, so with Meet in another language (Spanish, French, German...) it will not find them yet. The text of the conversation can be in any language.
+- Google Meet can be in any interface language: the extension finds the captions box, the captions button, the leave button and the chat button by Meet's own icons, not by their names. This was checked on a real Meet in Portuguese and with simulated Meet pages in Spanish, German and Japanese; if your Meet language misbehaves, please open an issue. One exception: reading your upcoming meetings from the Meet home page (the Agendas page) only understands English and Portuguese so far; in other languages you can still write each agenda by hand.
 - The quality of the text is the quality of Meet's captions. Technical names are often wrong.
 - Google changes the Meet page now and then. If captions stop being picked up after a Meet update, open an issue.
 - The Windows and Linux installers were prepared and tested by simulation, not yet on a real machine. If something fails, open an issue with your system and the error message.
