@@ -392,3 +392,7 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 @keyframes entra-suave { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .troca { animation: entra-suave .24s ease-out; }
 @media (prefers-reduced-motion: reduce) { .troca { animation: none; } }
+
+/* o e-mail de suporte chama a atenção: cor de destaque, em negrito */
+.email-suporte { color: var(--acento); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
+.email-suporte:hover, .email-suporte:focus-visible { text-decoration: underline; text-underline-offset: 3px; }

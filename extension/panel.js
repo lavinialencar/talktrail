@@ -856,7 +856,7 @@ async function diagnosticar() {
   }
   if (!servidorOk && pastaNavegador) {
     add(pastaPendente ? 'atencao' : 'ok', 'Pasta escolhida', pastaPendente ? `A pasta "${pastaNavegador.name}" precisa de um clique pra ser liberada. Enquanto isso, vai pra Downloads.` : `Grava em tempo real em "${pastaNavegador.name}".`);
-  } else add(servidorOk ? 'ok' : 'atencao', 'Pasta ao vivo (complemento)', servidorOk ? `Funcionando. ${pastaServidor}` : 'Desligada. Tudo bem: as reuniões ficam na biblioteca da extensão e vão pra Downloads/Talktrail ao terminar.');
+  } else add(servidorOk ? 'ok' : 'atencao', 'Pasta ao vivo (complemento)', servidorOk ? `Funcionando. Salvando em ${caminhoCurto(pastaServidor)}` : 'Desligada. Tudo bem: as reuniões ficam na biblioteca da extensão e vão pra Downloads/Talktrail ao terminar.');
   ultimoDiag = { itens, modo: r && r.modoSalvar, erro: (ultimo && ultimo.erro) || '' };
   const falhas = itens.filter((x) => x.nivel === 'falha').length;
   const gravando = !!(d && d.gravando);
@@ -1040,7 +1040,11 @@ if (URL_APOIO) {
   $('ajAvaliar').onclick = () => abrirPagina(`${URL_LOJA}/reviews`);
 }
 if (EMAIL_SUPORTE) {
-  $('ajSuporteEmail').textContent = `Ou escreva direto pra ${EMAIL_SUPORTE}.`;
+  const link = document.createElement('a');
+  link.href = `mailto:${EMAIL_SUPORTE}`;
+  link.className = 'email-suporte';
+  link.textContent = EMAIL_SUPORTE;
+  $('ajSuporteEmail').replaceChildren('Ou escreva pra ', link);
   $('ajSuporteEmail').hidden = false;
 }
 
