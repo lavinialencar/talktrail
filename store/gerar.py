@@ -8,7 +8,7 @@ VARIANTE = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] in ("marfim", "grafi
 SLAB = {"marfim": MARF, "grafite": "#2A2D35"}[VARIANTE]   # fundo da laje: nunca teal
 PASTA = {"marfim": "#FBF7EA", "grafite": MARF}[VARIANTE]     # cor da caixa "Sua pasta"
 os.makedirs(os.path.join(RAIZ, "out", VARIANTE), exist_ok=True)
-logo = open(os.path.join(RAIZ, "../design/logo-final/fita-completo.svg")).read()
+logo = open(os.path.join(RAIZ, "../design/logo-final/fita-cheio128.svg")).read()  # a mesma marca do ícone da loja e da extensão
 logo = re.sub(r'\s(width|height)="\d+"', "", logo, count=2)  # tamanho vem do CSS
 GRAO = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'>"
         "<feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter>"

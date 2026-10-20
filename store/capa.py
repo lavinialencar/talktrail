@@ -3,7 +3,7 @@ import os, re, subprocess
 RAIZ = os.path.dirname(os.path.abspath(__file__))
 HELIUM = "/Applications/Helium.app/Contents/MacOS/Helium"
 CARV, MARF, TEAL = "#0E0F12", "#E7DFC7", "#2DD4BF"
-logo = open(os.path.join(RAIZ, "../design/logo-final/fita-completo.svg")).read()
+logo = open(os.path.join(RAIZ, "../design/logo-final/fita-cheio128.svg")).read()
 logo = re.sub(r'\s(width|height)="\d+"', "", logo, count=2)
 GRAO = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'>"
         "<feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter>"
