@@ -402,3 +402,9 @@ body:not(.fora) .agenda-topo { justify-content: flex-end; margin-bottom: 4px; }
 /* o e-mail de suporte chama a atenção: cor de destaque, em negrito */
 .email-suporte { color: var(--acento); font-weight: 700; text-decoration: none; overflow-wrap: anywhere; }
 .email-suporte:hover, .email-suporte:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+/* os dois botões do bloco de ajuda ficam sempre lado a lado, mesmo no painel estreito */
+.ajajuda .ajbotoes.duas { flex-wrap: nowrap; flex-direction: row; }
+.ajajuda .ajbotoes.duas .sec, #ajApoio .ajbotoes.duas .sec { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; gap: 6px; font-size: 13px; }
+#ajApoio .ajbotoes.duas { flex-wrap: nowrap; flex-direction: row; }
+@media (max-width: 330px) { .ajajuda .ajbotoes.duas, #ajApoio .ajbotoes.duas { flex-direction: column; } } /* painel mínimo: aí empilha */
