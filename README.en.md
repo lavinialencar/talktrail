@@ -62,6 +62,7 @@ The extension picks automatically: if the local server answers, it uses the live
 
 ## Known limits
 
+- Google Meet itself must be set to English or Portuguese. The extension finds the captions box and buttons by their English or Portuguese names, so with Meet in another language (Spanish, French, German...) it will not find them yet. The text of the conversation can be in any language.
 - The quality of the text is the quality of Meet's captions. Technical names are often wrong.
 - Google changes the Meet page now and then. If captions stop being picked up after a Meet update, open an issue.
 - The Windows and Linux installers were prepared and tested by simulation, not yet on a real machine. If something fails, open an issue with your system and the error message.

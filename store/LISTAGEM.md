@@ -63,6 +63,7 @@ Everything stays on your computer. No account, no cloud, no telemetry. The exten
 
 Good to know
 • Captions must be on. The extension turns them on when the organizer allows it.
+• Works with Google Meet set to English or Portuguese. Other Meet languages are not supported yet.
 • Let the people in the meeting know you are transcribing.
 • Talktrail is not affiliated with Google. Google Meet is a trademark of Google LLC.
 

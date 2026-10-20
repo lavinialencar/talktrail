@@ -116,6 +116,8 @@ Nome do arquivo: `AAAA-MM/AAAA-MM-DD_HHhMM_titulo.md`. Se você muda o título d
 
 ## Limites conhecidos
 
+- O Google Meet precisa estar em **português ou inglês**. A extensão acha a caixa de legendas e os botões pelo nome nesses dois idiomas; com o Meet em outro idioma (espanhol, francês, alemão...) ela ainda não acha. A conversa pode ser em qualquer idioma.
+
 - A qualidade é a das legendas do Meet. O idioma das legendas precisa ser o da conversa; nomes técnicos saem errados com frequência.
 - O Google muda a página do Meet de vez em quando. O ponto frágil é achar a caixa de legendas (`achaRegiao` e `legendasLigadas` em `extension/content.js`).
 - Só funciona na aba normal do Meet, não no app instalado (PWA).
