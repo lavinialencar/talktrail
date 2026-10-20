@@ -18,11 +18,12 @@ def botao(nome, largura, rotulo, fundo, borda, icone_svg, descricao):
 botao("btn-loja.svg", 262, "Instalar na Chrome Web Store", CARV, TEAL,
       f'<image x="14" y="9" width="22" height="22" xlink:href="data:image/png;base64,{icone}" href="data:image/png;base64,{icone}"/>',
       "Instalar o Talktrail na Chrome Web Store")
-# apoiar: xícara em traço, na cor de destaque
-xicara = (f'<g transform="translate(16,10)"><path d="M3 7h10v4.2A4.2 4.2 0 0 1 8.8 15.4h-1.6A4.2 4.2 0 0 1 3 11.2z" fill="none" stroke="{TEAL}" stroke-width="1.6" stroke-linejoin="round"/>'
-          f'<path d="M13 8.2h1.4a2.1 2.1 0 0 1 0 4.2H13" fill="none" stroke="{TEAL}" stroke-width="1.6" stroke-linecap="round"/>'
-          f'<path d="M6.2 2.6v2M9.8 2.6v2" stroke="{TEAL}" stroke-width="1.6" stroke-linecap="round"/></g>')
-botao("btn-cafe.svg", 190, "Pague um café", GRAF, "#34373F", xicara, "Apoiar o Talktrail com um café")
+# apoiar: xícara cheia com vapor, em âmbar (a cor do café), no mesmo corpo do botão da loja
+AMBAR = "#F5C84B"
+xicara = (f'<g transform="translate(14,8)"><path d="M3.5 9.5h13v5.2a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5z" fill="{AMBAR}"/>'
+          f'<path d="M16.5 11h1.6a2.7 2.7 0 0 1 0 5.4h-1.6" fill="none" stroke="{AMBAR}" stroke-width="1.8" stroke-linecap="round"/>'
+          f'<path d="M7.6 3.2v3.2M12.2 3.2v3.2" stroke="{AMBAR}" stroke-width="1.8" stroke-linecap="round"/></g>')
+botao("btn-cafe.svg", 190, "Pague um café", CARV, AMBAR, xicara, "Apoiar o Talktrail com um café")
 # código: GitHub
 git = (f'<g transform="translate(16,10)"><path fill="{TEAL}" transform="scale(.8333)" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .26.18.58.69.48A10 10 0 0 0 12 2z"/></g>')
 botao("btn-codigo.svg", 160, "Ver o código", GRAF, "#34373F", git, "Ver o código do Talktrail no GitHub")
