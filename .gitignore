@@ -8,3 +8,6 @@ design/icones/
 design/logo-v*/
 store/out/grafite/
 store/painel/rev-*
+
+# pacote de envio montado à mão (cópias do zip e das imagens)
+store/envio-*/
