@@ -29,7 +29,7 @@ function lerBloco(texto) {
   if (l.length < 2) return null;
   let speaker = l[0];
   if (speaker.length > 60 || INTERFACE.test(speaker)) return null;
-  if (/^(você|voce|you)$/i.test(speaker)) speaker = 'Eu';
+  if (/^(você|voce|you)$/i.test(speaker)) speaker = trad('Eu');
   return { speaker, text: colapsar(l.slice(1)) };
 }
 
@@ -147,7 +147,9 @@ function tituloPadrao(docTitle) {
     // reunião sem nome: o código da sala não diz nada, usa a data e a hora
     const d = new Date();
     const dois = (n) => String(n).padStart(2, '0');
-    t = `Reunião de ${dois(d.getDate())}/${dois(d.getMonth() + 1)} às ${dois(d.getHours())}h${dois(d.getMinutes())}`;
+    const dia = MB_IDIOMA.en ? `${dois(d.getMonth() + 1)}/${dois(d.getDate())}` : `${dois(d.getDate())}/${dois(d.getMonth() + 1)}`;
+    const hora = MB_IDIOMA.en ? `${dois(d.getHours())}:${dois(d.getMinutes())}` : `${dois(d.getHours())}h${dois(d.getMinutes())}`;
+    t = trad('Reunião de {0} às {1}', [dia, hora]);
   }
   return t;
 }
@@ -170,7 +172,7 @@ if (typeof module !== 'undefined') {
   module.exports = { limparLinhas, colapsar, lerBloco, fundir, fecharLinha, tituloPadrao, inferirTags, palavraBloqueada, limparRepeticoes, CODIGO_SALA };
 }
 
-const TEXTO_CHAT = 'Estou transcrevendo esta reunião (só o texto, sem gravar áudio nem vídeo) no meu computador, com o Talktrail. Nada vai pra nuvem.';
+const TEXTO_CHAT = trad('Estou transcrevendo esta reunião (só o texto, sem gravar áudio nem vídeo) no meu computador, com o Talktrail. Nada vai pra nuvem.');
 // um texto salvo que é uma versão antiga do padrão (começa igual, mas não tem o nome atual) migra pro padrão novo
 const ehTextoPadraoAntigo = (t) => /^Estou (gravando e )?transcrevendo esta reunião/.test(String(t || '')) && !String(t).includes('Talktrail');
 
@@ -639,13 +641,13 @@ function iniciar() {
       S.erro = S.erroFixo || null;
       S.modoSalvar = (r.data && r.data.vazia) || r.modo === 'vazia' ? 'vazia' : r.modo || '';
     } else if (r && r.status === 403 && r.data && r.data.erro) {
-      S.erro = 'Esta extensão não está autorizada no servidor da pasta. A reunião continua guardada na extensão. Abra http://127.0.0.1:8787/ e clique em "Parear de novo".';
+      S.erro = trad('Esta extensão não está autorizada no servidor da pasta. A reunião continua guardada na extensão. Abra http://127.0.0.1:8787/ e clique em "Parear de novo".');
     } else if (r && r.status === 413) {
-      S.erro = 'Texto grande demais pra salvar na pasta. Apague parte das Notas ou da Pauta; a transcrição continua sendo capturada e guardada na extensão.';
+      S.erro = trad('Texto grande demais pra salvar na pasta. Apague parte das Notas ou da Pauta; a transcrição continua sendo capturada e guardada na extensão.');
     } else if (r && r.status >= 400 && r.data && r.data.erro) {
-      S.erro = 'Não consegui salvar na pasta (' + r.data.erro + '). A reunião continua guardada na extensão.';
+      S.erro = trad('Não consegui salvar na pasta (') + r.data.erro + trad('). A reunião continua guardada na extensão.');
     } else {
-      S.erro = 'A extensão não respondeu (ela pode ter sido atualizada). Recarregue a aba do Meet.';
+      S.erro = trad('A extensão não respondeu (ela pode ter sido atualizada). Recarregue a aba do Meet.');
     }
     push();
     desenhar();
@@ -663,7 +665,7 @@ function iniciar() {
   // "Ana 08:13" -> "Ana"; "Você" -> "Eu" (igual ao das legendas)
   function nomeDoCabecalho(texto) {
     const n = String(texto || '').replace(/\s+/g, ' ').trim().replace(/\s*\d{1,2}:\d{2}(\s?[AaPp][Mm])?$/, '').trim();
-    if (/^(você|voce|you)$/i.test(n)) return 'Eu';
+    if (/^(você|voce|you)$/i.test(n)) return trad('Eu');
     return n && n.length <= 60 ? n : '';
   }
 
@@ -722,9 +724,9 @@ function iniciar() {
       chatVisto.add(id);
       const agora = Math.floor(seg());
       if (S.chat.some((m) => m.text === texto.slice(0, 2000) && Math.abs(m.t - agora) < 15)) continue; // a mesma mensagem desenhada duas vezes
-      const quem = remetente(no) || (chatPendente.has(id) ? 'Eu' : '');
+      const quem = remetente(no) || (chatPendente.has(id) ? trad('Eu') : '');
       if (!quem && !S.chatEstrutura) S.chatEstrutura = estruturaDoNo(no);
-      S.chat.push({ t: agora, speaker: quem || 'Chat', text: texto.slice(0, 2000) });
+      S.chat.push({ t: agora, speaker: quem || trad('Chat'), text: texto.slice(0, 2000) });
       if (S.chat.length > 2000) S.chat.shift();
     }
   }
@@ -738,7 +740,7 @@ function iniciar() {
     S.linhas.push({
       t: Math.max(0, seg() - ms / 1000),
       speaker: 'Talktrail',
-      text: `(transcrição pausada por ${dur} e retomada)`,
+      text: trad('(transcrição pausada por {0} e retomada)', [dur]),
     });
   }
 
@@ -749,9 +751,9 @@ function iniciar() {
     S.linhas.push({
       t: Math.max(0, seg() - ms / 1000),
       speaker: 'Talktrail',
-      text: `(transcrição parada por ${min} min: o computador dormiu ou a aba foi suspensa; este trecho não foi transcrito)`,
+      text: trad('(transcrição parada por {0} min: o computador dormiu ou a aba foi suspensa; este trecho não foi transcrito)', [min]),
     });
-    S.info = `A transcrição ficou parada por ${min} min (o computador dormiu ou a aba foi suspensa). Esse trecho não foi transcrito.`;
+    S.info = trad('A transcrição ficou parada por {0} min (o computador dormiu ou a aba foi suspensa). Esse trecho não foi transcrito.', [min]);
     S.infoAte = Date.now() + 60000;
     push();
   }
@@ -825,13 +827,13 @@ function iniciar() {
       let abriuAgora = false;
       if (!campo()) {
         const a = alternador();
-        if (!a) throw new Error('sem botão de chat');
+        if (!a) throw new Error(trad('sem botão de chat'));
         a.click();
         abriuAgora = true;
         for (let i = 0; i < 12 && !campo(); i++) await espera(300);
       }
       const c = campo();
-      if (!c) throw new Error('sem campo de mensagem');
+      if (!c) throw new Error(trad('sem campo de mensagem'));
       c.focus();
       if (c.tagName === 'TEXTAREA') {
         Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set.call(c, msg);
@@ -841,7 +843,7 @@ function iniciar() {
       c.dispatchEvent(new Event('input', { bubbles: true }));
       await espera(250);
       const enviar = botoes().find((b) => /(enviar|send)/i.test(rotulo(b)) && !b.disabled && b !== alternador());
-      if (!enviar) throw new Error('sem botão de enviar');
+      if (!enviar) throw new Error(trad('sem botão de enviar'));
       enviar.click();
       await espera(300);
       if (abriuAgora) {
@@ -859,7 +861,7 @@ function iniciar() {
     if (S.fase === 'gravando') return;
     const bloq = bloqueioNaReuniao();
     if (bloq) {
-      S.erro = `"${bloq}" está nesta reunião (no nome ou entre os participantes), então não vou transcrever. Tire da lista de bloqueio nos Ajustes se quiser transcrever.`;
+      S.erro = trad('"{0}" está nesta reunião (no nome ou entre os participantes), então não vou transcrever. Tire da lista de bloqueio nos Ajustes se quiser transcrever.', [bloq]);
       push();
       desenhar();
       return;
@@ -1115,7 +1117,7 @@ function iniciar() {
       @media (prefers-reduced-motion:reduce){.fab.rec::after{animation:none}}
       [hidden]{display:none !important}
     </style>
-    <button class="fab" type="button" hidden aria-label="Transcrever esta reunião" title="Transcrever esta reunião"><i></i></button>
+    <button class="fab" type="button" hidden aria-label="${trad('Transcrever esta reunião')}" title="${trad('Transcrever esta reunião')}"><i></i></button>
     <div id="slot" role="status" aria-live="polite"></div>`;
   document.documentElement.appendChild(host);
   // Em tela cheia do Meet só o elemento em tela cheia (e o que está dentro) aparece: leva o aviso e o botão redondo pra dentro dele.
@@ -1147,7 +1149,7 @@ function iniciar() {
     fab.hidden = !visivel;
     const gravando = S.fase === 'gravando';
     fab.classList.toggle('rec', gravando);
-    const rotulo = gravando ? 'Parar a transcrição' : 'Transcrever esta reunião';
+    const rotulo = gravando ? trad('Parar a transcrição') : trad('Transcrever esta reunião');
     fab.title = rotulo;
     fab.setAttribute('aria-label', rotulo);
   }
@@ -1190,31 +1192,31 @@ function iniciar() {
     const doisBotoes = oferta && S.ajustes.avisoChat === 'perguntar';
     el.className = oferta ? 'card' + (doisBotoes ? ' dois' : '') : 'card salvo'; // o de salvo e o de "transcrevendo": texto em cima, botões embaixo
     const botoes = aviso
-      ? '<div class="r"><button class="p" data-a="r">Recarregar a aba</button></div>'
+      ? '<div class="r"><button class="p" data-a="r">' + trad('Recarregar a aba') + '</button></div>'
       : oferta
       ? doisBotoes
-        ? '<div class="r"><button class="p" data-a="g">Transcrever</button><button class="g b" data-a="ga" title="Transcreve e escreve no chat do Meet que você está transcrevendo">Transcrever e avisar</button><button class="g" data-a="n">Agora não</button></div><div class="bar"></div>'
-        : '<div class="r"><button class="p" data-a="g">Transcrever</button></div><div class="bar"></div>'
+        ? '<div class="r"><button class="p" data-a="g">' + trad('Transcrever') + '</button><button class="g b" data-a="ga" title="' + trad('Transcreve e escreve no chat do Meet que você está transcrevendo') + '">' + trad('Transcrever e avisar') + '</button><button class="g" data-a="n">' + trad('Agora não') + '</button></div><div class="bar"></div>'
+        : '<div class="r"><button class="p" data-a="g">' + trad('Transcrever') + '</button></div><div class="bar"></div>'
       : inicio
-        ? '<div class="r"><button class="g" data-a="p" title="Parar a transcrição">Parar</button></div>'
+        ? '<div class="r"><button class="g" data-a="p" title="' + trad('Parar a transcrição') + '">' + trad('Parar') + '</button></div>'
         : '<div class="r">' +
-          (S.podeDesfazer ? '<button class="g" data-a="d" title="Continuar transcrevendo esta reunião">Desfazer</button>' : '') +
-          '<button class="g" data-a="pf" title="Escolher uma pasta sua pra salvar as próximas reuniões nela, ao vivo"' + (ofertaDePasta() ? '' : ' hidden') + '>Salvar numa pasta minha</button>' +
-          '<button class="a" data-a="m" title="Mostra o arquivo da reunião na pasta, pra você decidir o que fazer com ele (por exemplo, mandar pra uma IA)"' + (temArquivo() ? '' : ' hidden') + '><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1 1 0 0 1 1-1h3.2l1.4 1.5h5.9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>Mostrar na pasta</button></div>';
+          (S.podeDesfazer ? '<button class="g" data-a="d" title="' + trad('Continuar transcrevendo esta reunião') + '">' + trad('Desfazer') + '</button>' : '') +
+          '<button class="g" data-a="pf" title="' + trad('Escolher uma pasta sua pra salvar as próximas reuniões nela, ao vivo') + '"' + (ofertaDePasta() ? '' : ' hidden') + '>' + trad('Salvar numa pasta minha') + '</button>' +
+          '<button class="a" data-a="m" title="' + trad('Mostra o arquivo da reunião na pasta, pra você decidir o que fazer com ele (por exemplo, mandar pra uma IA)') + '"' + (temArquivo() ? '' : ' hidden') + '><svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1 1 0 0 1 1-1h3.2l1.4 1.5h5.9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>' + trad('Mostrar na pasta') + '</button></div>';
     el.innerHTML = `<div class="ico${oferta || inicio ? '' : ' ok'}"><i></i></div><div class="c"><div class="t"></div><div class="m"></div></div>${botoes}`;
     if (!oferta) el.querySelector('.c').appendChild(el.querySelector('.r')); // título, texto e botões, um embaixo do outro
     el.classList.add('cf');
-    el.insertAdjacentHTML('beforeend', '<button class="fechar" type="button" data-a="x" aria-label="Fechar" title="Fechar">×</button>');
+    el.insertAdjacentHTML('beforeend', '<button class="fechar" type="button" data-a="x" aria-label="' + trad('Fechar') + '" title="' + trad('Fechar') + '">×</button>');
     const semNada = !oferta && !inicio && !aviso && S.modoSalvar === 'vazia';
-    el.querySelector('.t').textContent = aviso ? 'A extensão foi atualizada' : oferta ? 'Transcrever esta reunião?' : inicio ? 'Transcrevendo esta reunião' : semNada ? 'Nada foi falado' : 'Reunião salva';
+    el.querySelector('.t').textContent = aviso ? trad('A extensão foi atualizada') : oferta ? trad('Transcrever esta reunião?') : inicio ? trad('Transcrevendo esta reunião') : semNada ? trad('Nada foi falado') : trad('Reunião salva');
     el.querySelector('.m').textContent = aviso
-      ? 'Recarregue esta aba para voltar a transcrever.\nO que já foi salvo continua guardado.'
+      ? trad('Recarregue esta aba para voltar a transcrever.\nO que já foi salvo continua guardado.')
       : oferta
-      ? 'A transcrição fica só no seu computador.'
+      ? trad('A transcrição fica só no seu computador.')
       : inicio
-        ? 'Só no seu computador.\nO painel abre pelo ícone da extensão.'
+        ? trad('Só no seu computador.\nO painel abre pelo ícone da extensão.')
         : semNada
-          ? 'Sem fala, nota nem marcador: não guardei arquivo.'
+          ? trad('Sem fala, nota nem marcador: não guardei arquivo.')
           : S.titulo || '';
     if (!oferta && !inicio && !aviso) el.querySelector('.m').title = S.titulo || '';
     el.addEventListener('click', (ev) => {
@@ -1288,9 +1290,9 @@ function iniciar() {
         const nada = S.modoSalvar === 'vazia';
         const tt = atual.el.querySelector('.t');
         const mm = atual.el.querySelector('.m');
-        if (tt && mm && (tt.textContent === 'Nada foi falado') !== nada) {
-          tt.textContent = nada ? 'Nada foi falado' : 'Reunião salva';
-          mm.textContent = nada ? 'Sem fala, nota nem marcador: não guardei arquivo.' : S.titulo || '';
+        if (tt && mm && (tt.textContent === trad('Nada foi falado')) !== nada) {
+          tt.textContent = nada ? trad('Nada foi falado') : trad('Reunião salva');
+          mm.textContent = nada ? trad('Sem fala, nota nem marcador: não guardei arquivo.') : S.titulo || '';
         }
       }
       return;
@@ -1350,7 +1352,7 @@ const SAIU = /voc[êe] (saiu|encerrou)|you (left|ended)|reuni[ãa]o (foi )?encer
       if (noCall) semChamadaDesde = 0;
       const entrou = S.ajustes.palavras.length ? bloqueioNaReuniao() : '';
       if (entrou) {
-        S.erroFixo = `Parei de transcrever: "${entrou}" entrou na reunião. O que já foi transcrito ficou salvo; apague na biblioteca se não quiser guardar.`;
+        S.erroFixo = trad('Parei de transcrever: "{0}" entrou na reunião. O que já foi transcrito ficou salvo; apague na biblioteca se não quiser guardar.', [entrou]);
         pararGravacao();
         S.erro = S.erroFixo;
         push();
@@ -1373,7 +1375,7 @@ const SAIU = /voc[êe] (saiu|encerrou)|you (left|ended)|reuni[ãa]o (foi )?encer
       const modo = S.ajustes.oferta;
       if (bloq) {
         S.dispensado = true;
-        S.erro = `"${bloq}" está nesta reunião (no nome ou entre os participantes), então não vou oferecer transcrever.`;
+        S.erro = trad('"{0}" está nesta reunião (no nome ou entre os participantes), então não vou oferecer transcrever.', [bloq]);
         push();
       } else if (modo === 'nada') {
         S.dispensado = true; // só o painel; nenhum aviso na página

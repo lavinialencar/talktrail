@@ -226,11 +226,11 @@
   };
 
   // Reunião sem nada: nem fala, nem marcador, nem nota, nem pauta, nem chat de verdade (o aviso da extensão não conta).
-  const AVISO_CHAT = 'estou transcrevendo esta reuni';
+  const AVISOS_CHAT = ['estou transcrevendo esta reuni', 'i am transcribing this meeting']; // o texto padrão do aviso, em português e em inglês
   function vazia(p) {
     const lista = (v) => (Array.isArray(v) ? v : []).filter((x) => x && typeof x === 'object' && !Array.isArray(x));
     const falas = lista(p.transcript).filter((l) => l.speaker !== 'Talktrail' && linhaUnica(l.text, 20));
-    const chat = lista(p.chat).filter((m) => linhaUnica(m.text, 2000) && !linhaUnica(m.text, 200).toLowerCase().startsWith(AVISO_CHAT));
+    const chat = lista(p.chat).filter((m) => linhaUnica(m.text, 2000) && !AVISOS_CHAT.some((a) => linhaUnica(m.text, 200).toLowerCase().startsWith(a)));
     return !(falas.length || lista(p.marcas).length || chat.length || texto(p.notes, MAX_TEXTO).trim() || texto(p.cola, MAX_TEXTO).trim());
   }
 

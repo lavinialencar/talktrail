@@ -32,13 +32,13 @@ function resumo(reg) {
     md = '';
   }
   const d = new Date(p.startedAt);
-  const quando = Number.isNaN(d.getTime()) ? '' : `${dois(d.getDate())}/${dois(d.getMonth() + 1)}/${d.getFullYear()} às ${dois(d.getHours())}h${dois(d.getMinutes())}`;
+  const quando = Number.isNaN(d.getTime()) ? '' : MB_IDIOMA.en ? `${dois(d.getMonth() + 1)}/${dois(d.getDate())}/${d.getFullYear()} at ${dois(d.getHours())}:${dois(d.getMinutes())}` : `${dois(d.getDate())}/${dois(d.getMonth() + 1)}/${d.getFullYear()} às ${dois(d.getHours())}h${dois(d.getMinutes())}`;
   const falas = (Array.isArray(p.transcript) ? p.transcript : []).filter((l) => l && l.text && l.speaker !== 'Talktrail');
   return {
     md,
-    titulo: MB_MD.linhaUnica(p.titulo, 200) || 'Reunião sem título',
+    titulo: MB_MD.linhaUnica(p.titulo, 200) || trad('Reunião sem título'),
     quando,
-    duracao: p.endedAt ? Math.max(1, Math.round((new Date(p.endedAt) - d) / 60000)) + ' min' : 'em andamento',
+    duracao: p.endedAt ? Math.max(1, Math.round((new Date(p.endedAt) - d) / 60000)) + ' min' : trad('em andamento'),
     tags: MB_MD.tagsLimpas(p.tags),
     primeira: falas.length ? { quem: MB_MD.linhaUnica(falas[0].speaker, 40) || '', texto: MB_MD.linhaUnica(falas[0].text, 220) } : null,
     busca: (MB_MD.linhaUnica(p.titulo, 200) + ' ' + MB_MD.tagsLimpas(p.tags).join(' ') + ' ' + falas.map((l) => l.text).join(' ') + ' ' + (p.notes || '')).toLowerCase(),
@@ -101,7 +101,7 @@ function desenhar() {
   ul.innerHTML = '';
   const itens = TODAS.map((reg) => ({ reg, r: resumo(reg) })).filter((x) => !q || x.r.busca.includes(q));
   $('vazio').hidden = TODAS.length > 0 && itens.length > 0;
-  $('vazio').textContent = TODAS.length && !itens.length ? 'Nada encontrado para essa busca.' : 'Nenhuma reunião ainda. Entre numa chamada do Meet e clique em Transcrever.';
+  $('vazio').textContent = TODAS.length && !itens.length ? trad('Nada encontrado para essa busca.') : trad('Nenhuma reunião ainda. Entre numa chamada do Meet e clique em Transcrever.');
   for (const { reg, r } of itens) {
     const li = document.createElement('li');
     li.className = 'reuniao';
@@ -140,33 +140,33 @@ function desenhar() {
       return b;
     };
     let aberta = null;
-    bt('Ver', (b) => {
+    bt(trad('Ver'), (b) => {
       if (aberta) {
         aberta.remove();
         aberta = null;
-        b.textContent = 'Ver';
+        b.textContent = trad('Ver');
         return;
       }
       aberta = previa(r.md);
       li.appendChild(aberta);
-      b.textContent = 'Fechar';
+      b.textContent = trad('Fechar');
     });
-    bt('Copiar', async (b) => {
+    bt(trad('Copiar'), async (b) => {
       try {
         await navigator.clipboard.writeText(r.md);
-        b.textContent = 'Copiado';
-        setTimeout(() => (b.textContent = 'Copiar'), 1500);
+        b.textContent = trad('Copiado');
+        setTimeout(() => (b.textContent = trad('Copiar')), 1500);
       } catch (e) {}
     });
-    bt('Baixar .md', () => baixar(reg, r.md), 'primario');
+    bt(trad('Baixar .md'), () => baixar(reg, r.md), 'primario');
     let tApagar = null;
-    bt('Apagar', async (b) => {
+    bt(trad('Apagar'), async (b) => {
       if (!b.classList.contains('confirma')) {
         b.classList.add('confirma');
-        b.textContent = 'Apagar mesmo?';
+        b.textContent = trad('Apagar mesmo?');
         tApagar = setTimeout(() => {
           b.classList.remove('confirma');
-          b.textContent = 'Apagar';
+          b.textContent = trad('Apagar');
         }, 4000);
         return;
       }

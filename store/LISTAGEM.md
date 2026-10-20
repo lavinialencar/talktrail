@@ -68,7 +68,7 @@ Good to know
 
 Support the project: https://buymeacoffee.com/talktrail
 
-> Observação: o painel da extensão ainda está só em português. A descrição em inglês só deve ir pra loja depois da interface em inglês (i18n), senão a pessoa instala e encontra tudo em português.
+> Observação: a interface em inglês (i18n) entra na versão 1.21.13. A descrição e as imagens em inglês só vão pra loja quando essa versão estiver aprovada, senão a pessoa instala e encontra tudo em português. O idioma segue o do navegador: inglês e português (pt-BR e pt-PT); qualquer outro idioma cai no inglês.
 
 ## URL da política de privacidade
 

@@ -7,6 +7,8 @@ const normT = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀
 const diaISO = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
 const dataDe = (iso) => new Date(`${iso}T12:00:00`);
+const nReunioes = (n) => (n === 1 ? trad('{0} reunião', [n]) : trad('{0} reuniões', [n]));
+if (MB_IDIOMA.en) document.querySelectorAll('.cal-sem span').forEach((el, i) => (el.textContent = 'SMTWTFS'[i])); // a semana começa no domingo
 const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1); // "outubro de 2026" -> "Outubro de 2026" (só a primeira letra)
 const ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar)$/i;
 const DIAS_A_FRENTE = 14;
@@ -25,7 +27,7 @@ let lendo = ''; // 'tudo' ou o dia que está sendo lido no Meet
 let tSalvar = null;
 
 const ed = MBEditor.create($('edTxt'), {
-  placeholder: 'O que você quer tratar',
+  placeholder: trad('O que você quer tratar'),
   onChange: (v) => {
     clearTimeout(tSalvar);
     tSalvar = setTimeout(() => salvar(v), 300);
@@ -53,9 +55,9 @@ const porDia = () => {
 
 function diaLongo(iso) {
   const hoje = diaISO();
-  const base = dataDe(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-  if (iso === hoje) return `Hoje, ${base}`;
-  if (iso === diaISO(new Date(Date.now() + 86400000))) return `Amanhã, ${base}`;
+  const base = dataDe(iso).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'long', day: 'numeric', month: 'long' });
+  if (iso === hoje) return trad('Hoje, {0}', [base]);
+  if (iso === diaISO(new Date(Date.now() + 86400000))) return trad('Amanhã, {0}', [base]);
   return cap(base);
 }
 
@@ -93,16 +95,16 @@ function item(l) {
   if (andando) {
     const e = document.createElement('span');
     e.className = 'chip-agora';
-    e.textContent = 'Em andamento';
+    e.textContent = trad('Em andamento');
     estado.append(e);
   }
   const chip = document.createElement('span');
   chip.className = l.texto ? 'chip-pauta tem' : 'chip-pauta sem';
-  chip.textContent = l.texto ? 'Pauta pronta' : 'Adicionar pauta';
+  chip.textContent = l.texto ? trad('Pauta pronta') : trad('Adicionar pauta');
   estado.append(chip);
   corpo.append(tit, estado);
   abrir.append(hora, corpo);
-  abrir.setAttribute('aria-label', `${l.hora || ''} ${l.titulo}. ${l.texto ? 'Pauta pronta' : 'Adicionar pauta'}`);
+  abrir.setAttribute('aria-label', `${l.hora || ''} ${l.titulo}. ${l.texto ? trad('Pauta pronta') : trad('Adicionar pauta')}`);
   abrir.onclick = () => escolher(l.id);
   li.append(abrir);
   if (l.salva) {
@@ -110,7 +112,7 @@ function item(l) {
     x.type = 'button';
     x.className = 'apagar' + (confirmaApagar === l.id ? ' confirma' : '');
     x.textContent = confirmaApagar === l.id ? 'Apagar?' : '×';
-    x.setAttribute('aria-label', `Apagar a pauta de ${l.titulo}`);
+    x.setAttribute('aria-label', trad('Apagar a pauta de {0}', [l.titulo]));
     x.onclick = () => {
       if (confirmaApagar !== l.id) {
         confirmaApagar = l.id;
@@ -133,7 +135,7 @@ function item(l) {
 function pintarCalendario(dias) {
   const ano = mes.getFullYear();
   const m = mes.getMonth();
-  const nome = mes.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const nome = mes.toLocaleDateString(MB_IDIOMA.loc, { month: 'long', year: 'numeric' });
   $('mesNome').textContent = cap(nome);
   const hoje = diaISO();
   const cels = [];
@@ -152,7 +154,7 @@ function pintarCalendario(dias) {
       p.className = 'ponto ' + (completas ? 'tem' : 'sem');
       b.append(p);
     }
-    b.setAttribute('aria-label', `${dataDe(iso).toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}${reunioes.length ? `, ${reunioes.length} ${reunioes.length === 1 ? 'reunião' : 'reuniões'}, ${completas ? 'todas com pauta' : 'falta pauta'}` : ''}`);
+    b.setAttribute('aria-label', `${dataDe(iso).toLocaleDateString(MB_IDIOMA.loc, { day: 'numeric', month: 'long' })}${reunioes.length ? `, ${nReunioes(reunioes.length)}, ${completas ? trad('todas com pauta') : trad('falta pauta')}` : ''}`);
     b.setAttribute('aria-pressed', String(iso === diaSel));
     b.onclick = () => { diaSel = iso; pintar(); };
     cels.push(b);
@@ -163,12 +165,12 @@ function pintarCalendario(dias) {
 function pintarDia(dias) {
   const doDia = dias.get(diaSel) || [];
   $('diaNome').textContent = diaLongo(diaSel);
-  $('diaN').textContent = doDia.length ? `${doDia.length} ${doDia.length === 1 ? 'reunião' : 'reuniões'}` : '';
+  $('diaN').textContent = doDia.length ? nReunioes(doDia.length) : '';
   $('diaLista').replaceChildren(...doDia.map(item));
   const lido = !!diasLidos[diaSel];
   $('diaVazio').hidden = doDia.length > 0;
   if (!doDia.length) {
-    $('diaVazioTxt').textContent = lido ? 'Nenhuma reunião do Meet neste dia.' : diaSel < diaISO() ? 'Dia que já passou.' : 'Ainda não li este dia. Use o botão no alto da página para ler.';
+    $('diaVazioTxt').textContent = lido ? trad('Nenhuma reunião do Meet neste dia.') : diaSel < diaISO() ? trad('Dia que já passou.') : trad('Ainda não li este dia. Use o botão no alto da página para ler.');
   }
 }
 
@@ -191,7 +193,7 @@ function pintarLista() {
       const nome = document.createElement('b');
       nome.textContent = diaLongo(l.data).split(',')[0];
       const curta = document.createElement('span');
-      curta.textContent = dataDe(l.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      curta.textContent = dataDe(l.data).toLocaleDateString(MB_IDIOMA.loc, { day: '2-digit', month: '2-digit' });
       h.append(nome, curta);
       els.push(h);
     }
@@ -199,7 +201,7 @@ function pintarLista() {
   }
   $('lista').replaceChildren(...els);
   $('vazio').hidden = mostrar.length > 0;
-  $('vazio').textContent = futuras.length ? (filtro === 'sem' ? 'Todas as reuniões já têm pauta.' : 'Nenhuma reunião com pauta ainda.') : 'Nenhuma reunião lida ainda. Toque em "Atualizar os próximos 14 dias".';
+  $('vazio').textContent = futuras.length ? (filtro === 'sem' ? trad('Todas as reuniões já têm pauta.') : trad('Nenhuma reunião com pauta ainda.')) : trad('Nenhuma reunião lida ainda. Toque em "Atualizar os próximos 14 dias".');
 }
 
 function pintar() {
@@ -213,13 +215,13 @@ function pintar() {
     pintarLista();
   }
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-  const hora = lidaEm ? new Date(lidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const hora = lidaEm ? new Date(lidaEm).toLocaleTimeString(MB_IDIOMA.loc, { hour: '2-digit', minute: '2-digit' }) : '';
   const ate = Object.keys(diasLidos).sort().pop();
-  const ateTxt = ate ? new Date(`${ate}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : '';
-  $('status').textContent = lendo ? 'Lendo a agenda do Meet em abas de fundo.' : hora ? `Atualizado às ${hora} · lido até ${ateTxt || 'hoje'}` : 'A agenda ainda não foi lida.';
+  const ateTxt = ate ? new Date(`${ate}T12:00:00`).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '') : '';
+  $('status').textContent = lendo ? trad('Lendo a agenda do Meet em abas de fundo.') : hora ? trad('Atualizado às {0} · lido até {1}', [hora, ateTxt || trad('hoje')]) : trad('A agenda ainda não foi lida.');
   $('status').title = versao ? `Talktrail ${versao}` : '';
   const pt = pontoDeLeitura();
-  $('atualizar').textContent = lendo ? 'Parar a leitura' : pt.rotulo;
+  $('atualizar').textContent = lendo ? trad('Parar a leitura') : pt.rotulo;
 }
 
 function pintarEditor() {
@@ -228,7 +230,7 @@ function pintarEditor() {
   $('edCorpo').hidden = !e;
   if (!e) return;
   $('edTitulo').textContent = e.titulo;
-  $('edQuando').textContent = cap(`${dataDe(e.data).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}${e.hora ? ` · ${e.hora}${e.fim ? ` às ${e.fim}` : ''}` : ''}`);
+  $('edQuando').textContent = cap(`${dataDe(e.data).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'long', day: 'numeric', month: 'long' })}${e.hora ? ` · ${e.hora}${e.fim ? trad(' às {0}', [e.fim]) : ''}` : ''}`);
   ed.setValue(e.texto || MB_MODELO.TEXTO); // pauta nova começa no modelo; só vira pauta quando a pessoa escreve
 }
 
@@ -265,8 +267,8 @@ async function carregar() {
 // um botão só: lê os próximos dias; se o dia escolhido está longe demais, lê a partir dele
 function pontoDeLeitura() {
   const limite = diaISO(new Date(Date.now() + (DIAS_A_FRENTE - 1) * 86400000));
-  if (diaSel > limite && !diasLidos[diaSel]) return { desde: diaSel, rotulo: `Ler a partir de ${dataDe(diaSel).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}` };
-  return { desde: '', rotulo: 'Atualizar agenda' };
+  if (diaSel > limite && !diasLidos[diaSel]) return { desde: diaSel, rotulo: trad('Ler a partir de {0}', [dataDe(diaSel).toLocaleDateString(MB_IDIOMA.loc, { day: '2-digit', month: '2-digit' })]) };
+  return { desde: '', rotulo: trad('Atualizar agenda') };
 }
 
 function pedirLeitura(modo, dias, desde) {

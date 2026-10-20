@@ -3,21 +3,21 @@
 const soPasta = new URLSearchParams(location.search).get('so') === 'pasta';
 if (soPasta) {
   document.body.classList.add('so-pasta');
-  document.getElementById('titulo').textContent = 'Onde salvar suas reuniões?';
+  document.getElementById('titulo').textContent = trad('Onde salvar suas reuniões?');
 }
 const status = document.getElementById('status');
 const passo = document.getElementById('passoPasta');
 function pronto(nome) {
   passo.classList.add('pronto');
   status.classList.remove('erro');
-  status.textContent = `Pronto. Salvando em "${nome}".`;
+  status.textContent = trad('Pronto. Salvando em "{0}".', [nome]);
 }
 
 MB_PASTA.ler().then((h) => { if (h) pronto(h.name); }).catch(() => {});
 document.getElementById('escolher').onclick = async () => {
   status.classList.add('erro');
   if (typeof window.showDirectoryPicker !== 'function') {
-    status.textContent = 'Este navegador não deixa escolher uma pasta. As reuniões continuam indo para Downloads.';
+    status.textContent = trad('Este navegador não deixa escolher uma pasta. As reuniões continuam indo para Downloads.');
     return;
   }
   try {
@@ -27,6 +27,6 @@ document.getElementById('escolher').onclick = async () => {
     pronto(h.name);
     if (soPasta) setTimeout(() => window.close(), 1600);
   } catch (e) {
-    status.textContent = e && e.name === 'AbortError' ? '' : 'Não consegui usar essa pasta. Escolha outra.';
+    status.textContent = e && e.name === 'AbortError' ? '' : trad('Não consegui usar essa pasta. Escolha outra.');
   }
 };

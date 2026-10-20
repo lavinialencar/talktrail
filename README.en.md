@@ -11,7 +11,7 @@
 
 **A free Chrome extension that turns Google Meet captions into a Markdown file on your computer.** No account, no cloud, no telemetry. It reads the captions Meet already shows, keeps the live text in a side panel, and saves each meeting as a `.md` file you can open in Obsidian, search, or hand to an AI.
 
-> The extension's interface is in Portuguese for now. An English interface is the next big update. Everything else on this page already applies.
+> The interface follows your browser's language: English, or Portuguese if your browser is in Portuguese. The saved `.md` files keep Portuguese section headings (`## Resumo`, `## Pauta`, `## Transcrição`) for now, so scripts and AI tools can rely on a fixed format.
 
 ## What it does
 

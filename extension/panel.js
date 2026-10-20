@@ -35,7 +35,7 @@ async function checarServidor() {
 }
 
 // ---------- ajustes (engrenagem) ----------
-const TEXTO_CHAT = 'Estou transcrevendo esta reunião (só o texto, sem gravar áudio nem vídeo) no meu computador, com o Talktrail. Nada vai pra nuvem.';
+const TEXTO_CHAT = trad('Estou transcrevendo esta reunião (só o texto, sem gravar áudio nem vídeo) no meu computador, com o Talktrail. Nada vai pra nuvem.');
 // um texto salvo que é uma versão antiga do padrão (começa igual, mas não tem o nome atual) migra pro padrão novo
 const ehTextoPadraoAntigo = (t) => /^Estou (gravando e )?transcrevendo esta reunião/.test(String(t || '')) && !String(t).includes('Talktrail');
 let AJ = { oferta: 'perguntar', avisoChat: 'nunca', salvarChat: false, textoChat: TEXTO_CHAT, palavras: [], baixarAoTerminar: true, apagarAntigas: 'nunca' };
@@ -67,28 +67,28 @@ const instalavel = instaladorEmbutido || !!URL_COMPLEMENTO;
 function pintarPasta() {
   const ao_vivo = servidorOk && !!pastaServidor;
   $('ajPautasArq').textContent = ao_vivo || pastaNavegador
-    ? 'As pautas também ficam em arquivos, na subpasta Pautas/. Uma IA pode editar esses arquivos e a mudança aparece aqui em até 1 minuto, com o navegador aberto.'
-    : 'Escolhendo uma pasta, as pautas também passam a ficar em arquivos (subpasta Pautas/) que uma IA pode editar.';
+    ? trad('As pautas também ficam em arquivos, na subpasta Pautas/. Uma IA pode editar esses arquivos e a mudança aparece aqui em até 1 minuto, com o navegador aberto.')
+    : trad('Escolhendo uma pasta, as pautas também passam a ficar em arquivos (subpasta Pautas/) que uma IA pode editar.');
   // com o complemento: escolher a pasta ao vivo e copiar o caminho. Sem ele: escolher uma pasta pelo navegador
   $('ajAbrir').hidden = false;
   $('ajInstalar').hidden = ao_vivo || !instalavel; // com o complemento já rodando, ou sem instalador à mão, não mostra
   $('ajCopiar').hidden = !ao_vivo && !pastaNavegador;
-  rotuloDe('ajAbrir', ao_vivo ? 'Escolher a pasta ao vivo…' : pastaNavegador ? 'Trocar a pasta…' : 'Escolher uma pasta…');
-  rotuloDe('ajCopiar', ao_vivo ? 'Copiar o caminho' : 'Voltar pra Downloads');
+  rotuloDe('ajAbrir', ao_vivo ? trad('Escolher a pasta ao vivo…') : pastaNavegador ? trad('Trocar a pasta…') : trad('Escolher uma pasta…'));
+  rotuloDe('ajCopiar', ao_vivo ? trad('Copiar o caminho') : trad('Voltar pra Downloads'));
   if (!ao_vivo && pastaNavegador) {
-    $('ajPasta').textContent = `Pasta escolhida: ${pastaNavegador.name}`;
+    $('ajPasta').textContent = trad('Pasta escolhida: {0}', [pastaNavegador.name]);
     $('ajPasta').title = '';
-    $('ajPastaDica').textContent = 'Salva nela em tempo real, numa subpasta por mês. De vez em quando o navegador pede pra liberar a pasta de novo: é um clique. Enquanto isso, a reunião vai pra Downloads.';
+    $('ajPastaDica').textContent = trad('Salva nela em tempo real, numa subpasta por mês. De vez em quando o navegador pede pra liberar a pasta de novo: é um clique. Enquanto isso, a reunião vai pra Downloads.');
     return;
   }
   if (ao_vivo) {
     $('ajPasta').textContent = caminhoCurto(pastaServidor); // o caminho inteiro é comprido e o leigo não precisa dele; fica na dica e em "Copiar o caminho"
     $('ajPasta').title = pastaServidor;
-    $('ajPastaDica').textContent = 'Pasta ao vivo: salva em tempo real, uma subpasta por mês, um arquivo por reunião.';
+    $('ajPastaDica').textContent = trad('Pasta ao vivo: salva em tempo real, uma subpasta por mês, um arquivo por reunião.');
   } else {
     $('ajPasta').textContent = 'Downloads/Talktrail/AAAA-MM/';
     $('ajPasta').title = '';
-    $('ajPastaDica').textContent = 'Sem o complemento, a reunião fica na biblioteca e vira arquivo em Downloads ao terminar. Quer numa pasta sua, em tempo real? Toque em "Escolher uma pasta": abre em Documentos; crie uma pasta chamada Talktrail (botão "Nova pasta") e clique em Abrir.';
+    $('ajPastaDica').textContent = trad('Sem o complemento, a reunião fica na biblioteca e vira arquivo em Downloads ao terminar. Quer numa pasta sua, em tempo real? Toque em "Escolher uma pasta": abre em Documentos; crie uma pasta chamada Talktrail (botão "Nova pasta") e clique em Abrir.');
   }
 }
 function pintarAjustes() {
@@ -136,9 +136,9 @@ async function baixarComplemento() {
   const so = /Win/i.test(sistema) ? 'windows' : /Mac/i.test(sistema) ? 'mac' : 'linux';
   const arquivo = instaladorEmbutido ? 'Talktrail-complemento.zip' : `Talktrail-complemento-${so}.zip`;
   const passos = {
-    mac: `Baixei o arquivo ${arquivo}. 1) Em Downloads, dê dois cliques nele. 2) Abra "Instalar Talktrail" (na primeira vez: botão direito, Abrir). 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.`,
-    windows: `Baixei o arquivo ${arquivo}. 1) Em Downloads, botão direito nele, Extrair tudo. 2) Abra "Instalar Talktrail" (se o Windows avisar: Mais informações, Executar assim mesmo). 3) Espere terminar: o Talktrail passa a salvar em Documentos\\Talktrail.`,
-    linux: `Baixei o arquivo ${arquivo}. 1) Extraia. 2) Abra um terminal na pasta e rode: bash instalar-talktrail.sh. 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.`,
+    mac: trad('Baixei o arquivo {0}. 1) Em Downloads, dê dois cliques nele. 2) Abra "Instalar Talktrail" (na primeira vez: botão direito, Abrir). 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.', [arquivo]),
+    windows: trad('Baixei o arquivo {0}. 1) Em Downloads, botão direito nele, Extrair tudo. 2) Abra "Instalar Talktrail" (se o Windows avisar: Mais informações, Executar assim mesmo). 3) Espere terminar: o Talktrail passa a salvar em Documentos\\Talktrail.', [arquivo]),
+    linux: trad('Baixei o arquivo {0}. 1) Extraia. 2) Abra um terminal na pasta e rode: bash instalar-talktrail.sh. 3) Espere terminar: o Talktrail passa a salvar em Documentos/Talktrail.', [arquivo]),
   }[so];
   const baixar = (href, nome) => {
     const a = document.createElement('a');
@@ -174,7 +174,7 @@ async function baixarComplemento() {
     $('ajInstalarDica').textContent = passos;
     $('ajInstalarDica').hidden = false;
   } catch (e) {
-    $('ajInstalarDica').textContent = 'Não consegui montar o instalador agora. Tente de novo em instantes.';
+    $('ajInstalarDica').textContent = trad('Não consegui montar o instalador agora. Tente de novo em instantes.');
     $('ajInstalarDica').hidden = false;
   }
 }
@@ -182,7 +182,7 @@ async function baixarComplemento() {
 // Sem o complemento: o próprio navegador abre o seletor de pasta e guarda a escolha.
 async function escolherPastaNavegador() {
   if (typeof window.showDirectoryPicker !== 'function') {
-    $('ajPastaDica').textContent = 'Este navegador não deixa escolher uma pasta. As reuniões vão pra Downloads/Talktrail.';
+    $('ajPastaDica').textContent = trad('Este navegador não deixa escolher uma pasta. As reuniões vão pra Downloads/Talktrail.');
     return;
   }
   try {
@@ -192,7 +192,7 @@ async function escolherPastaNavegador() {
     pastaNavegador = h;
     pintarPasta();
   } catch (e) {
-    if (e && e.name !== 'AbortError') $('ajPastaDica').textContent = 'Não consegui usar essa pasta. Escolha outra, ou fique com Downloads.';
+    if (e && e.name !== 'AbortError') $('ajPastaDica').textContent = trad('Não consegui usar essa pasta. Escolha outra, ou fique com Downloads.');
   }
 }
 async function voltarProDownloads() {
@@ -211,19 +211,19 @@ async function liberarPasta() {
       return;
     }
   } catch (e) {}
-  $('ajPastaDica').textContent = 'O navegador não liberou a pasta. Tente de novo, ou escolha outra.';
+  $('ajPastaDica').textContent = trad('O navegador não liberou a pasta. Tente de novo, ou escolha outra.');
 }
 
 async function escolherPastaAoVivo() {
   if (!servidorOk) return escolherPastaNavegador();
-  $('ajPastaDica').textContent = 'Escolha a pasta na janela que abriu...';
+  $('ajPastaDica').textContent = trad('Escolha a pasta na janela que abriu...');
   const r = await chrome.runtime.sendMessage({ type: 'escolher-pasta' }).catch(() => null);
   if (r && r.ok) {
     pastaServidor = r.pasta;
     pintarPasta();
   } else {
     pintarPasta();
-    if (r && !r.cancelado) $('ajPastaDica').textContent = (r && r.erro) || 'Não consegui abrir o seletor de pasta.';
+    if (r && !r.cancelado) $('ajPastaDica').textContent = (r && r.erro) || trad('Não consegui abrir o seletor de pasta.');
   }
 }
 let CORES = {}; // tag -> cor escolhida
@@ -240,7 +240,7 @@ let pulso = null;
 let tNotas = null;
 let tCola = null;
 const edNotas = MBEditor.create($('notasTxt'), {
-  placeholder: 'Decisões e ideias da reunião',
+  placeholder: trad('Decisões e ideias da reunião'),
   onChange: (v) => {
     clearTimeout(tNotas);
     tNotas = setTimeout(() => cmd('notes', { text: v }), 300);
@@ -252,7 +252,7 @@ const edNotas = MBEditor.create($('notasTxt'), {
   },
 });
 const edCola = MBEditor.create($('colaTxt'), {
-  placeholder: 'O que você quer tratar',
+  placeholder: trad('O que você quer tratar'),
   onChange: (v) => {
     clearTimeout(tCola);
     tCola = setTimeout(() => (alvoExterno() ? salvarPautaAlvo(v) : cmd('cola', { text: v })), 300);
@@ -280,8 +280,8 @@ const minutosDe = (hora) => { const m = /^(\d{1,2}):(\d{2})$/.exec(hora || ''); 
 function rotuloQuando(data, hora) {
   const hoje = diaISO();
   const amanha = diaISO(new Date(Date.now() + 86400000));
-  const d = data === hoje ? 'hoje' : data === amanha ? 'amanhã'
-    : new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+  const d = data === hoje ? 'hoje' : data === amanha ? trad('amanhã')
+    : new Date(`${data}T12:00:00`).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
   return hora ? `${d} · ${hora}` : d;
 }
 function linhasDePautas() {
@@ -325,24 +325,24 @@ function itemDePauta(l) {
   if (andando) {
     const e = document.createElement('span');
     e.className = 'chip-agora';
-    e.textContent = 'Em andamento';
+    e.textContent = trad('Em andamento');
     estado.append(e);
   }
   const p = document.createElement('span');
   p.className = l.texto ? 'chip-pauta tem' : 'chip-pauta sem';
-  p.textContent = l.texto ? 'Pauta pronta' : 'Adicionar pauta';
+  p.textContent = l.texto ? trad('Pauta pronta') : trad('Adicionar pauta');
   estado.append(p);
   corpo.append(tit, estado);
   abrir.append(hora, corpo);
   abrir.onclick = () => escolherPauta(l.id);
-  abrir.setAttribute('aria-label', `${l.hora || ''} ${l.titulo}. ${l.texto ? 'Pauta pronta' : 'Adicionar pauta'}`);
+  abrir.setAttribute('aria-label', `${l.hora || ''} ${l.titulo}. ${l.texto ? trad('Pauta pronta') : trad('Adicionar pauta')}`);
   li.append(abrir);
   if (l.salva) {
     const x = document.createElement('button');
     x.type = 'button';
     x.className = 'apagar' + (confirmaApagar === l.id ? ' confirma' : '');
     x.textContent = confirmaApagar === l.id ? 'Apagar?' : '×';
-    x.setAttribute('aria-label', `Apagar a pauta de ${l.titulo}`);
+    x.setAttribute('aria-label', trad('Apagar a pauta de {0}', [l.titulo]));
     x.onclick = () => {
       if (confirmaApagar !== l.id) {
         confirmaApagar = l.id;
@@ -364,9 +364,9 @@ function itemDePauta(l) {
 }
 function tituloDoDia(data) {
   const hoje = diaISO();
-  if (data === hoje) return 'Hoje';
-  if (data === diaISO(new Date(Date.now() + 86400000))) return 'Amanhã';
-  return new Date(`${data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }).replace('.', '');
+  if (data === hoje) return trad('Hoje');
+  if (data === diaISO(new Date(Date.now() + 86400000))) return trad('Amanhã');
+  return new Date(`${data}T12:00:00`).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'long', day: '2-digit', month: '2-digit' }).replace('.', '');
 }
 function pintarPautas() {
   const hoje = diaISO();
@@ -385,7 +385,7 @@ function pintarPautas() {
       const nome = document.createElement('b');
       nome.textContent = tituloDoDia(l.data);
       const dataCurta = document.createElement('span');
-      dataCurta.textContent = new Date(`${l.data}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
+      dataCurta.textContent = new Date(`${l.data}T12:00:00`).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
       h.append(nome, dataCurta);
       linhas.push(h);
     }
@@ -397,7 +397,7 @@ function pintarPautas() {
   $('pautasAtualizar').parentElement.hidden = recolhida;
   $('pautasFrente').hidden = recolhida;
   $('pautasN').textContent = futuras.length ? String(futuras.length) : '';
-  $('pautaEscolha').textContent = 'Toque numa reunião pra escrever a pauta dela.';
+  $('pautaEscolha').textContent = trad('Toque numa reunião pra escrever a pauta dela.');
   // a próxima reunião de HOJE em destaque (só de hoje: uma de daqui a um mês não fica cutucando)
   const agora = new Date();
   const min = agora.getHours() * 60 + agora.getMinutes();
@@ -406,16 +406,17 @@ function pintarPautas() {
   if (prox) {
     const falta = prox.t - min;
     $('proximaTit').textContent = prox.l.titulo;
-    $('proximaQuando').textContent = `${prox.l.hora} · ` + (falta === 0 ? 'agora' : falta < 60 ? `em ${falta} min` : `em ${Math.floor(falta / 60)} h${falta % 60 ? ` ${falta % 60} min` : ''}`);
+    const horas = Math.floor(falta / 60);
+    $('proximaQuando').textContent = `${prox.l.hora} · ` + (falta === 0 ? trad('agora') : falta < 60 ? trad('em {0} min', [falta]) : falta % 60 ? trad('em {0} h {1} min', [horas, falta % 60]) : trad('em {0} h', [horas]));
   }
-  const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString(MB_IDIOMA.loc, { hour: '2-digit', minute: '2-digit' }) : '';
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
   const velha = !!agendaLidaEm && Date.now() - agendaLidaEm > 30 * 60 * 1000;
   // nada de texto solto no topo: o estado vai no próprio botão (bolinha quando a lista pode estar velha, giro enquanto lê)
   // e, com a lista vazia, na mensagem da lista
-  const dica = atualizandoAgenda ? 'Lendo o Meet em abas de fundo, por alguns segundos.' : lida ? `Atualizar pelo Meet. Última leitura às ${lida}${velha ? ', a lista pode estar desatualizada' : ''}${versao ? `. Talktrail ${versao}` : ''}.` : 'Atualizar pelo Meet';
+  const dica = atualizandoAgenda ? trad('Lendo o Meet em abas de fundo, por alguns segundos.') : lida ? `Atualizar pelo Meet. Última leitura às ${lida}${velha ? ', a lista pode estar desatualizada' : ''}${versao ? `. Talktrail ${versao}` : ''}.` : trad('Atualizar pelo Meet');
   $('pautasAtualizar').classList.toggle('velha', (velha || !lida) && !atualizandoAgenda);
-  $('pautasVazioTxt').textContent = !lida ? 'Toque no botão de atualizar, no topo, para ler as suas reuniões do Meet.' : agendaDiag && agendaDiag.achados === 0 ? 'A última leitura não achou reuniões. Só aparecem as que têm link do Meet no convite.' : 'Só aparecem as que têm link do Meet no convite. Toque no botão de atualizar, no topo.';
+  $('pautasVazioTxt').textContent = !lida ? trad('Toque no botão de atualizar, no topo, para ler as suas reuniões do Meet.') : agendaDiag && agendaDiag.achados === 0 ? trad('A última leitura não achou reuniões. Só aparecem as que têm link do Meet no convite.') : trad('Só aparecem as que têm link do Meet no convite. Toque no botão de atualizar, no topo.');
   $('pautasAtualizar').title = dica;
   $('pautasAtualizar').setAttribute('aria-label', dica);
   $('pautasAtualizar').classList.toggle('girando', atualizandoAgenda);
@@ -495,7 +496,7 @@ function modoFora(ligado) {
     $('pautasBotao').setAttribute('aria-expanded', 'false');
     return;
   }
-  const dataExtenso = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dataExtenso = new Date().toLocaleDateString(MB_IDIOMA.loc, { weekday: 'long', day: 'numeric', month: 'long' });
   $('foraData').textContent = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
   alvo = '';
   listaAberta = true;
@@ -532,7 +533,7 @@ let ultimo = null;
 let linhasVistas = 0;
 
 const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-const hhmm = (ms) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const hhmm = (ms) => new Date(ms).toLocaleTimeString(MB_IDIOMA.loc, { hour: '2-digit', minute: '2-digit' });
 
 async function abaAtiva() {
   const [t] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -562,14 +563,14 @@ async function cmdCru(c) {
 }
 
 function semMeet() {
-  $('sub').textContent = 'Abra uma reunião do Meet pra transcrever.';
+  $('sub').textContent = trad('Abra uma reunião do Meet pra transcrever.');
   $('sub').hidden = false;
   $('rec').className = 'rec';
   modoFora(true);
 }
 
 let acaoAviso = 'ligar';
-function aviso(txt, botao = null, titulo = 'Atenção', tom = 'erro') {
+function aviso(txt, botao = null, titulo = trad('Atenção'), tom = 'erro') {
   $('aviso').hidden = !txt;
   $('aviso').classList.toggle('neutro', tom === 'neutro');
   $('avisoTit').textContent = titulo;
@@ -595,10 +596,10 @@ function chip(p, on, sel, comX) {
       b.click();
     }
   });
-  b.innerHTML = '<span class="cor" title="Mudar a cor"></span><span class="n"></span><span class="x"></span>';
+  b.innerHTML = '<span class="cor" title="' + trad('Mudar a cor') + '"></span><span class="n"></span><span class="x"></span>';
   b.querySelector('.n').textContent = p;
   b.querySelector('.x').textContent = '×';
-  b.querySelector('.x').title = comX === 'apagar' ? 'Apagar esta tag da lista' : 'Tirar desta reunião';
+  b.querySelector('.x').title = comX === 'apagar' ? trad('Apagar esta tag da lista') : trad('Tirar desta reunião');
   b.onclick = (e) => {
     if (e.target.classList.contains('cor')) {
       corAberta = corAberta === p ? null : p;
@@ -625,7 +626,7 @@ function chips(sel) {
   const linha = $('tagsSel');
   linha.innerHTML = '';
   for (const p of sel) linha.appendChild(chip(p, true, sel, 'tirar'));
-  $('tagMais').textContent = tagsAbertas ? 'Fechar' : '+ Tag';
+  $('tagMais').textContent = tagsAbertas ? trad('Fechar') : trad('+ Tag');
   $('tagMais').setAttribute('aria-expanded', String(tagsAbertas));
   $('tagsGerencia').hidden = !tagsAbertas;
 
@@ -640,7 +641,7 @@ function chips(sel) {
   if (corAberta) {
     const rot = document.createElement('span');
     rot.className = 'rotcor';
-    rot.append('Cor da tag ');
+    rot.append(trad('Cor da tag '));
     const nome = document.createElement('b');
     nome.textContent = corAberta;
     nome.title = corAberta;
@@ -650,7 +651,7 @@ function chips(sel) {
       const s = document.createElement('button');
       s.style.setProperty('--c', cor);
       s.className = corDe(corAberta) === cor ? 'sel' : '';
-      s.setAttribute('aria-label', 'Cor ' + cor);
+      s.setAttribute('aria-label', trad('Cor ') + cor);
       s.onclick = () => {
         CORES[corAberta] = cor;
         chrome.storage.local.set({ tagCores: CORES });
@@ -686,9 +687,9 @@ function aplicar(s) {
     gsap.fromTo('#rec', { scale: 0.95 }, { scale: 1, duration: 0.5, ease: 'back.out(3)' });
   }
   $('rec').className = 'rec' + (gravando ? ' on' : '');
-  $('rec').title = gravando ? 'Parar' : 'Transcrever';
-  $('estado').textContent = gravando ? 'Parar' : 'Transcrever';
-  const nota = s.info || (s.avisoChat === 'falhou' ? 'Não consegui avisar no chat do Meet. Avise os participantes por conta própria.' : '');
+  $('rec').title = gravando ? trad('Parar') : trad('Transcrever');
+  $('estado').textContent = gravando ? trad('Parar') : trad('Transcrever');
+  const nota = s.info || (s.avisoChat === 'falhou' ? trad('Não consegui avisar no chat do Meet. Avise os participantes por conta própria.') : '');
   $('sub').textContent = nota;
   $('sub').hidden = !nota;
   $('tempo').textContent = gravando ? fmt(s.segundos) : '';
@@ -720,7 +721,7 @@ function aplicar(s) {
   ul.innerHTML = '';
   s.linhas.forEach((l, i) => {
     const li = document.createElement('li');
-    li.className = 'linha-fala' + (l.speaker === 'Eu' ? ' eu' : '');
+    li.className = 'linha-fala' + (l.speaker === 'Eu' || l.speaker === trad('Eu') ? ' eu' : '');
     li.innerHTML = `<div class="cab"><span class="quem"></span><span class="hora"></span></div><div class="fala"></div>`;
     li.querySelector('.quem').textContent = l.speaker;
     li.querySelector('.hora').textContent = fmt(l.t);
@@ -748,30 +749,30 @@ function aplicar(s) {
   const motivo = s.legendasMotivo;
   if (s.erro) {
     const naoAutorizada = /não está autorizada/.test(s.erro);
-    aviso(s.erro, naoAutorizada ? { rotulo: 'Abrir a página de pareamento', acao: 'parear' } : null,
-      /palavra bloqueada/.test(s.erro) ? 'Transcrição bloqueada' : naoAutorizada ? 'Extensão não autorizada' : 'Problema ao salvar');
+    aviso(s.erro, naoAutorizada ? { rotulo: trad('Abrir a página de pareamento'), acao: 'parear' } : null,
+      /palavra bloqueada/.test(s.erro) ? trad('Transcrição bloqueada') : naoAutorizada ? trad('Extensão não autorizada') : trad('Problema ao salvar'));
   } else if (gravando && !s.legendas && (motivo === 'organizador' || motivo === 'sem-botao')) {
     aviso(
       motivo === 'organizador'
-        ? 'O organizador pode ter desativado as legendas desta reunião, e sem elas não dá pra transcrever. Peça pra ele ligar.'
-        : 'Não encontro o botão de legendas do Meet. O organizador pode ter desativado, ou o Meet mudou a tela.',
-      { rotulo: 'Diagnosticar', acao: 'diagnostico' },
-      'Legendas indisponíveis'
+        ? trad('O organizador pode ter desativado as legendas desta reunião, e sem elas não dá pra transcrever. Peça pra ele ligar.')
+        : trad('Não encontro o botão de legendas do Meet. O organizador pode ter desativado, ou o Meet mudou a tela.'),
+      { rotulo: trad('Diagnosticar'), acao: 'diagnostico' },
+      trad('Legendas indisponíveis')
     );
   } else if (gravando && !s.legendas) {
-    aviso('Sem as legendas ligadas, a transcrição para de funcionar. Ligue o CC do Meet ou use o botão.', { rotulo: 'Ligar legendas agora', acao: 'ligar' }, 'Legendas do Meet desligadas');
+    aviso(trad('Sem as legendas ligadas, a transcrição para de funcionar. Ligue o CC do Meet ou use o botão.'), { rotulo: trad('Ligar legendas agora'), acao: 'ligar' }, trad('Legendas do Meet desligadas'));
   } else if (!servidorOk && pastaNavegador && pastaPendente) {
     aviso(
-      'A pasta que você escolheu precisa de um clique pra continuar recebendo as reuniões. Enquanto isso, elas vão pra Downloads.',
-      { rotulo: 'Liberar a pasta', acao: 'liberar-pasta' },
-      'Libere a pasta',
+      trad('A pasta que você escolheu precisa de um clique pra continuar recebendo as reuniões. Enquanto isso, elas vão pra Downloads.'),
+      { rotulo: trad('Liberar a pasta'), acao: 'liberar-pasta' },
+      trad('Libere a pasta'),
       'neutro'
     );
   } else if (!servidorOk && usaServidor && !pastaNavegador) {
     aviso(
-      'Esta reunião está sendo guardada só na extensão e, ao terminar, é baixada em Downloads/Talktrail. Pra salvar direto na pasta de novo, ligue o complemento opcional da pasta ao vivo.',
+      trad('Esta reunião está sendo guardada só na extensão e, ao terminar, é baixada em Downloads/Talktrail. Pra salvar direto na pasta de novo, ligue o complemento opcional da pasta ao vivo.'),
       null,
-      'A pasta ao vivo está desligada',
+      trad('A pasta ao vivo está desligada'),
       'neutro'
     );
   } else {
@@ -779,21 +780,21 @@ function aplicar(s) {
   }
 
   // "Salvo às 07:23" e, quando há arquivo, um botão que abre a pasta com ele selecionado
-  const ondeSalvou = { pasta: 'na pasta', extensao: 'na extensão', downloads: 'em Downloads' }[s.modoSalvar] || '';
+  const ondeSalvou = { pasta: trad('na pasta'), extensao: trad('na extensão'), downloads: trad('em Downloads') }[s.modoSalvar] || '';
   const elSalvo = $('salvo');
   const chave = s.salvoEm ? `${hhmm(s.salvoEm)}|${s.modoSalvar}|${s.id}` : '';
   if (elSalvo.dataset.chave !== chave) {
     elSalvo.dataset.chave = chave;
     elSalvo.textContent = '';
     if (s.salvoEm) {
-      elSalvo.append(`Salvo às ${hhmm(s.salvoEm)}`);
+      elSalvo.append(trad('Salvo às {0}', [hhmm(s.salvoEm)]));
       if (s.modoSalvar === 'navegador') {
-        elSalvo.append(' · na pasta escolhida');
+        elSalvo.append(trad(' · na pasta escolhida'));
       } else if (s.modoSalvar === 'pasta' || s.modoSalvar === 'downloads') {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'abrir';
-        b.title = 'Abre a pasta com o arquivo desta reunião selecionado';
+        b.title = trad('Abre a pasta com o arquivo desta reunião selecionado');
         b.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M1.75 4.5a1 1 0 0 1 1-1h3.2l1.4 1.5h5.9a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2.75a1 1 0 0 1-1-1z"/></svg>Mostrar na pasta';
         b.onclick = () => chrome.runtime.sendMessage({ type: 'mostrar', id: s.id }).catch(() => {});
         elSalvo.append(b);
@@ -845,33 +846,33 @@ async function diagnosticar() {
   const itens = [];
   const add = (nivel, titulo, detalhe) => itens.push({ nivel, titulo, detalhe });
   if (!d) {
-    add('falha', 'Aba do Meet', 'Não consegui falar com a aba. Abra uma reunião do Meet em aba normal (não no app instalado) e recarregue a página.');
+    add('falha', trad('Aba do Meet'), trad('Não consegui falar com a aba. Abra uma reunião do Meet em aba normal (não no app instalado) e recarregue a página.'));
   } else {
-    add(d.naSala ? 'ok' : 'falha', 'Reunião do Meet', d.naSala ? 'Você está numa sala do Meet.' : 'Esta aba não é uma sala do Meet.');
-    add(d.naChamada ? 'ok' : 'falha', 'Dentro da chamada', d.naChamada ? 'Você está na chamada.' : 'Entre na chamada: a transcrição só roda dentro dela.');
-    add(d.gravando ? 'ok' : 'atencao', 'Transcrevendo', d.gravando ? 'A transcrição está ligada.' : 'A transcrição está desligada. Clique em Transcrever.');
+    add(d.naSala ? 'ok' : 'falha', trad('Reunião do Meet'), d.naSala ? trad('Você está numa sala do Meet.') : trad('Esta aba não é uma sala do Meet.'));
+    add(d.naChamada ? 'ok' : 'falha', trad('Dentro da chamada'), d.naChamada ? trad('Você está na chamada.') : trad('Entre na chamada: a transcrição só roda dentro dela.'));
+    add(d.gravando ? 'ok' : 'atencao', trad('Transcrevendo'), d.gravando ? trad('A transcrição está ligada.') : trad('A transcrição está desligada. Clique em Transcrever.'));
     const l = d.legendas || {};
-    if (l.ligadas === true) add('ok', 'Legendas do Meet', 'Estão ligadas.');
-    else if (l.ligadas === false) add('falha', 'Legendas do Meet', l.desabilitado ? 'Estão desligadas e o botão está travado: o organizador pode ter desativado.' : 'Estão desligadas. Use o botão "Ligar legendas agora" ou tecle C no Meet.');
-    else if (l.botao) add('atencao', 'Legendas do Meet', 'Achei o botão, mas não sei se estão ligadas. Tecle C no Meet.');
-    else add(d.regiao ? 'ok' : 'falha', 'Legendas do Meet', d.regiao ? 'A caixa de legendas está na tela.' : 'Não encontro o botão nem a caixa de legendas. O organizador pode ter desativado, ou o Meet mudou a tela.');
+    if (l.ligadas === true) add('ok', trad('Legendas do Meet'), trad('Estão ligadas.'));
+    else if (l.ligadas === false) add('falha', trad('Legendas do Meet'), l.desabilitado ? trad('Estão desligadas e o botão está travado: o organizador pode ter desativado.') : trad('Estão desligadas. Use o botão "Ligar legendas agora" ou tecle C no Meet.'));
+    else if (l.botao) add('atencao', trad('Legendas do Meet'), trad('Achei o botão, mas não sei se estão ligadas. Tecle C no Meet.'));
+    else add(d.regiao ? 'ok' : 'falha', trad('Legendas do Meet'), d.regiao ? trad('A caixa de legendas está na tela.') : trad('Não encontro o botão nem a caixa de legendas. O organizador pode ter desativado, ou o Meet mudou a tela.'));
     if (d.gravando) {
-      if (d.ultimaFalaHa === null) add('atencao', 'Texto chegando', 'Ainda não chegou fala. Se já falaram, confira se o idioma das legendas é o da conversa.');
-      else add(d.ultimaFalaHa < 90 ? 'ok' : 'atencao', 'Texto chegando', d.ultimaFalaHa < 90 ? `Última fala há ${d.ultimaFalaHa} s.` : `Faz ${Math.round(d.ultimaFalaHa / 60)} min sem fala nova. Pode ser silêncio, ou as legendas pararam.`);
-      add(d.salvoHa !== null ? 'ok' : 'atencao', 'Salvando', d.salvoHa !== null ? `Salvo há ${d.salvoHa} s (${{ pasta: 'na pasta', navegador: 'na pasta escolhida', extensao: 'na extensão', downloads: 'em Downloads' }[r.modoSalvar] || 'ok'}).` : 'Ainda não salvou nada. Aguarde alguns segundos.');
+      if (d.ultimaFalaHa === null) add('atencao', trad('Texto chegando'), trad('Ainda não chegou fala. Se já falaram, confira se o idioma das legendas é o da conversa.'));
+      else add(d.ultimaFalaHa < 90 ? 'ok' : 'atencao', trad('Texto chegando'), d.ultimaFalaHa < 90 ? trad('Última fala há {0} s.', [d.ultimaFalaHa]) : trad('Faz {0} min sem fala nova. Pode ser silêncio, ou as legendas pararam.', [Math.round(d.ultimaFalaHa / 60)]));
+      add(d.salvoHa !== null ? 'ok' : 'atencao', trad('Salvando'), d.salvoHa !== null ? trad('Salvo há {0} s ({1}).', [d.salvoHa, { pasta: trad('na pasta'), navegador: trad('na pasta escolhida'), extensao: trad('na extensão'), downloads: trad('em Downloads') }[r.modoSalvar] || 'ok']) : trad('Ainda não salvou nada. Aguarde alguns segundos.'));
     }
   }
   if (!servidorOk && pastaNavegador) {
-    add(pastaPendente ? 'atencao' : 'ok', 'Pasta escolhida', pastaPendente ? `A pasta "${pastaNavegador.name}" precisa de um clique pra ser liberada. Enquanto isso, vai pra Downloads.` : `Grava em tempo real em "${pastaNavegador.name}".`);
-  } else add(servidorOk ? 'ok' : 'atencao', 'Pasta ao vivo (complemento)', servidorOk ? `Funcionando. Salvando em ${caminhoCurto(pastaServidor)}` : 'Desligada. Tudo bem: as reuniões ficam na biblioteca da extensão e vão pra Downloads/Talktrail ao terminar.');
+    add(pastaPendente ? 'atencao' : 'ok', trad('Pasta escolhida'), pastaPendente ? trad('A pasta "{0}" precisa de um clique pra ser liberada. Enquanto isso, vai pra Downloads.', [pastaNavegador.name]) : trad('Grava em tempo real em "{0}".', [pastaNavegador.name]));
+  } else add(servidorOk ? 'ok' : 'atencao', trad('Pasta ao vivo (complemento)'), servidorOk ? trad('Funcionando. Salvando em {0}', [caminhoCurto(pastaServidor)]) : trad('Desligada. Tudo bem: as reuniões ficam na biblioteca da extensão e vão pra Downloads/Talktrail ao terminar.'));
   ultimoDiag = { itens, modo: r && r.modoSalvar, erro: (ultimo && ultimo.erro) || '' };
   const falhas = itens.filter((x) => x.nivel === 'falha').length;
   const gravando = !!(d && d.gravando);
   $('diagResumo').textContent = falhas
-    ? `Achei ${falhas} ${falhas === 1 ? 'problema' : 'problemas'}. Veja abaixo o que fazer.`
+    ? (falhas === 1 ? trad('Achei 1 problema. Veja abaixo o que fazer.') : trad('Achei {0} problemas. Veja abaixo o que fazer.', [falhas]))
     : gravando
-      ? 'Tudo certo: está transcrevendo.'
-      : 'Tudo pronto pra transcrever.';
+      ? trad('Tudo certo: está transcrevendo.')
+      : trad('Tudo pronto pra transcrever.');
   ul.innerHTML = '';
   for (const it of itens) {
     const li = document.createElement('li');
@@ -921,12 +922,12 @@ async function pintarAtalho() {
   try {
     const todos = await chrome.commands.getAll();
     const tecla = (nome) => (todos.find((x) => x.name === nome) || {}).shortcut || '';
-    $('ajAtalho').textContent = tecla('marcar-momento') || 'sem atalho';
-    $('ajAtalhoRec').textContent = tecla('transcrever-ou-parar') || 'sem atalho';
-    $('ajAtalhoPainel').textContent = tecla('alternar-painel') || 'sem atalho';
-    if (tecla('marcar-momento')) $('marcar').title = `Marcar momento (${tecla('marcar-momento')})`;
+    $('ajAtalho').textContent = tecla('marcar-momento') || trad('sem atalho');
+    $('ajAtalhoRec').textContent = tecla('transcrever-ou-parar') || trad('sem atalho');
+    $('ajAtalhoPainel').textContent = tecla('alternar-painel') || trad('sem atalho');
+    if (tecla('marcar-momento')) $('marcar').title = trad('Marcar momento ({0})', [tecla('marcar-momento')]);
   } catch (e) {
-    $('ajAtalho').textContent = $('ajAtalhoRec').textContent = $('ajAtalhoPainel').textContent = 'sem atalho';
+    $('ajAtalho').textContent = $('ajAtalhoRec').textContent = $('ajAtalhoPainel').textContent = trad('sem atalho');
   }
 }
 pintarAtalho();
@@ -962,7 +963,7 @@ async function copiar(botao, texto) {
   const rotulo = alvo.textContent;
   try {
     await navigator.clipboard.writeText(texto);
-    alvo.textContent = 'Copiado';
+    alvo.textContent = trad('Copiado');
     setTimeout(() => (alvo.textContent = rotulo), 1500);
   } catch (e) {}
 }
@@ -978,7 +979,7 @@ $('ajExportar').onclick = async () => {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
-  msgBackup(`Cópia salva como ${f.nome}.`);
+  msgBackup(trad('Cópia salva como {0}.', [f.nome]));
 };
 $('ajImportar').onclick = () => $('ajArquivo').click();
 $('ajArquivo').onchange = async () => {
@@ -997,9 +998,9 @@ $('ajArquivo').onchange = async () => {
 const semCaminho = (s) => String(s || '').replace(/(\/Users\/|\/home\/|[A-Za-z]:\\Users\\)[^\s/\\)"']+/g, '$1…').replace(/\s+/g, ' ').trim();
 function sistemaENavegador() {
   const ua = navigator.userAgent || '';
-  const so = /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : 'sistema desconhecido';
+  const so = /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : trad('sistema desconhecido');
   const nav = (ua.match(/(Edg|OPR|Chrome|Brave|Vivaldi)\/(\d+)/) || []);
-  const nome = { Edg: 'Edge', OPR: 'Opera' }[nav[1]] || nav[1] || 'navegador desconhecido';
+  const nome = { Edg: 'Edge', OPR: 'Opera' }[nav[1]] || nav[1] || trad('navegador desconhecido');
   return { so, navegador: nav[2] ? `${nome} ${nav[2]}` : nome };
 }
 async function textoDoRelatorio() {
@@ -1007,31 +1008,31 @@ async function textoDoRelatorio() {
   let atalhos = '';
   try {
     const todos = await chrome.commands.getAll();
-    atalhos = todos.filter((c) => /^(marcar-momento|transcrever-ou-parar)$/.test(c.name)).map((c) => `${c.name}=${c.shortcut || 'sem atalho'}`).join(', ');
+    atalhos = todos.filter((c) => /^(marcar-momento|transcrever-ou-parar)$/.test(c.name)).map((c) => `${c.name}=${c.shortcut || trad('sem atalho')}`).join(', ');
   } catch (e) {}
   const linhas = [
-    'O que aconteceu (conte com as suas palavras):', '', '', 'O que você esperava que acontecesse:', '', '',
-    '--- Dados técnicos (pode deixar, ajudam a achar o problema; não há nada da sua reunião aqui) ---',
+    trad('O que aconteceu (conte com as suas palavras):'), '', '', trad('O que você esperava que acontecesse:'), '', '',
+    trad('--- Dados técnicos (pode deixar, ajudam a achar o problema; não há nada da sua reunião aqui) ---'),
     `Talktrail ${chrome.runtime.getManifest().version}`,
-    `Navegador: ${navegador}`,
-    `Sistema: ${so}`,
-    `Pasta ao vivo (complemento): ${servidorOk ? 'ligada' : 'desligada'}`,
+    trad('Navegador: {0}', [navegador]),
+    trad('Sistema: {0}', [so]),
+    trad('Pasta ao vivo (complemento): {0}', [servidorOk ? trad('ligada') : trad('desligada')]),
   ];
   if (ultimoDiag) {
-    if (ultimoDiag.modo) linhas.push(`Onde salva: ${{ pasta: 'na pasta', extensao: 'na extensão', downloads: 'em Downloads' }[ultimoDiag.modo] || ultimoDiag.modo}`);
-    if (ultimoDiag.erro) linhas.push(`Último erro: ${semCaminho(ultimoDiag.erro)}`);
-    linhas.push('Diagnóstico:');
+    if (ultimoDiag.modo) linhas.push(trad('Onde salva: {0}', [{ pasta: trad('na pasta'), extensao: trad('na extensão'), downloads: trad('em Downloads') }[ultimoDiag.modo] || ultimoDiag.modo]));
+    if (ultimoDiag.erro) linhas.push(trad('Último erro: {0}', [semCaminho(ultimoDiag.erro)]));
+    linhas.push(trad('Diagnóstico:'));
     for (const it of ultimoDiag.itens) {
-      linhas.push(`- ${{ ok: 'ok', falha: 'PROBLEMA', atencao: 'atenção' }[it.nivel] || it.nivel}: ${it.titulo}${it.nivel === 'ok' ? '' : ' (' + semCaminho(it.detalhe) + ')'}`);
+      linhas.push(`- ${{ ok: trad('ok'), falha: trad('PROBLEMA'), atencao: trad('atenção') }[it.nivel] || it.nivel}: ${it.titulo}${it.nivel === 'ok' ? '' : ' (' + semCaminho(it.detalhe) + ')'}`);
     }
   } else {
-    linhas.push('Diagnóstico: não rodou (abra os Ajustes dentro de uma reunião do Meet).');
+    linhas.push(trad('Diagnóstico: não rodou (abra os Ajustes dentro de uma reunião do Meet).'));
   }
-  if (atalhos) linhas.push(`Atalhos: ${atalhos}`);
+  if (atalhos) linhas.push(trad('Atalhos: {0}', [atalhos]));
   return linhas.join('\r\n');
 }
 $('ajRelatar').onclick = async () => {
-  const assunto = `Talktrail: problema (v${chrome.runtime.getManifest().version})`;
+  const assunto = trad('Talktrail: problema (v{0})', [chrome.runtime.getManifest().version]);
   const url = `mailto:${EMAIL_SUPORTE}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(await textoDoRelatorio())}`;
   const a = document.createElement('a'); // a âncora abre o programa de e-mail sem tirar o painel do lugar
   a.href = url;
@@ -1041,7 +1042,7 @@ $('ajRelatar').onclick = async () => {
   a.click();
   a.remove();
 };
-$('ajRelatorioCopiar').onclick = async () => copiar($('ajRelatorioCopiar'), `Assunto: Talktrail: problema\r\n\r\n${await textoDoRelatorio()}`);
+$('ajRelatorioCopiar').onclick = async () => copiar($('ajRelatorioCopiar'), trad('Assunto: Talktrail: problema') + `\r\n\r\n${await textoDoRelatorio()}`);
 if (URL_APOIO) {
   $('ajApoio').hidden = false;
   $('ajApoiar').onclick = () => abrirPagina(URL_APOIO);
@@ -1052,7 +1053,7 @@ if (EMAIL_SUPORTE) {
   link.href = `mailto:${EMAIL_SUPORTE}`;
   link.className = 'email-suporte';
   link.textContent = EMAIL_SUPORTE;
-  $('ajSuporteEmail').replaceChildren('Ou escreva pra ', link);
+  $('ajSuporteEmail').replaceChildren(trad('Ou escreva pra '), link);
   $('ajSuporteEmail').hidden = false;
 }
 

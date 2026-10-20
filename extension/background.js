@@ -1,4 +1,4 @@
-importScripts('md.js', 'pasta.js', 'pautas-arquivo.js'); // MB_MD: gera o .md no navegador; MB_PASTA: pasta escolhida pela pessoa (modo simples)
+importScripts('i18n-en.js', 'i18n.js', 'md.js', 'pasta.js', 'pautas-arquivo.js'); // MB_MD: gera o .md no navegador; MB_PASTA: pasta escolhida pela pessoa (modo simples)
 // só no build de desenvolvimento (version_name com "dev"): recarrega a extensão sozinha quando os arquivos mudam.
 // O pacote da loja não leva esse arquivo nem o version_name (ver tools/empacotar.py).
 if (/dev/.test(chrome.runtime.getManifest().version_name || '')) importScripts('dev-hot.js');
@@ -57,7 +57,7 @@ async function salvarNoServidor(payload) {
   let { pareamento } = await chrome.storage.local.get('pareamento');
   if (!pareamento) {
     const p = await parear();
-    if (!p.token) return { ok: false, status: p.status, data: { erro: p.erro || 'não consegui parear com o servidor' } };
+    if (!p.token) return { ok: false, status: p.status, data: { erro: p.erro || trad('não consegui parear com o servidor') } };
     pareamento = p.token;
   }
   let r = await enviar(payload, pareamento);
@@ -377,7 +377,7 @@ async function atualizarContagem() {
     await chrome.action.setBadgeBackgroundColor({ color: '#2DD4BF' });
     if (chrome.action.setBadgeTextColor) await chrome.action.setBadgeTextColor({ color: '#0E0F12' });
   }
-  await chrome.action.setTitle({ title: p ? `Talktrail: ${p.titulo} às ${p.hora} (falta ${p.texto})` : 'Talktrail' });
+  await chrome.action.setTitle({ title: p ? trad('Talktrail: {0} às {1} (falta {2})', [p.titulo, p.hora, p.texto]) : 'Talktrail' });
 }
 chrome.alarms.create('contagem', { periodInMinutes: 1 });
 chrome.storage.onChanged.addListener((c) => { if (c.agendaMeet) atualizarContagem().catch(() => {}); });

@@ -1,0 +1,14 @@
+{
+  "extDescricao": {
+    "message": "Transcrição e notas do Google Meet, salvas só no seu computador, em Markdown."
+  },
+  "cmdMarcar": {
+    "message": "Marcar momento na reunião"
+  },
+  "cmdPainel": {
+    "message": "Abrir ou fechar o painel do Talktrail"
+  },
+  "cmdTranscrever": {
+    "message": "Começar ou parar a transcrição"
+  }
+}

@@ -16,8 +16,8 @@
 
   function ler(texto) {
     let o;
-    try { o = JSON.parse(texto); } catch { return { erro: 'Esse arquivo não é uma cópia do Talktrail.' }; }
-    if (!o || o.talktrail !== 1 || !o.dados || typeof o.dados !== 'object' || Array.isArray(o.dados)) return { erro: 'Esse arquivo não é uma cópia do Talktrail.' };
+    try { o = JSON.parse(texto); } catch { return { erro: trad('Esse arquivo não é uma cópia do Talktrail.') }; }
+    if (!o || o.talktrail !== 1 || !o.dados || typeof o.dados !== 'object' || Array.isArray(o.dados)) return { erro: trad('Esse arquivo não é uma cópia do Talktrail.') };
     return { dados: o.dados };
   }
 
@@ -61,10 +61,10 @@
 
   function resumo(n) {
     const partes = [];
-    if (n.reunioes) partes.push(`${n.reunioes} ${n.reunioes === 1 ? 'reunião' : 'reuniões'}`);
-    if (n.pautas) partes.push(`${n.pautas} ${n.pautas === 1 ? 'pauta' : 'pautas'}`);
-    if (n.tags) partes.push(`${n.tags} ${n.tags === 1 ? 'tag' : 'tags'}`);
-    return partes.length ? `Importado: ${partes.join(', ')}.` : 'Nada novo: tudo o que está no arquivo já existe aqui.';
+    if (n.reunioes) partes.push(n.reunioes === 1 ? trad('{0} reunião', [1]) : trad('{0} reuniões', [n.reunioes]));
+    if (n.pautas) partes.push(n.pautas === 1 ? trad('{0} pauta', [1]) : trad('{0} pautas', [n.pautas]));
+    if (n.tags) partes.push(n.tags === 1 ? trad('{0} tag', [1]) : trad('{0} tags', [n.tags]));
+    return partes.length ? trad('Importado: {0}.', [partes.join(', ')]) : trad('Nada novo: tudo o que está no arquivo já existe aqui.');
   }
 
   raiz.MB_BACKUP = { exportar, ler, mesclar, resumo };

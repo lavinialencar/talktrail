@@ -324,7 +324,7 @@ def livre(caminho):
     return f"{base}-{n}.md"
 
 
-AVISO_CHAT = "estou transcrevendo esta reuni"  # começo do aviso que a própria extensão manda no chat: não conta como conteúdo
+AVISOS_CHAT = ("estou transcrevendo esta reuni", "i am transcribing this meeting")  # começo do aviso que a própria extensão manda no chat: não conta como conteúdo
 
 
 def reuniao_vazia(p):
@@ -332,7 +332,7 @@ def reuniao_vazia(p):
     def lista(v):
         return [x for x in (v if isinstance(v, list) else []) if isinstance(x, dict)]
     falas = [l for l in lista(p.get("transcript")) if l.get("speaker") not in ("Talktrail",) and linha_unica(l.get("text"), 20)]
-    chat = [m for m in lista(p.get("chat")) if linha_unica(m.get("text"), 2000) and not linha_unica(m.get("text"), 200).lower().startswith(AVISO_CHAT)]
+    chat = [m for m in lista(p.get("chat")) if linha_unica(m.get("text"), 2000) and not linha_unica(m.get("text"), 200).lower().startswith(AVISOS_CHAT)]
     return not (falas or lista(p.get("marcas")) or chat or texto(p.get("notes"), MAX_TEXTO).strip() or texto(p.get("cola"), MAX_TEXTO).strip())
 
 
@@ -348,7 +348,7 @@ def arquivo_sem_conteudo(caminho):
         m = re.search(r"^## " + re.escape(nome) + r"\n\n(.*?)(?=^## |\Z)", t, re.S | re.M)
         return m.group(1).strip() if m else None
     chat = secao("Chat da reunião")
-    chat_so_aviso = chat is None or all(l.lower().lstrip("- []0123456789:").strip().startswith("chat: " + AVISO_CHAT) or l.startswith("<!--") or not l.strip() for l in chat.split("\n"))
+    chat_so_aviso = chat is None or all(l.lower().lstrip("- []0123456789:").strip().startswith(tuple("chat: " + a for a in AVISOS_CHAT)) or l.startswith("<!--") or not l.strip() for l in chat.split("\n"))
     return (secao("Transcrição") == "_(vazia)_" and secao("Notas") == "_(sem notas)_" and secao("Pauta") == "_(vazia)_"
             and secao("Momentos marcados") == "_(nenhum)_" and chat_so_aviso)
 
