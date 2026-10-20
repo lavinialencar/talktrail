@@ -5,6 +5,15 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const RAIZ = path.resolve(__dirname, '..');
+// --en: arte em inglês (extensão com o idioma forçado, dados fictícios em inglês, saída em store/painel-en)
+const EN = process.argv.includes('--en');
+const EXT = EN ? (() => {
+  const d = fs.mkdtempSync('/tmp/talktrail-ext-en-');
+  fs.cpSync(path.join(RAIZ, 'extension'), d, { recursive: true });
+  const f = path.join(d, 'i18n.js');
+  fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace('const en = !/^pt\\b/i.test(lingua);', 'const en = true;'));
+  return d;
+})() : path.join(RAIZ, 'extension');
 const HELIUM = '/Applications/Helium.app/Contents/MacOS/Helium';
 let PORTA = 9444;
 const PERFIL = fs.mkdtempSync('/tmp/talktrail-loja-');
@@ -35,7 +44,7 @@ async function foto(url, arquivo, w, h, antes) {
 }
 let proc2 = null;
 (async () => {
-  const proc = spawn(HELIUM, ['--headless=new', `--user-data-dir=${PERFIL}`, `--remote-debugging-port=${PORTA}`, `--load-extension=${path.join(RAIZ, 'extension')}`, '--no-first-run', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
+  const proc = spawn(HELIUM, ['--headless=new', `--user-data-dir=${PERFIL}`, `--remote-debugging-port=${PORTA}`, `--load-extension=${EXT}`, '--no-first-run', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
   try {
     await esp(5000);
     const alvos = await getJSON(`http://127.0.0.1:${PORTA}/json`);
@@ -45,30 +54,34 @@ let proc2 = null;
     const p2 = (n) => String(n).padStart(2, '0');
     // dias úteis: hoje, depois o próximo dia útil, e assim por diante (a arte não mostra reunião de sábado)
     const dia = (n) => { const d = new Date(); for (let k = 0; k < n;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; } return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; };
+    const N = EN
+      ? { aurora: 'Aurora project review', cliente: 'Client sync', daily: 'Product daily', tri: 'Quarter planning', design: 'Design review', retro: 'Sprint retrospective', tags: ['Product', 'Aurora', 'Design'] }
+      : { aurora: 'Revisão do projeto Aurora', cliente: 'Alinhamento com o cliente', daily: 'Daily de produto', tri: 'Planejamento do trimestre', design: 'Revisão de design', retro: 'Retrospectiva da sprint', tags: ['Produto', 'Aurora', 'Design'] };
     const agenda = [
-      ['Revisão do projeto Aurora', 0, '14:00', '14:45'], ['Alinhamento com o cliente', 0, '16:30', '17:00'],
-      ['Daily de produto', 1, '09:30', '09:45'], ['Planejamento do trimestre', 1, '15:00', '16:30'],
-      ['Daily de produto', 2, '09:30', '09:45'], ['Revisão de design', 3, '11:00', '12:00'], ['Daily de produto', 5, '09:30', '09:45'], ['Retrospectiva da sprint', 6, '16:00', '17:00'],
+      [N.aurora, 0, '14:00', '14:45'], [N.cliente, 0, '16:30', '17:00'],
+      [N.daily, 1, '09:30', '09:45'], [N.tri, 1, '15:00', '16:30'],
+      [N.daily, 2, '09:30', '09:45'], [N.design, 3, '11:00', '12:00'], [N.daily, 5, '09:30', '09:45'], [N.retro, 6, '16:00', '17:00'],
     ].map(([titulo, n, hora, fim]) => ({ titulo, data: dia(n), hora, fim }));
     const norm = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
     const pauta = (titulo, n, hora, texto) => [`${dia(n)}|${norm(titulo)}`, { titulo, data: dia(n), hora, texto, criada: 1, atualizada: 2 }];
     const pautas = Object.fromEntries([
-      pauta('Revisão do projeto Aurora', 0, '14:00', '1. Status do protótipo\n2. Quem decide o prazo?\n3. Quais acessos faltam?\n\nCombinados\n- [ ] Enviar a proposta revisada\n- [ ] Marcar a próxima reunião'),
-      pauta('Planejamento do trimestre', 1, '15:00', '1. Metas do trimestre\n2. Prioridades por time\n3. Riscos e dependências\n\nCombinados\n- [ ] Fechar o orçamento\n- [ ] Definir responsáveis'),
-      pauta('Daily de produto', 1, '09:30', '1. Bloqueios\n2. Prioridades de hoje'),
-      pauta('Daily de produto', 2, '09:30', '1. Bloqueios\n2. Prioridades de hoje'),
+      pauta(N.aurora, 0, '14:00', EN ? '1. Prototype status\n2. Who decides the deadline?\n3. Which accesses are missing?\n\nAgreements\n- [ ] Send the revised proposal\n- [ ] Schedule the next meeting' : '1. Status do protótipo\n2. Quem decide o prazo?\n3. Quais acessos faltam?\n\nCombinados\n- [ ] Enviar a proposta revisada\n- [ ] Marcar a próxima reunião'),
+      pauta(N.tri, 1, '15:00', EN ? '1. Quarter goals\n2. Priorities by team\n3. Risks and dependencies\n\nAgreements\n- [ ] Close the budget\n- [ ] Assign owners' : '1. Metas do trimestre\n2. Prioridades por time\n3. Riscos e dependências\n\nCombinados\n- [ ] Fechar o orçamento\n- [ ] Definir responsáveis'),
+      pauta(N.daily, 1, '09:30', EN ? '1. Blockers\n2. Today\'s priorities' : '1. Bloqueios\n2. Prioridades de hoje'),
+      pauta(N.daily, 2, '09:30', EN ? '1. Blockers\n2. Today\'s priorities' : '1. Bloqueios\n2. Prioridades de hoje'),
     ]);
     const dias = Object.fromEntries(Array.from({ length: 10 }, (_, n) => [dia(n), 1]));
-    await bg.ev(`chrome.storage.local.set(${JSON.stringify({ agendaMeet: agenda, pautas, agendaDias: dias, agendaLidaEm: Date.now(), tagsSalvas: ['Produto', 'Aurora', 'Design'] })})`);
+    await bg.ev(`chrome.storage.local.set(${JSON.stringify({ agendaMeet: agenda, pautas, agendaDias: dias, agendaLidaEm: Date.now(), tagsSalvas: N.tags })})`);
     await esp(800);
-    const out = path.join(__dirname, 'painel');
+    const out = path.join(__dirname, EN ? 'painel-en' : 'painel');
+    fs.mkdirSync(out, { recursive: true });
     // painel fora do Meet: a agenda de hoje
     await foto(`chrome-extension://${ID}/panel.html`, path.join(out, 'agenda.png'), 400, 760);
     // página de Pautas: calendário e a pauta aberta
     await foto(`chrome-extension://${ID}/pautas.html`, path.join(out, 'pautas-pagina.png'), 1100, 760, async (pg) => {
       await pg.ev(`document.querySelector('[data-dia="${dia(1)}"]').click()`);
       await esp(300);
-      await pg.ev(`[...document.querySelectorAll('#diaLista .abrir')].find(b => /Planejamento/.test(b.textContent)).click()`);
+      await pg.ev(`[...document.querySelectorAll('#diaLista .abrir')].find(b => /${EN ? 'Quarter' : 'Planejamento'}/.test(b.textContent)).click()`);
     });
     proc.kill();
     // painel dentro da reunião: Chrome simulado (a demo define o próprio chrome.*), por isso num navegador sem a extensão
@@ -76,9 +89,9 @@ let proc2 = null;
     const perfil2 = fs.mkdtempSync('/tmp/talktrail-loja2-');
     proc2 = spawn(HELIUM, ['--headless=new', `--user-data-dir=${perfil2}`, `--remote-debugging-port=${PORTA}`, '--no-first-run', '--window-size=1400,900', 'about:blank'], { stdio: 'ignore' });
     await esp(4000);
-    await foto('http://127.0.0.1:8799/store/src/painel-loja.html?aba=texto', '/tmp/talktrail-aquecimento.png', 400, 760); // a primeira aba do navegador novo sai em branco
+    await foto('http://127.0.0.1:8799/store/src/painel-loja.html?aba=texto' + (EN ? '.en' : ''), '/tmp/talktrail-aquecimento.png', 400, 760); // a primeira aba do navegador novo sai em branco
     for (const [aba, arq] of [['texto', 'texto'], ['notas', 'notas'], ['cola', 'pauta'], ['marcadores', 'marcadores']]) {
-      await foto(`http://127.0.0.1:8799/store/src/painel-loja.html?aba=${aba}`, path.join(out, `${arq}.png`), 400, 760);
+      await foto(`http://127.0.0.1:8799/store/src/painel-loja.html?aba=${aba}${EN ? '.en' : ''}`, path.join(out, `${arq}.png`), 400, 760);
     }
     console.log('ok');
   } finally {

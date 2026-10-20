@@ -6,19 +6,44 @@
 // Simula o ambiente da extensão pra ver o painel num navegador comum.
 // Uso: servidor estático na pasta talktrail, abrir /test/panel-demo.html?tema=claro|escuro&aba=notas
 const q = new URLSearchParams(location.search);
+const ABA = (q.get('aba') || '').replace(/\.en$/, '');
+const EN = q.get('lang') === 'en' || /\.en$/.test(q.get('aba') || ''); // aba=texto.en: o DevTools corta & e # da URL
+window.__IDIOMA = EN ? 'en-US' : 'pt-BR'; // a demo não tem chrome.i18n: o idioma da arte vem daqui
 // agenda de mentira (nomes fictícios), sempre relativa a hoje
 const dia = (n) => { const d = new Date(); for (let k = 0; k < n;) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0 && d.getDay() !== 6) k++; } return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-const AGENDA = [
+const AGENDA = EN ? [
+  { titulo: 'Aurora project review', data: dia(0), hora: '14:00', fim: '14:45' },
+  { titulo: 'Client sync', data: dia(0), hora: '16:30', fim: '17:00' },
+  { titulo: 'Product daily', data: dia(1), hora: '09:30', fim: '09:45' },
+  { titulo: 'Quarter planning', data: dia(1), hora: '15:00', fim: '16:30' },
+] : [
   { titulo: 'Revisão do projeto Aurora', data: dia(0), hora: '14:00', fim: '14:45' },
   { titulo: 'Alinhamento com o cliente', data: dia(0), hora: '16:30', fim: '17:00' },
   { titulo: 'Daily de produto', data: dia(1), hora: '09:30', fim: '09:45' },
   { titulo: 'Planejamento do trimestre', data: dia(1), hora: '15:00', fim: '16:30' },
 ];
-const PAUTAS = {
+const PAUTAS = EN ? {
+  [dia(0) + '|aurora project review']: { titulo: 'Aurora project review', data: dia(0), hora: '14:00', texto: '# Agenda\n- [x] Prototype status\n- [ ] Who decides the deadline?\n- [ ] Which accesses are missing?\n- [ ] Next steps', criada: 1, atualizada: 2 },
+  [dia(1) + '|product daily']: { titulo: 'Product daily', data: dia(1), hora: '09:30', texto: '1. This week\'s blockers\n2. Today\'s priorities', criada: 1, atualizada: 2 },
+} : {
   [dia(0) + '|revisao do projeto aurora']: { titulo: 'Revisão do projeto Aurora', data: dia(0), hora: '14:00', texto: '# Pauta\n- [x] Status do protótipo\n- [ ] Quem decide o prazo?\n- [ ] Quais acessos faltam?\n- [ ] Próximos passos', criada: 1, atualizada: 2 },
   [dia(1) + '|daily de produto']: { titulo: 'Daily de produto', data: dia(1), hora: '09:30', texto: '1. Bloqueios da semana\n2. Prioridades de hoje', criada: 1, atualizada: 2 },
 };
-const estado = {
+const estado = EN ? {
+  fase: 'gravando', titulo: 'Aurora project review', projeto: '', tags: ['Product', 'Aurora'], segundos: 138,
+  notes: '# Decisions\n- final deadline: **November 28**\n- [x] send the revised proposal\n- [x] confirm the budget\n- [ ] schedule the next meeting\n\n**Heads up:** the prototype delivery depends on access to the test environment.',
+  cola: '# Agenda\n- [x] Prototype status\n- [ ] Who decides the deadline?\n- [ ] Which accesses are missing?\n- [ ] Next steps',
+  linhas: [
+    { speaker: 'Me', t: 12, text: "Let's start with the prototype. Has Ana tested it with the client yet?" },
+    { speaker: 'Ana', t: 31, text: 'I tested it on Tuesday. They liked the flow, but asked us to simplify the sign-up screen.' },
+    { speaker: 'Carlos', t: 58, text: 'We can cut two fields without losing anything. I will adjust it today.' },
+    { speaker: 'Me', t: 84, text: 'Great. And the test environment access, did it come through?' },
+    { speaker: 'Ana', t: 103, text: 'Not yet. I will chase their team today and let you know.' },
+    { speaker: 'Carlos', t: 127, text: 'If it comes through by Friday, we close the prototype on Monday.' },
+  ],
+  marcas: [{ t: 84, texto: 'Me: And the test environment access, did it come through?' }, { t: 127, texto: 'Carlos: If it comes through by Friday, we close the prototype on Monday.' }],
+  esconderLegendas: false, legendas: q.get('legenda') !== 'off', legendasMotivo: q.get('motivo') || (q.get('legenda') === 'off' ? 'desligadas' : ''), modoSalvar: q.get('salvar') || 'extensao', salvoEm: Date.now() - 8000, id: 'demo', pautaId: dia(0) + '|aurora project review', info: q.get('info') || '', erro: null, salvoEm: Date.now(),
+} : {
   fase: 'gravando', titulo: 'Revisão do projeto Aurora', projeto: '', tags: ['Produto', 'Aurora'], segundos: 138,
   notes: '# Decisões\n- prazo final: **28 de novembro**\n- [x] enviar a proposta revisada\n- [x] confirmar o orçamento\n- [ ] marcar a próxima reunião\n\n**Atenção:** a entrega do protótipo depende do acesso ao ambiente.',
   cola: '# Pauta\n- [x] Status do protótipo\n- [ ] Quem decide o prazo?\n- [ ] Quais acessos faltam?\n- [ ] Próximos passos',
@@ -52,7 +77,7 @@ fetch('../../extension/panel.html').then((r) => r.text()).then((h) => {
   const v = '?v=' + Date.now(); // sem cache: a demo sempre mostra o código atual
   document.write(h.replace('<head>', '<head><base href="../../extension/">').replace('panel.css', 'panel.css' + v).replace('panel.js', 'panel.js' + v).replace('vendor/editor.js', 'vendor/editor.js' + v));
   document.close();
-  if (q.get('aba')) setTimeout(() => document.querySelector('[data-aba="' + q.get('aba') + '"]').click(), 300);
+  if (ABA) setTimeout(() => document.querySelector('[data-aba="' + ABA + '"]').click(), 300);
   if (q.get('aj')) setTimeout(() => document.getElementById('engrenagem').click(), 500);
 });
 </script>

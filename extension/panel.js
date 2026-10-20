@@ -386,7 +386,9 @@ function pintarPautas() {
       nome.textContent = tituloDoDia(l.data);
       const dataCurta = document.createElement('span');
       dataCurta.textContent = new Date(`${l.data}T12:00:00`).toLocaleDateString(MB_IDIOMA.loc, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace('.', '');
-      h.append(nome, dataCurta);
+      // "Hoje" e "Amanhã" ganham a data ao lado; os outros dias já têm a data no próprio título
+      if (l.data === hoje || l.data === diaISO(new Date(Date.now() + 86400000))) h.append(nome, dataCurta);
+      else h.append(nome);
       linhas.push(h);
     }
     linhas.push(itemDePauta(l));
