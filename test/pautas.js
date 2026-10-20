@@ -104,6 +104,7 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('o botão abre a página do servidor local', criadas.includes('http://127.0.0.1:8787/'), JSON.stringify(criadas));
   w.eval(`aplicar(${JSON.stringify(estado)})`);
 
+  t('o painel não tem mais o bloco "Anteriores"', !w.document.getElementById('pautasAnteriores') && !/Anteriores/.test(w.document.body.textContent));
   console.log('Painel na tela inicial do Meet');
   {
     const antes = foraDoMeet;

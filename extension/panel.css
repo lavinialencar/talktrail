@@ -325,8 +325,6 @@ kbd { font: 600 12px ui-monospace, "SF Mono", Menlo, monospace; padding: 4px 8px
 .pauta-item.passou .hora b { font-weight: 600; }
 .pauta-item .apagar { flex: none; padding: 0 10px; border: 1px solid var(--linha2); border-radius: var(--raio); background: transparent; color: var(--mudo); font: inherit; cursor: pointer; }
 .pauta-item .apagar:hover, .pauta-item .apagar.confirma { color: var(--rec); border-color: var(--rec); }
-.pautas-ant { margin-top: 10px; }
-.pautas-ant summary { cursor: pointer; color: var(--mudo); font-size: 12px; }
 .peq { padding: 4px 10px; font-size: 12px; }
 
 /* fora do Meet: só reuniões de hoje e pauta */

@@ -366,7 +366,6 @@ function pintarPautas() {
   const todas = linhasDePautas();
   const futuras = todas.filter((l) => l.data >= hoje);
   const deHoje = futuras.filter((l) => l.data === hoje);
-  const passadas = todas.filter((l) => l.data < hoje && l.texto).reverse();
   // uma pequena agenda: o título de cada dia e as reuniões dele
   const linhas = [];
   let dia = '';
@@ -386,8 +385,6 @@ function pintarPautas() {
     linhas.push(itemDePauta(l));
   }
   $('pautasLista').replaceChildren(...linhas);
-  $('pautasAntLista').replaceChildren(...passadas.map(itemDePauta));
-  $('pautasAnteriores').hidden = !passadas.length || recolhida;
   $('pautasVazio').hidden = futuras.length > 0;
   $('pautasMostrar').hidden = !recolhida;
   $('pautasAtualizar').parentElement.hidden = recolhida;
