@@ -951,11 +951,12 @@ $('ajPalavras').addEventListener('input', () => {
 });
 // copia pra área de transferência e mostra "Copiado" no próprio botão por um instante
 async function copiar(botao, texto) {
-  const rotulo = botao.textContent;
+  const alvo = botao.querySelector('span') || botao; // o ícone do botão fica; só o texto troca
+  const rotulo = alvo.textContent;
   try {
     await navigator.clipboard.writeText(texto);
-    botao.textContent = 'Copiado';
-    setTimeout(() => (botao.textContent = rotulo), 1500);
+    alvo.textContent = 'Copiado';
+    setTimeout(() => (alvo.textContent = rotulo), 1500);
   } catch (e) {}
 }
 $('ajCopiar').onclick = () => (servidorOk && pastaServidor ? copiar($('ajCopiar'), pastaServidor) : voltarProDownloads());

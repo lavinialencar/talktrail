@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Talktrail",
-  "version": "1.21.10",
-  "version_name": "1.21.10-dev",
+  "version": "1.21.11",
+  "version_name": "1.21.11-dev",
   "description": "Transcrição e notas do Google Meet, salvas só no seu computador, em Markdown.",
   "permissions": ["sidePanel", "storage", "unlimitedStorage", "alarms", "downloads"],
   "host_permissions": ["https://meet.google.com/*", "http://127.0.0.1:8787/*"],

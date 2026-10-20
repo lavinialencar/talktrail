@@ -229,7 +229,7 @@ textarea.caixa { resize: vertical; font-weight: 400; }
 .ajajuda h3 { color: var(--rec); }
 .ajajuda .sec { border-color: color-mix(in srgb, var(--rec) 45%, var(--linha2)); }
 .ajajuda .sec:hover { border-color: var(--rec); background: color-mix(in srgb, var(--rec) 12%, var(--card)); }
-.ajajuda .email-suporte { color: var(--rec); }
+.ajajuda .email-suporte { color: var(--texto); } /* branco, em negrito; só o bloco é vermelho */
 /* "Gostou do Talktrail?": o verde-água de destaque, no lugar que o "Algo não funcionou?" ocupava */
 #ajApoio { background: color-mix(in srgb, var(--acento) 9%, var(--card)); border-color: color-mix(in srgb, var(--acento) 38%, var(--linha)); }
 #ajApoio h3 { color: var(--acento); }
