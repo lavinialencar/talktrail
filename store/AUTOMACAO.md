@@ -11,18 +11,23 @@ O arquivo `.github/workflows/publicar-loja.yml` envia o Talktrail pra Chrome Web
 Sem as credenciais, o fluxo só monta o zip e anexa na Release, e avisa que nada foi enviado. Também dá pra rodar à mão em Actions > Publicar na Chrome Web Store > Run workflow (marque "enviar" só se quiser mesmo enviar).
 
 ## Credenciais (uma vez só, é você que faz)
-A API da loja pede um acesso seu. Os quatro valores ficam como **segredos** do repositório (nunca em arquivo):
+A API da loja pede um acesso seu. Os três valores (`CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN`) ficam como **segredos** do repositório, nunca em arquivo. Os nomes que você digita no Google não importam: o app só você usa. Leva uns 10 minutos.
 
-1. Entre em https://console.cloud.google.com com a MESMA conta Google que é dona da extensão na loja.
-2. Crie um projeto (nome livre, ex.: "talktrail-loja") e ative a **Chrome Web Store API** (APIs e serviços > Biblioteca).
-3. APIs e serviços > **Tela de consentimento OAuth**: tipo Externo, nome do app "Talktrail loja", seu e-mail. Em "Usuários de teste", adicione o seu próprio e-mail. Pode deixar em modo de teste.
-4. APIs e serviços > Credenciais > **Criar credenciais > ID do cliente OAuth** > tipo "App para computador". Anote o **ID do cliente** e a **chave secreta do cliente**.
-5. Gere o **refresh token** (o código que deixa o GitHub agir como você): com o ID e a chave do passo 4, rode no terminal
-   `npx chrome-webstore-upload-keys` e siga as instruções (abre uma página do Google pedindo permissão; o token aparece no terminal). Guarde só no passo 6.
-6. No GitHub: repositório > Settings > Secrets and variables > Actions > **New repository secret**, três vezes:
-   - `CWS_CLIENT_ID`: o ID do cliente
-   - `CWS_CLIENT_SECRET`: a chave secreta do cliente
-   - `CWS_REFRESH_TOKEN`: o refresh token
+1. Entre com a conta Google que é DONA da extensão na loja em https://console.developers.google.com/apis/credentials e **crie um projeto** (nome: `chrome-webstore-upload`).
+2. Abra https://console.cloud.google.com/auth/overview, clique em **Get started** (Começar), ponha um nome de app (`chrome-webstore-upload`) e o seu e-mail.
+3. Em público (Audience), escolha **External** (Externo). *Interno só existe em conta de empresa (Workspace).* Preencha o que for obrigatório até o botão **Create** liberar.
+4. Em **Audience**, adicione o seu e-mail em "Test users" e clique em **Publish app** (Publicar app, "In production"). Isso é importante: em modo de teste o token expira em 7 dias e a automação para de funcionar. Para uso só seu não precisa de verificação do Google (vai aparecer um aviso de "app não verificado" quando você autorizar: é normal, é o seu app).
+5. Clique em **Create OAuth client**, tipo **Desktop app**, nome `Chrome Webstore Upload`. Anote o **ID do cliente** (`CLIENT_ID`).
+6. Abra o cliente criado, e no ícone de informação copie a **chave secreta** (`CLIENT_SECRET`).
+7. Abra https://console.cloud.google.com/apis/library/chromewebstore.googleapis.com e clique em **Enable** (Ativar).
+8. No seu terminal, rode `npx chrome-webstore-upload-keys`. Ele pede o `CLIENT_ID` e o `CLIENT_SECRET`, abre uma página do Google (clique em permitir, mesmo com o aviso de app não verificado) e mostra o **`REFRESH_TOKEN`** no terminal.
+9. Guarde os três como segredos do repositório (no terminal, cada comando pergunta o valor e não mostra na tela):
+   ```
+   gh secret set CWS_CLIENT_ID --repo lavinialencar/talktrail
+   gh secret set CWS_CLIENT_SECRET --repo lavinialencar/talktrail
+   gh secret set CWS_REFRESH_TOKEN --repo lavinialencar/talktrail
+   ```
+   (ou pelo site: repositório > Settings > Secrets and variables > Actions > New repository secret, com esses mesmos nomes.)
 
 O ID da extensão (`jneejlpdlldinjnilghnndennbnpbeak`) já está no arquivo do fluxo.
 
