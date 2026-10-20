@@ -152,7 +152,7 @@ pagina("captura-5-privacidade", 1280, 800, f"""
 
 icone = re.sub(r'viewBox="[^"]+"', 'viewBox="-32 -32 192 192"', open(os.path.join(RAIZ, "../design/logo-final/fita-completo.svg")).read(), count=1)
 open(os.path.join(RAIZ, "src", "store-icon.svg"), "w").write(icone)
-subprocess.run(["rsvg-convert", "-w", "128", "-h", "128", "-a", "-b", "none", os.path.join(RAIZ, "src", "store-icon.svg"), "-o", os.path.join(RAIZ, "out", VARIANTE, "icone-loja-128.png")], check=True)
+import shutil; shutil.copy(os.path.join(RAIZ, "../extension/icons/icon-128.png"), os.path.join(RAIZ, "out", VARIANTE, "icone-loja-128.png"))  # o ícone da loja é o mesmo da extensão: cassete alto, preenche o quadrado
 if len(sys.argv) > 2 and sys.argv[2] == "so-html": sys.exit()
 for nome, w, h in [("tile-440x280-pt", 440, 280), ("tile-440x280-en", 440, 280), ("marquee-1400x560-pt", 1400, 560), ("marquee-1400x560-en", 1400, 560),
                    ("captura-1-transcricao", 1280, 800), ("captura-2-arquivo", 1280, 800), ("captura-3-agenda-pauta", 1280, 800), ("captura-4-pautas", 1280, 800), ("captura-5-privacidade", 1280, 800)]:

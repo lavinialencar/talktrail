@@ -83,13 +83,25 @@ def barra():
     a += f'<path d="M30 104 L40 84 H88 L98 104" fill="{CARV}" stroke-width="7"/>'
     return adesivo(sil, a, rot=0, sombra=0, halo=8, traco=8)
 
+
+# ---------- 128 e 48 px: o cassete alto (mesma silhueta da barra), com o T e sombra curta, preenchendo o quadrado ----------
+def cheio(tam):
+    sil = '<rect x="10" y="12" width="108" height="92" rx="15"/>'
+    a = f'<rect x="10" y="12" width="108" height="92" rx="15" fill="{TEAL}"/>'
+    a += f'<rect x="22" y="21" width="84" height="50" rx="9" fill="{MARF}" stroke-width="6"/>'
+    a += f'<rect x="31" y="33" width="46" height="28" rx="14" fill="{CARV}" stroke="none"/>'
+    a += dots([(45, 47, 8.5), (63, 47, 8.5)], MARF) + dots([(45, 47, 3.2), (63, 47, 3.2)])
+    a += f'<g transform="translate(82 30) scale(1.1)">{T}</g>'
+    a += f'<path d="M30 104 L40 84 H88 L98 104" fill="{CARV}" stroke-width="6"/>'
+    return adesivo(sil, a, rot=0, sombra=4, halo=9 if tam >= 128 else 8, traco=6.5)
+
 VB_QUAD = "-8 -8 144 144"
 arquivos = {"completo": (completo(), VB_QUAD), "medio": (medio(), VB_QUAD),
-            "mini": (mini(False), "-4 8 136 112"), "barra": (barra(), "3 -2 122 122")}
+            "mini": (mini(False), "-4 8 136 112"), "barra": (barra(), "3 -2 122 122"), "cheio128": (cheio(128), "1 -5 128 128"), "cheio48": (cheio(48), "1 -5 128 128")}
 for k, (corpo, vb) in arquivos.items():
     open(f"fita-{k}.svg", "w").write(svg(corpo, vb))
 os.makedirs("../../extension/icons", exist_ok=True)
-for tam, k in ((128, "completo"), (48, "medio"), (32, "barra"), (24, "barra"), (16, "barra")):
+for tam, k in ((128, "cheio128"), (48, "cheio48"), (32, "barra"), (24, "barra"), (16, "barra")):
     subprocess.run(["rsvg-convert", "-w", str(tam), "-h", str(tam), "-a", "-b", "none", f"fita-{k}.svg",
                     "-o", f"../../extension/icons/icon-{tam}.png"], check=True)
 print("ok")
