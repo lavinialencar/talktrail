@@ -7,6 +7,7 @@
 
 # Talktrail
 
+**Português** | [English](README.en.md)
 
 Transcrição e notas do Google Meet, **100% local**. Uma extensão para o navegador lê as legendas da reunião, mostra tudo num painel lateral e salva cada reunião como um arquivo Markdown na sua pasta. Nada vai para a nuvem, não há conta, não há telemetria.
 
@@ -38,7 +39,9 @@ A extensão escolhe sozinha: se o servidor responde, usa a pasta ao vivo; se nã
 
 ## Instalar
 
-Precisa de um navegador Chromium (Chrome, Brave, Edge, Helium...) e de Python 3.
+**Pela Chrome Web Store (recomendado):** [Talktrail na Chrome Web Store](https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak). Funciona no Chrome, Edge, Brave e outros navegadores Chromium. Entre numa reunião do Meet, em aba normal, e clique em **Transcrever** no aviso. O servidor local é opcional (veja "Dois modos de guardar").
+
+**Pelo código (desenvolvedores):** precisa de um navegador Chromium (Chrome, Brave, Edge, Helium...) e de Python 3.
 
 **macOS, em dois passos:**
 
@@ -86,6 +89,22 @@ status: cru
 ```
 
 Nome do arquivo: `AAAA-MM/AAAA-MM-DD_HHhMM_titulo.md`. Se você muda o título durante a reunião, o arquivo é renomeado, não duplicado.
+
+## Perguntas frequentes
+
+**Funciona sem conta?** Sim. Não há nada pra entrar.
+
+**Onde ficam os meus dados?** No seu computador: na biblioteca da extensão e na pasta que você escolher. Nada é enviado.
+
+**Funciona com Zoom ou Teams?** Não, só com o Google Meet.
+
+**Grava o áudio?** Não. Salva o texto das legendas que o Meet mostra. As legendas precisam estar ligadas, no idioma que está sendo falado.
+
+**É uma alternativa grátis ao Otter, Fireflies ou Tactiq?** Cobre a parte de transcrever pra arquivo no Google Meet, de graça e local. Não resume com IA sozinho: o arquivo Markdown serve pra você entregar à IA que já usa.
+
+**Como uma IA edita a minha pauta?** Com uma pasta escolhida, cada pauta vira um `.md` em `Pautas/`, com um `LEIA-ME.md` explicando o formato. Aponte uma IA pra essa pasta, peça a mudança, e a pauta atualiza na extensão em até 1 minuto.
+
+**É código aberto?** Sim, licença MIT.
 
 ## Privacidade e uso responsável
 

@@ -37,9 +37,9 @@ Sem landing page, a página da Chrome Web Store é a vitrine. A busca da loja ol
 Pra aparecer no Google e nas respostas de ChatGPT, Claude, Perplexity e afins, o que conta é ter páginas claras que respondam à pergunta que a pessoa faz ("extensão pra transcrever Google Meet", "Google Meet transcript Chrome extension privacy", "pauta de reunião Google Meet"). A IA cita o que já está no Google e em páginas conhecidas.
 
 Depois que a loja aprovar (precisa do link definitivo):
-- [ ] **README em inglês** (`README.en.md`) com as mesmas palavras de busca, no topo o link da loja. IA e Google internacional leem inglês primeiro.
-- [ ] **GitHub:** descrição curta do repositório, site (link da loja) e tópicos: `google-meet`, `transcription`, `chrome-extension`, `meeting-notes`, `markdown`, `local-first`, `privacy`, `agenda`.
-- [ ] **Perguntas e respostas no README** (FAQ): "funciona sem conta?", "onde ficam os dados?", "funciona com Zoom?" (não), "como uma IA edita a pauta?". Respostas curtas e diretas são o que a IA copia.
+- [x] (feito em 20/10/2026) **README em inglês** (`README.en.md`) com as mesmas palavras de busca, no topo o link da loja. IA e Google internacional leem inglês primeiro.
+- [x] (feito) **GitHub:** descrição curta do repositório, site (link da loja) e tópicos: `google-meet`, `transcription`, `chrome-extension`, `meeting-notes`, `markdown`, `local-first`, `privacy`, `agenda`.
+- [x] (feito, nos dois READMEs) **Perguntas e respostas no README** (FAQ): "funciona sem conta?", "onde ficam os dados?", "funciona com Zoom?" (não), "como uma IA edita a pauta?". Respostas curtas e diretas são o que a IA copia.
 - [ ] **Onde a IA costuma citar:** post no Reddit (r/chrome_extensions, r/productivity), Product Hunt, AlternativeTo (cadastrar como alternativa a Otter, Fireflies e Tactiq, destacando "local e grátis"), listas "awesome" de extensões.
 - [ ] **Texto da loja** com as frases que as pessoas digitam (já tem "Google Meet", "transcrição", "legendas", "Markdown"); na versão em inglês: "Google Meet transcript", "captions", "meeting notes", "agenda", "local", "no account".
 - [ ] Uma **página com endereço próprio** pesa mais no Google do que só o GitHub: a landing page adiada volta a valer quando houver tráfego ou pedido de empresa. Até lá, o README em inglês e a página da loja fazem esse papel.
