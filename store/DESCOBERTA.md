@@ -1,5 +1,7 @@
 # Como fazer o Talktrail ser achado
 
+Loja (publicada em 20/10/2026): https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak
+
 Sem landing page, a página da Chrome Web Store é a vitrine. A busca da loja olha o nome, a descrição curta, a descrição longa e as avaliações. Nada disso é pago nem precisa de ferramenta.
 
 ## Na página da loja

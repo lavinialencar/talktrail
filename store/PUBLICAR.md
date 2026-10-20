@@ -39,3 +39,7 @@ Clique em **Enviar para revisão**. Costuma levar de alguns dias a umas semanas.
 ## Depois de publicar
 - ID novo da extensão (a loja gera): os links `chrome-extension://...` de teste mudam.
 - Buy Me a Coffee: falta conectar o recebimento (Stripe) pra página aceitar apoio.
+
+## Publicada (20/10/2026)
+https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak
+Endereço com o código de compartilhamento: `...?utm_source=item-share-cb` (o mesmo item). Atualizações: subir um zip com versão maior na aba Pacote.

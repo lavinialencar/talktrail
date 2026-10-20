@@ -2,6 +2,8 @@
 
 # Talktrail
 
+**[Instalar na Chrome Web Store](https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak)** (grátis, sem conta)
+
 Transcrição e notas do Google Meet, **100% local**. Uma extensão para o navegador lê as legendas da reunião, mostra tudo num painel lateral e salva cada reunião como um arquivo Markdown na sua pasta. Nada vai para a nuvem, não há conta, não há telemetria.
 
 Gostou? [Pague um café](https://buymeacoffee.com/lavinialencar) pra manter o projeto vivo.

@@ -43,5 +43,6 @@ t('os Ajustes têm o grupo Cópia de segurança com Exportar e Importar', /<h3>C
 
 t('Ajustes explicam que as pautas também ficam em arquivos (Pautas/) editáveis por IA', /id="ajPautasArq"/.test(html) && /Pautas\//.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')));
 t('o bloco de apoio dos Ajustes aponta pro Buy Me a Coffee', /const URL_APOIO = 'https:\/\/buymeacoffee\.com\/lavinialencar'/.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')) && /id="ajApoio"/.test(html));
+t('o bloco de apoio tem o botão de avaliar na loja, apontando pro item publicado', /id="ajAvaliar"/.test(html) && /URL_LOJA = 'https:\/\/chromewebstore\.google\.com\/detail\/talktrail\/jneejlpdlldinjnilghnndennbnpbeak'/.test(fs.readFileSync(path.join(__dirname, '../extension/panel.js'), 'utf8')));
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);
