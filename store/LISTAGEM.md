@@ -43,7 +43,7 @@ Bom saber
 • Avise as pessoas da reunião que você está transcrevendo.
 • Talktrail não é afiliado ao Google. Google Meet é marca do Google LLC.
 
-Apoie o projeto: https://buymeacoffee.com/lavinialencar
+Apoie o projeto: https://buymeacoffee.com/talktrail
 
 ## Long description (English)
 
@@ -66,7 +66,7 @@ Good to know
 • Let the people in the meeting know you are transcribing.
 • Talktrail is not affiliated with Google. Google Meet is a trademark of Google LLC.
 
-Support the project: https://buymeacoffee.com/lavinialencar
+Support the project: https://buymeacoffee.com/talktrail
 
 > Observação: o painel da extensão ainda está só em português. A descrição em inglês só deve ir pra loja depois da interface em inglês (i18n), senão a pessoa instala e encontra tudo em português.
 
@@ -104,7 +104,7 @@ Falta:
 1. Preencher `URL_COMPLEMENTO` em `extension/panel.js` com a página de releases do GitHub (enquanto vazio, o botão de instalar some no pacote da loja).
 2. ~~Publicar `PRIVACIDADE.md` numa URL pública~~ Feito em 14/10/2026: repositório público, URL acima.
 3. Interface em inglês antes da listagem em inglês.
-4. ~~Link do Buy Me a Coffee~~ Feito em 16/10/2026: https://buymeacoffee.com/lavinialencar (falta ela conectar o recebimento no Stripe). (E-mail de suporte feito em 14/10/2026: talktrail@lavinialencar.com.br, encaminha para o e-mail work pela Cloudflare Email Routing.)
+4. ~~Link do Buy Me a Coffee~~ Feito em 16/10/2026: https://buymeacoffee.com/talktrail (falta ela conectar o recebimento no Stripe). (E-mail de suporte feito em 14/10/2026: talktrail@lavinialencar.com.br, encaminha para o e-mail work pela Cloudflare Email Routing.)
 5. Ela buscar "Talktrail" na loja e nas bases de marca (WIPO, INPI).
 
 ## Arte (pasta `out/marfim/`, recomendada; `out/grafite/` é a alternativa)
