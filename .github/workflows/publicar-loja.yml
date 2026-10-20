@@ -18,6 +18,10 @@ on:
         description: 'Enviar pra loja (false = só montar o pacote)'
         type: boolean
         default: false
+      release:
+        description: 'Criar a Release no GitHub com os zips (use quando o pacote já foi enviado à loja à mão)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -70,11 +74,13 @@ jobs:
             dist/Talktrail-complemento-*.zip
 
       - name: Release no GitHub com o zip
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' || inputs.release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" dist/Talktrail-complemento-*.zip \
+          TAG="${GITHUB_REF_NAME}"
+          if [ "${GITHUB_REF_TYPE}" != "tag" ]; then TAG="v${{ steps.versao.outputs.versao }}"; fi
+          gh release create "${TAG}" --target "${GITHUB_SHA}" "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" dist/Talktrail-complemento-*.zip \
             --title "Talktrail ${{ steps.versao.outputs.versao }}" \
             --notes "Pacote da Chrome Web Store. Instale pela loja: https://chromewebstore.google.com/detail/talktrail/${EXTENSION_ID}. Os arquivos Talktrail-complemento-*.zip são o instalador do servidor local (opcional), baixado pelo botão do painel." \
             || echo "Release já existe, seguindo."

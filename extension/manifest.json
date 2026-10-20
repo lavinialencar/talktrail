@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Talktrail",
-  "version": "1.21.13",
-  "version_name": "1.21.13-dev",
+  "version": "1.21.14",
+  "version_name": "1.21.14-dev",
   "description": "__MSG_extDescricao__",
-  "default_locale": "pt_BR",
+  "default_locale": "en",
   "permissions": ["sidePanel", "storage", "unlimitedStorage", "alarms", "downloads"],
   "host_permissions": ["https://meet.google.com/*", "http://127.0.0.1:8787/*"],
   "background": { "service_worker": "background.js" },
