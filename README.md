@@ -1,12 +1,15 @@
 <p align="center"><img src="docs/banner.png" alt="Talktrail: transcrição do Google Meet, só no seu computador" width="100%"></p>
 
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak"><img src="docs/btn-loja.svg" height="40" alt="Instalar o Talktrail na Chrome Web Store" /></a>
+  <a href="https://buymeacoffee.com/lavinialencar"><img src="docs/btn-cafe.svg" height="40" alt="Pague um café" /></a>
+  <a href="https://github.com/lavinialencar/talktrail"><img src="docs/btn-codigo.svg" height="40" alt="Ver o código no GitHub" /></a>
+</p>
+
 # Talktrail
 
-**[Instalar na Chrome Web Store](https://chromewebstore.google.com/detail/talktrail/jneejlpdlldinjnilghnndennbnpbeak)** (grátis, sem conta)
 
 Transcrição e notas do Google Meet, **100% local**. Uma extensão para o navegador lê as legendas da reunião, mostra tudo num painel lateral e salva cada reunião como um arquivo Markdown na sua pasta. Nada vai para a nuvem, não há conta, não há telemetria.
-
-Gostou? [Pague um café](https://buymeacoffee.com/lavinialencar) pra manter o projeto vivo.
 
 - Oferece gravar quando você entra numa chamada e liga as legendas sozinha.
 - Painel lateral com o texto ao vivo, **Notas** (o que sai da reunião) e **Pauta** (o que você leva antes; cada reunião tem a sua, com a lista de hoje vinda da tela inicial do Meet, o ícone contando quanto falta pra próxima reunião, e carrega sozinha ao entrar na sala; o painel abre em qualquer página, não só no Meet) com um editor markdown de verdade: título, lista, tarefa com caixa de marcar, hierarquia), **Marcadores** de momento e tags.

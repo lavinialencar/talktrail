@@ -1,0 +1,29 @@
+"""Botões do README, no mesmo formato dos botões do perfil (40 px, canto 6, ícone à esquerda, Archivo 14/600).
+Uso: python3 docs/gerar-botoes.py"""
+import base64, os
+RAIZ = os.path.dirname(os.path.abspath(__file__))
+CARV, GRAF, MARF, TEAL = "#0E0F12", "#1A1C21", "#F1EAD2", "#2DD4BF"
+icone = base64.b64encode(open(os.path.join(RAIZ, "../extension/icons/icon-48.png"), "rb").read()).decode()
+
+def botao(nome, largura, rotulo, fundo, borda, icone_svg, descricao):
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{largura}" height="40" viewBox="0 0 {largura} 40" role="img" aria-label="{descricao}">
+<rect x=".5" y=".5" width="{largura - 1}" height="39" rx="6" fill="{fundo}" stroke="{borda}"/>
+{icone_svg}
+<text x="46" y="25.0" font-family="Archivo,'Helvetica Neue',Arial,sans-serif" font-size="14" font-weight="600" fill="{MARF}">{rotulo}</text>
+</svg>
+'''
+    open(os.path.join(RAIZ, nome), "w").write(svg)
+
+# instalar: o cassete do Talktrail
+botao("btn-loja.svg", 262, "Instalar na Chrome Web Store", CARV, TEAL,
+      f'<image x="14" y="9" width="22" height="22" xlink:href="data:image/png;base64,{icone}" href="data:image/png;base64,{icone}"/>',
+      "Instalar o Talktrail na Chrome Web Store")
+# apoiar: xícara em traço, na cor de destaque
+xicara = (f'<g transform="translate(16,10)"><path d="M3 7h10v4.2A4.2 4.2 0 0 1 8.8 15.4h-1.6A4.2 4.2 0 0 1 3 11.2z" fill="none" stroke="{TEAL}" stroke-width="1.6" stroke-linejoin="round"/>'
+          f'<path d="M13 8.2h1.4a2.1 2.1 0 0 1 0 4.2H13" fill="none" stroke="{TEAL}" stroke-width="1.6" stroke-linecap="round"/>'
+          f'<path d="M6.2 2.6v2M9.8 2.6v2" stroke="{TEAL}" stroke-width="1.6" stroke-linecap="round"/></g>')
+botao("btn-cafe.svg", 190, "Pague um café", GRAF, "#34373F", xicara, "Apoiar o Talktrail com um café")
+# código: GitHub
+git = (f'<g transform="translate(16,10)"><path fill="{TEAL}" transform="scale(.8333)" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.3 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .26.18.58.69.48A10 10 0 0 0 12 2z"/></g>')
+botao("btn-codigo.svg", 160, "Ver o código", GRAF, "#34373F", git, "Ver o código do Talktrail no GitHub")
+print("ok")
