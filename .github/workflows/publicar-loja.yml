@@ -1,0 +1,88 @@
+# Publica o Talktrail na Chrome Web Store a partir de uma tag de versão.
+#   1. Mude a versão em extension/manifest.json (ex.: 1.21.7) e faça o commit.
+#   2. git tag v1.21.7 && git push origin v1.21.7
+# O fluxo roda os testes, confere que a tag bate com o manifest, monta o pacote, anexa o zip numa Release do GitHub
+# e envia pra loja já pedindo a revisão. A revisão da Google continua acontecendo a cada versão.
+# Sem as credenciais da loja (segredos do repositório), ele só monta e anexa o zip, e não envia nada.
+# Passo a passo das credenciais: store/AUTOMACAO.md
+name: Publicar na Chrome Web Store
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      enviar:
+        description: 'Enviar pra loja (false = só montar o pacote)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      EXTENSION_ID: jneejlpdlldinjnilghnndennbnpbeak
+      # true quando os três segredos da loja existem; sem eles o fluxo só monta o pacote
+      CWS_TEM_SEGREDOS: ${{ secrets.CWS_CLIENT_ID != '' && secrets.CWS_CLIENT_SECRET != '' && secrets.CWS_REFRESH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Testes
+        run: |
+          npm ci
+          npm test
+
+      - name: Versão do manifest e da tag
+        id: versao
+        run: |
+          V=$(python3 -c "import json;print(json.load(open('extension/manifest.json'))['version'])")
+          echo "versao=$V" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$V" ]; then
+            echo "A tag ${GITHUB_REF_NAME} não bate com a versão do manifest (v$V)."; exit 1
+          fi
+
+      - name: Montar o pacote
+        run: python3 tools/empacotar.py
+
+      - name: Guardar o zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: talktrail-${{ steps.versao.outputs.versao }}
+          path: dist/talktrail-${{ steps.versao.outputs.versao }}.zip
+
+      - name: Release no GitHub com o zip
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" \
+            --title "Talktrail ${{ steps.versao.outputs.versao }}" \
+            --notes "Pacote da Chrome Web Store. Instale pela loja: https://chromewebstore.google.com/detail/talktrail/${EXTENSION_ID}" \
+            || echo "Release já existe, seguindo."
+
+      - name: Enviar pra Chrome Web Store
+        if: (github.ref_type == 'tag' || inputs.enviar) && env.CWS_TEM_SEGREDOS == 'true'
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3.5.0 upload \
+            --source "dist/talktrail-${{ steps.versao.outputs.versao }}.zip" \
+            --auto-publish
+
+      - name: Aviso quando faltam as credenciais
+        if: (github.ref_type == 'tag' || inputs.enviar) && env.CWS_TEM_SEGREDOS != 'true'
+        run: echo "::warning::Faltam os segredos CWS_CLIENT_ID, CWS_CLIENT_SECRET e CWS_REFRESH_TOKEN. O pacote foi montado e anexado à Release, mas NADA foi enviado pra loja. Veja store/AUTOMACAO.md."
