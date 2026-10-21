@@ -223,12 +223,14 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('a troca de sala chega no painel em até 0,5 s, já com a pauta nova', envios.length > 0 && envios[envios.length - 1].state.cola === 'pauta da sala A', JSON.stringify(envios.map((x) => x.state.cola)));
 
   const m3 = await mundo();
-  m3.w.history.pushState({}, '', '/home/2026/10/20');
+  const dataLida = new Date(Date.now() + 86400000), p2m = (n) => String(n).padStart(2, '0');
+  const diaLido = `${dataLida.getFullYear()}-${p2m(dataLida.getMonth() + 1)}-${p2m(dataLida.getDate())}`; // um dia de amanhã: a data fixa do teste virava passado
+  m3.w.history.pushState({}, '', '/home/' + diaLido.replace(/-/g, '/'));
   // a estrutura real da tela inicial do Meet: <li> com horário e título em texto, sem botão nem aria-label
   m3.w.document.body.insertAdjacentHTML('beforeend', '<ul><li><div><span>10:00 – 11:00</span></div><div>Planejamento semanal</div></li><li><span>videocam</span></li></ul><button aria-label="Quinta-feira, 15 de outubro">15</button>');
   await m3.tick(3200);
   let ag = m3.loja.agendaMeet || [];
-  t('lê título e hora das reuniões da tela inicial (estrutura real: li com texto)', ag.length === 1 && ag[0].titulo === 'Planejamento semanal' && ag[0].hora === '10:00' && ag[0].data === '2026-10-20', JSON.stringify(ag));
+  t('lê título e hora das reuniões da tela inicial (estrutura real: li com texto)', ag.length === 1 && ag[0].titulo === 'Planejamento semanal' && ag[0].hora === '10:00' && ag[0].data === diaLido, JSON.stringify(ag));
   t('item sem horário (ícone, tira de dias) não entra', !ag.some((x) => /feira|videocam/i.test(x.titulo)));
   t('guarda a hora da última leitura', typeof m3.loja.agendaLidaEm === 'number');
 

@@ -1,7 +1,8 @@
 // Talktrail 0.2, script de conteúdo: lê as legendas do Meet e guarda a reunião.
 // Funções puras no topo (testáveis no Node); o resto só roda dentro do Meet.
 
-const CODIGO_SALA = /^\/[a-z]{3}-[a-z]{4}-[a-z]{3}(\/|$)/;
+// o Meet usa dois endereços de sala: meet.google.com/abc-defg-hij e o novo, meet.google.com/meet/abc-defg-hij
+const CODIGO_SALA = /^\/(?:meet\/)?[a-z]{3}-[a-z]{4}-[a-z]{3}(\/|$)/;
 const ICONE = /^[a-z]+(_[a-z]+)+$/; // ligadura de ícone do Material, ex.: format_size
 const INTERFACE = /^(idioma|language|legendas?|captions?|formato|format|tamanho|font|cor|color)\b/i;
 
@@ -272,7 +273,7 @@ function iniciar() {
   // aparece depois do clique), e a aba da sala se chama "Meet: <título>", então título + dia casa a pauta com a sala.
   const normTitulo = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const dia = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const codigoDaSala = () => { const m = location.pathname.match(/^\/([a-z]{3}-[a-z]{4}-[a-z]{3})(\/|$)/); return m ? m[1] : ''; };
+  const codigoDaSala = () => { const m = location.pathname.match(/^\/(?:meet\/)?([a-z]{3}-[a-z]{4}-[a-z]{3})(\/|$)/); return m ? m[1] : ''; };
   const tituloDoMeet = () => {
     const t = String(document.title || '').replace(/^Meet\s*[:\-–]\s*/i, '').replace(/\s*[-–]\s*Google Meet$/i, '').trim();
     return /^(meet|google meet|reuni[ãa]o)?$/i.test(t) || /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(t) ? '' : t;
