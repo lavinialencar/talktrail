@@ -18,6 +18,11 @@ on:
         description: 'Enviar pra loja (false = só montar o pacote)'
         type: boolean
         default: false
+      api:
+        description: 'Falar com a API da loja: estado (só olha) ou reenviar (cancela a análise pendente, sobe este pacote e pede a revisão)'
+        type: choice
+        options: [nada, estado, reenviar]
+        default: nada
       release:
         description: 'Criar a Release no GitHub com os zips (use quando o pacote já foi enviado à loja à mão)'
         type: boolean
@@ -72,6 +77,18 @@ jobs:
           path: |
             dist/talktrail-${{ steps.versao.outputs.versao }}.zip
             dist/Talktrail-complemento-*.zip
+
+      - name: Loja via API (estado ou reenviar)
+        if: inputs.api == 'estado' || inputs.api == 'reenviar'
+        env:
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          PUBLISHER_ID: 7b75c688-f504-4388-b588-0c5742c25a0d
+          ACAO: ${{ inputs.api }}
+          ZIP: dist/talktrail-${{ steps.versao.outputs.versao }}.zip
+        run: |
+          if [ "$ACAO" = "estado" ]; then python3 tools/loja_api.py estado; else python3 tools/loja_api.py reenviar "$ZIP"; fi
 
       - name: Release no GitHub com o zip
         if: github.ref_type == 'tag' || inputs.release
