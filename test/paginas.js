@@ -11,6 +11,10 @@ const ler = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
   t('a linha da chavinha (.opc) é o ponto de referência do campo escondido (position: relative)', !!opc && /position:\s*relative/.test(opc[0]));
   t('o painel desfaz qualquer rolagem da janela', /window\.addEventListener\('scroll'[\s\S]{0,120}scrollTo\(0, 0\)/.test(ler('extension/panel.js')));
 }
+// o ícone novo também aparece na aba do navegador, em todas as páginas
+for (const f of ['panel.html', 'pautas.html', 'biblioteca.html', 'boas-vindas.html']) {
+  t(`${f} tem o ícone na aba (rel="icon")`, /<link[^>]*rel="icon"[^>]*icons\/icon-48\.png/.test(ler(`extension/${f}`)));
+}
 console.log('Páginas da extensão: mesma identidade');
 for (const f of ['biblioteca.html', 'pautas.html', 'boas-vindas.html']) {
   const h = ler(`extension/${f}`);
@@ -25,7 +29,7 @@ t('a página do servidor local tem o logo embutido', /<h1><img src="data:image\/
 t('a cópia do servidor dentro da extensão está sincronizada', ler('server/talktrail_server.py') === ler('extension/complemento/talktrail_server.py'));
 t('o painel não tem mais a dica de atalhos embaixo da pauta', !/<div id="colaTxt"[^>]*><\/div>\s*<p class="dica">/.test(ler('extension/panel.html')));
 t('trocar de página é suave: a transição entre páginas está ligada e o cabeçalho fica parado', /@view-transition \{ navigation: auto; \}/.test(ler('extension/panel.css')) && /view-transition-name: topo-pagina/.test(ler('extension/panel.css')) && /prefers-reduced-motion/.test(ler('extension/panel.css').split('@view-transition')[1]));
-t('boas-vindas tem o logo, os 4 passos numerados e fecha o painel', /<h1[^>]*>\s*<img[^>]*icon-128/.test(ler('extension/boas-vindas.html')) && (ler('extension/boas-vindas.html').match(/<li/g) || []).length === 4 && /pagina\.js/.test(ler('extension/boas-vindas.html')));
+t('boas-vindas tem o logo, os 4 passos numerados e fecha o painel', /<h1[^>]*>\s*<img[^>]*icon-128/.test(ler('extension/boas-vindas.html')) && (ler('extension/boas-vindas.html').match(/<li[ >]/g) || []).length === 4 && /pagina\.js/.test(ler('extension/boas-vindas.html')));
 t('a página de boas-vindas é empacotada e aparece nos Ajustes', /ajBoasVindas/.test(ler('extension/panel.html')) && /boas-vindas\.html/.test(ler('extension/panel.js')));
 console.log(`\n${ok} ok, ${ruim} falharam`);
 process.exit(ruim ? 1 : 0);
