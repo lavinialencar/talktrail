@@ -366,12 +366,25 @@ function iniciar() {
   const RE_HORA = /(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/;
   const RE_ROTULO = /^(agora|now|hoje|today|amanh[ãa]|em andamento|ao vivo|live|participar|join|entrar|copiar|copy)$/i; // rótulos do Meet que não são título
   // dias já lidos: o calendário da página de Pautas sabe a diferença entre "sem reunião" e "ainda não li"
+  // as abas de leitura das duas contas gravam ao mesmo tempo: sem trava, uma sobrescreve a outra e reunião some da lista
+  const comTrava = (fn) => (navigator.locks && navigator.locks.request ? navigator.locks.request('talktrail-agenda', fn) : fn());
   async function marcarDiaLido(data) {
-    const v = await chrome.storage.local.get(['agendaDias']);
-    const dias = { ...((v && v.agendaDias) || {}), [data]: Date.now() };
-    const chaves = Object.keys(dias).sort();
-    while (chaves.length > 400) delete dias[chaves.shift()];
-    await chrome.storage.local.set({ agendaDias: dias });
+    await comTrava(async () => {
+      const v = await chrome.storage.local.get(['agendaDias']);
+      const dias = { ...((v && v.agendaDias) || {}), [data]: Date.now() };
+      const chaves = Object.keys(dias).sort();
+      while (chaves.length > 400) delete dias[chaves.shift()];
+      await chrome.storage.local.set({ agendaDias: dias });
+    });
+  }
+  // dia lido e vazio: tira da lista o que estava guardado pra esse dia, dessa conta
+  async function esquecerDia(data, conta) {
+    await comTrava(async () => {
+      const v = await chrome.storage.local.get(['agendaMeet']);
+      const lista = Array.isArray(v && v.agendaMeet) ? v.agendaMeet : [];
+      const resto = lista.filter((x) => !(x && x.data === data && (!x.conta || x.conta === conta)));
+      if (resto.length !== lista.length) await chrome.storage.local.set({ agendaMeet: resto });
+    });
   }
   let ultimaAgenda = '';
   let inicioHome = 0;
@@ -382,6 +395,7 @@ function iniciar() {
     if (!m) { inicioHome = 0; avisouVazio = false; prontoDesde = 0; return; }
     if (!inicioHome) inicioHome = Date.now();
     const data = m[1] ? `${m[1]}-${m[2]}-${m[3]}` : dia(new Date());
+    const conta = new URLSearchParams(location.search).get('authuser') || '0'; // cada conta do Google tem a sua lista
     const achados = [];
     // cada reunião é um <li> com o horário e o título em texto (sem botão nem aria-label), em qualquer das contas do Meet
     document.querySelectorAll('li').forEach((li) => {
@@ -403,6 +417,7 @@ function iniciar() {
       if (!avisouVazio && ((prontoDesde && Date.now() - prontoDesde > 2500) || passou > 7000)) {
         avisouVazio = true;
         chrome.storage.local.set({ agendaLidaEm: Date.now(), agendaDiag: diag() });
+        if (prontoDesde) await esquecerDia(data, conta); // a lista carregou e o dia está vazio: o que estava guardado foi cancelado
         marcarDiaLido(data).catch(() => {});
         enviar({ type: 'agenda-lida' });
       }
@@ -411,14 +426,17 @@ function iniciar() {
     const chave = data + JSON.stringify(achados);
     if (chave === ultimaAgenda) return;
     ultimaAgenda = chave;
-    const v = await chrome.storage.local.get(['agendaMeet']);
-    const hoje = dia(new Date());
-    // une com o que já se sabia (outra conta do Meet pode ter lido o mesmo dia); só some o que já passou de dia
-    const chaveDe = (x) => `${x.data}|${normTitulo(x.titulo)}|${x.hora}`;
-    const mapa = new Map();
-    for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje && !RE_ROTULO.test(String(x.titulo || '').trim())) mapa.set(chaveDe(x), x);
-    for (const x of achados) mapa.set(chaveDe(x), x);
-    await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-400), agendaLidaEm: Date.now(), agendaDiag: diag() });
+    await comTrava(async () => {
+      const v = await chrome.storage.local.get(['agendaMeet']);
+      const hoje = dia(new Date());
+      // une com o que já se sabia (outra conta do Meet pode ter lido o mesmo dia); só some o que já passou de dia
+      const chaveDe = (x) => `${x.data}|${normTitulo(x.titulo)}|${x.hora}|${x.conta || ''}`;
+      const mapa = new Map();
+      // o dia lido agora vale por inteiro: reunião cancelada ou remarcada no Google Agenda sai da lista (só dessa conta; guardados sem conta, de versões antigas, também saem)
+      for (const x of Array.isArray(v && v.agendaMeet) ? v.agendaMeet : []) if (x && x.data >= hoje && !RE_ROTULO.test(String(x.titulo || '').trim()) && !(x.data === data && (!x.conta || x.conta === conta))) mapa.set(chaveDe(x), x);
+      for (const x of achados) mapa.set(chaveDe({ ...x, conta }), { ...x, conta });
+      await chrome.storage.local.set({ agendaMeet: [...mapa.values()].slice(-400), agendaLidaEm: Date.now(), agendaDiag: diag() });
+    });
     await marcarDiaLido(data);
     enviar({ type: 'agenda-lida' });
   }

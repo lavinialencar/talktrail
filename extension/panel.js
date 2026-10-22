@@ -419,7 +419,7 @@ function pintarPautas() {
   }
   const lida = agendaLidaEm ? new Date(agendaLidaEm).toLocaleTimeString(MB_IDIOMA.loc, { hour: '2-digit', minute: '2-digit' }) : '';
   const versao = (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || '';
-  const velha = !!agendaLidaEm && Date.now() - agendaLidaEm > 30 * 60 * 1000;
+  const velha = !!agendaLidaEm && Date.now() - agendaLidaEm > 10 * 60 * 1000;
   // nada de texto solto no topo: o estado vai no próprio botão (bolinha quando a lista pode estar velha, giro enquanto lê)
   // e, com a lista vazia, na mensagem da lista
   const dica = atualizandoAgenda ? trad('Lendo o Meet em abas de fundo, por alguns segundos.') : lida ? `Atualizar pelo Meet. Última leitura às ${lida}${velha ? ', a lista pode estar desatualizada' : ''}${versao ? `. Talktrail ${versao}` : ''}.` : trad('Atualizar pelo Meet');
@@ -520,6 +520,8 @@ $('pautasBotao').onclick = () => {
   $('pautasBotao').setAttribute('aria-expanded', String(aberto));
 };
 carregarPautas();
+chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' }).catch(() => {}); // lista velha é lida de novo sozinha
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' }).catch(() => {}); });
 chrome.runtime.sendMessage({ type: 'sincronizar-pautas' }).catch(() => {}); // traz o que foi editado nos arquivos da pasta Pautas
 let travaEsconder = 0; // o interruptor responde na hora; o eco do estado não pode desfazer o clique
 // vírgula e ponto e vírgula separam tags; pontuação nas pontas não faz parte do nome

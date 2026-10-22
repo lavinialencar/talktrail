@@ -307,4 +307,6 @@ $('atualizar').onclick = () => {
 };
 chrome.storage.onChanged.addListener((c) => { if (c.pautas || c.agendaMeet || c.agendaLidaEm || c.agendaDias) carregar(); });
 carregar();
+chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' }).catch(() => {}); // lista velha é lida de novo sozinha
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' }).catch(() => {}); });
 chrome.runtime.sendMessage({ type: 'sincronizar-pautas' }).catch(() => {}); // traz o que foi editado nos arquivos da pasta Pautas

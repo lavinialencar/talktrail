@@ -5,7 +5,9 @@
   "scripts": {
     "test": "for f in test/*.js; do case $f in test/_*) continue;; esac; node -r ./test/_idioma.js $f > /dev/null || { echo FALHOU $f; exit 1; }; done && python3 -m unittest discover -s test -p servidor.py",
     "sincronizar": "cp server/talktrail_server.py extension/complemento/talktrail_server.py",
-    "empacotar": "python3 tools/empacotar.py"
+    "empacotar": "python3 tools/empacotar.py",
+    "test:real": "node test/real/paginas.js && node test/real/meet.js && node test/real/servidor-real.js && node test/real/atualizacao.js",
+    "test:tudo": "npm test && npm run test:real"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"

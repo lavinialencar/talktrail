@@ -235,6 +235,10 @@ chrome.runtime.onMessage.addListener((msg, sender, responder) => {
     atualizarAgenda(msg.dias, msg.desde).catch(() => {}); // só chega aqui quando a pessoa toca num botão de atualizar
     return false;
   }
+  if (msg.type === 'agenda-ao-abrir') {
+    lerAgendaSeVelha(3 * 60 * 1000).catch(() => {}); // abriu o painel ou a página de Pautas: lista com mais de 3 min é lida de novo
+    return false;
+  }
   if (msg.type === 'cancelar-agenda') {
     fecharAbaAtualizacao(); // a pessoa mandou parar: fecha as abas de leitura na hora
     return false;
@@ -333,12 +337,15 @@ function fecharAbaAtualizacao(id) {
   if (abasAtualizacao.delete(id)) chrome.tabs.remove(id).catch(() => {});
   if (!abasAtualizacao.size) clearTimeout(fechaAbas);
 }
+let abrindoAbas = false; // painel e Pautas abrindo juntos não abrem as abas duas vezes
 const filaDias = new Map(); // aba -> endereços dos próximos dias, ainda por ler
 const DIAS_DA_AGENDA = 7; // padrão: uma semana, pra segunda e terça da semana seguinte aparecerem numa sexta (a página de Pautas pede mais)
 async function atualizarAgenda(dias = DIAS_DA_AGENDA, desde = '') {
   dias = Math.max(1, Math.min(21, Number(dias) || DIAS_DA_AGENDA));
   const base = /^\d{4}-\d{2}-\d{2}$/.test(String(desde)) ? new Date(`${desde}T12:00:00`).getTime() : 0; // um dia escolhido no calendário
-  if (abasAtualizacao.size) return; // já tem leitura em andamento
+  if (abasAtualizacao.size || abrindoAbas) return; // já tem leitura em andamento
+  abrindoAbas = true;
+  try {
   const pad = (n) => String(n).padStart(2, '0');
   for (const conta of [0, 1]) {
     const urls = Array.from({ length: dias }, (_, n) => {
@@ -350,7 +357,14 @@ async function atualizarAgenda(dias = DIAS_DA_AGENDA, desde = '') {
     filaDias.set(aba.id, urls.slice(1));
   }
   fechaAbas = setTimeout(() => fecharAbaAtualizacao(), 30000 + dias * 12000); // sem login ou sem lista: não deixa aba aberta
+  } finally { abrindoAbas = false; }
 }
+
+async function lerAgendaSeVelha(idadeMax) {
+  const { agendaLidaEm } = await chrome.storage.local.get('agendaLidaEm');
+  if (!agendaLidaEm || Date.now() - agendaLidaEm > idadeMax) await atualizarAgenda();
+}
+chrome.runtime.onStartup.addListener(() => setTimeout(() => lerAgendaSeVelha(10 * 60 * 1000).catch(() => {}), 8000)); // navegador aberto: traz a lista do dia
 
 const diaLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 // Próxima reunião de HOJE que ainda não começou. Longe demais (mais de 8 h) ou de outro dia: não cutuca.

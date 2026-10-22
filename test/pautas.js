@@ -241,10 +241,40 @@ const amanha = dia(new Date(Date.now() + 86400000));
   t('o rótulo "Agora" do Meet não vira título', !ag.some((x) => /^agora$/i.test(x.titulo)) && ag.some((x) => x.titulo === '1:1 Marinaldo' && x.hora === '15:30' && x.fim === '16:00'), JSON.stringify(ag.filter((x) => x.hora === '15:30')));
 
   // segunda conta do Meet (outra lista no mesmo dia): junta, não apaga a primeira
+  const caminhoDia = '/home/' + diaLido.replace(/-/g, '/');
+  m3.w.history.pushState({}, '', caminhoDia + '?authuser=1');
   m3.w.document.body.innerHTML = '<ul><li><div>15:00 – 15:30</div><div>1:1 Brisas</div></li></ul>';
   await m3.tick(3200);
   ag = m3.loja.agendaMeet || [];
-  t('a leitura da segunda conta se junta à da primeira', ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Planejamento semanal'), JSON.stringify(ag));
+  t('a leitura da segunda conta se junta à da primeira', ag.some((x) => x.titulo === '1:1 Brisas' && x.conta === '1') && ag.some((x) => x.titulo === '1:1 Marinaldo' && x.conta === '0'), JSON.stringify(ag));
+
+  // a mesma conta lê de novo e a reunião foi remarcada no Google Agenda: a lista acompanha, sem sobrar o horário velho
+  m3.w.document.body.innerHTML = '<ul><li><div>16:00 – 16:30</div><div>1:1 Brisas</div></li></ul>';
+  await m3.tick(3200);
+  ag = m3.loja.agendaMeet || [];
+  t('reunião remarcada: fica só o horário novo', ag.filter((x) => x.titulo === '1:1 Brisas').length === 1 && ag.some((x) => x.titulo === '1:1 Brisas' && x.hora === '16:00'), JSON.stringify(ag));
+  t('remarcar numa conta não mexe nas reuniões da outra', ag.some((x) => x.titulo === '1:1 Marinaldo' && x.conta === '0'));
+
+  // a mesma conta lê de novo e uma reunião sumiu (cancelada): sai da lista
+  m3.w.document.body.innerHTML = '<ul><li><div>17:00 – 17:30</div><div>Outra coisa</div></li></ul>';
+  await m3.tick(3200);
+  ag = m3.loja.agendaMeet || [];
+  t('reunião cancelada sai da lista', !ag.some((x) => x.titulo === '1:1 Brisas') && ag.some((x) => x.titulo === 'Outra coisa'), JSON.stringify(ag));
+
+  // dia que ficou sem nenhuma reunião, com a lista já carregada: esvazia o dia (só dessa conta)
+  const mV = await mundo({ loja: { agendaMeet: [{ titulo: 'Velha A', data: diaLido, hora: '09:00', conta: '0' }, { titulo: 'Velha B', data: diaLido, hora: '10:00', conta: '1' }, { titulo: 'Velha sem conta', data: diaLido, hora: '11:00' }] } });
+  mV.w.history.pushState({}, '', caminhoDia);
+  mV.w.document.body.innerHTML = '<h1>Meet</h1><h2>a</h2><h2>b</h2><h2>c</h2><h2>d</h2><h2>e</h2>';
+  await mV.tick(6500);
+  ag = mV.loja.agendaMeet || [];
+  t('dia vazio com a lista carregada: some o que era da conta e o que veio sem conta', !ag.some((x) => x.titulo === 'Velha A' || x.titulo === 'Velha sem conta'), JSON.stringify(ag));
+  t('dia vazio numa conta não apaga a outra conta', ag.some((x) => x.titulo === 'Velha B'), JSON.stringify(ag));
+  // página que não terminou de carregar (sem cabeçalhos) não pode apagar a lista só porque o tempo passou
+  const mW = await mundo({ loja: { agendaMeet: [{ titulo: 'Fica', data: diaLido, hora: '09:00', conta: '0' }] } });
+  mW.w.history.pushState({}, '', caminhoDia);
+  mW.w.document.body.innerHTML = '';
+  await mW.tick(9000);
+  t('página ainda carregando (sem cabeçalhos) não esvazia o dia', (mW.loja.agendaMeet || []).some((x) => x.titulo === 'Fica'), JSON.stringify(mW.loja.agendaMeet));
 
   // atualizar pelo Meet: uma aba de fundo por conta, e cada uma fecha quando a leitura termina
   const m4b = await mundo();
@@ -255,6 +285,27 @@ const amanha = dia(new Date(Date.now() + 86400000));
   await m5.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: 3 });
   await m5.tick(200);
   t('atualizar abre a tela inicial das duas contas, em aba de fundo', m5.criadas.length === 2 && /authuser=0/.test(m5.criadas[0]) && /authuser=1/.test(m5.criadas[1]), JSON.stringify(m5.criadas));
+  // abrir o painel (ou a página de Pautas) lê a agenda sozinho quando a lista está velha
+  const vmRun = (cod, ctx) => require('vm').runInContext(cod, ctx);
+  const mA = await mundo();
+  await mA.w.chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' });
+  await mA.tick(300);
+  t('abrir o painel sem nunca ter lido: lê a agenda sozinho (duas contas)', mA.criadas.length === 2, JSON.stringify(mA.criadas));
+  await mA.w.chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' });
+  await mA.w.chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' });
+  await mA.tick(300);
+  t('painel e Pautas abrindo juntos não abrem as abas duas vezes', mA.criadas.length === 2, String(mA.criadas.length));
+  const mB = await mundo();
+  await vmRun(`chrome.storage.local.set({ agendaLidaEm: ${Date.now() - 60 * 1000} })`, mB.bgCtx);
+  await mB.w.chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' });
+  await mB.tick(300);
+  t('lista lida há 1 minuto: não lê de novo', mB.criadas.length === 0, JSON.stringify(mB.criadas));
+  const mC = await mundo();
+  await vmRun(`chrome.storage.local.set({ agendaLidaEm: ${Date.now() - 20 * 60 * 1000} })`, mC.bgCtx);
+  await mC.w.chrome.runtime.sendMessage({ type: 'agenda-ao-abrir' });
+  await mC.tick(300);
+  t('lista lida há 20 minutos: lê de novo ao abrir', mC.criadas.length === 2, JSON.stringify(mC.criadas));
+
   // a página de Pautas pede mais dias: a fila de cada aba cresce
   const m7 = await mundo();
   await m7.w.chrome.runtime.sendMessage({ type: 'atualizar-agenda', dias: 14 });
