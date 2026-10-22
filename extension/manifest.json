@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Talktrail",
-  "version": "1.21.16",
-  "version_name": "1.21.16-dev",
+  "version": "1.21.17",
+  "version_name": "1.21.17-dev",
   "description": "__MSG_extDescricao__",
   "default_locale": "en",
   "permissions": ["sidePanel", "storage", "unlimitedStorage", "alarms", "downloads"],
