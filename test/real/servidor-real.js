@@ -48,6 +48,7 @@ async function rodar(idioma) {
     arqs = arvore(out).filter((f) => f.endsWith('.md') && !/(Pautas|Agendas)/.test(f));
     const txtFinal = arqs[0] ? fs.readFileSync(arqs[0], 'utf8') : '';
     R.t('depois de sair da chamada o arquivo final tem as três falas', /Primeira frase/.test(txtFinal) && /servidor fora do ar/.test(txtFinal) && /depois que o servidor voltou/.test(txtFinal), txtFinal.replace(/\n+/g, ' / ').slice(-300));
+    if (process.env.TT_DEBUG) { const tt = await lerTudo(B); const r0 = Object.values(tt).find((v) => v && v.payload); console.log('--- BIBLIOTECA:', JSON.stringify((r0 ? r0.payload.transcript : []).map((l) => `${l.speaker}: ${l.text}`))); console.log('--- ARQUIVO:\n' + txtFinal.slice(txtFinal.indexOf('## Transcri'))); }
     R.t('o arquivo na pasta está no idioma do navegador', idioma === 'en' ? /## Transcript/.test(fs.readFileSync(arqs[0], 'utf8')) : /## Transcrição/.test(fs.readFileSync(arqs[0], 'utf8')));
     await aba.fecha();
 
@@ -78,6 +79,16 @@ async function rodar(idioma) {
     }
     R.t('nenhum erro na página de Pautas', pg.erros.length === 0, pg.erros.join(' | '));
     await pg.fecha();
+
+    // "Parear de novo" na página do servidor: o pareamento some. A extensão tem que se parear sozinha ao sincronizar pautas, sem esperar uma gravação
+    fs.unlinkSync(path.join(estado, 'pareamento.json'));
+    const pgR = await B.nova(B.url('pautas.html'), { largura: 1000, altura: 800 }); await esp(1500);
+    await pgR.ev(`chrome.storage.local.set({ pautas: { 'p|2': { titulo: 'Pauta depois de parear de novo', data: '${dia}', hora: '17:00', texto: '1. um', criada: Date.now(), atualizada: Date.now() } } })`);
+    await pgR.ev(`chrome.runtime.sendMessage({ type: 'sincronizar-pautas' })`); await esp(6000);
+    const pjR = path.join(estado, 'pareamento.json');
+    R.t('depois de "Parear de novo", abrir/sincronizar Pautas pareia sozinho com a extensão certa', fs.existsSync(pjR) && JSON.parse(fs.readFileSync(pjR, 'utf8')).origem === `chrome-extension://${B.ID}`, fs.existsSync(pjR) ? fs.readFileSync(pjR, 'utf8').slice(0, 80) : '(sem arquivo)');
+    R.t('e a pauta já vai pra pasta', fs.existsSync(fp) && fs.readdirSync(fp).some((f) => /depois-de-parear/.test(f)), fs.existsSync(fp) ? fs.readdirSync(fp).join(',') : '');
+    await pgR.fecha();
 
     // OUTRA extensão (outro ID) tenta usar o mesmo servidor: tem que ser barrada
     const B2 = await abrir({ idioma, meetPorta: meet.porta, portaServidor: porta });

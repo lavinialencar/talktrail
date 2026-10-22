@@ -76,6 +76,35 @@ async function salvarNoServidor(payload) {
 const CHAVE = (id) => 'reuniao:' + String(id);
 let servidorForaAte = 0; // depois de uma falha de rede, não insiste por 20 s
 
+// Se o servidor da pasta caiu (ou o salvamento caiu na janela de espera depois da queda), a reunião continua na biblioteca, mas o
+// arquivo da pasta ficaria velho até chegar uma fala nova. Aqui o conteúdo mais recente é reenviado sozinho quando o servidor volta.
+const pendentesServidor = new Map(); // id -> tentativas já feitas
+let tReenvio = null;
+function lembrarPendente(id) {
+  if (!pendentesServidor.has(String(id))) pendentesServidor.set(String(id), 0);
+  clearTimeout(tReenvio);
+  tReenvio = setTimeout(() => reenviarPendentes().catch(() => {}), Math.max(1500, servidorForaAte - Date.now() + 1000));
+}
+async function reenviarPendentes() {
+  for (const id of [...pendentesServidor.keys()]) {
+    const n = pendentesServidor.get(id) + 1;
+    const reg = (await chrome.storage.local.get(CHAVE(id)))[CHAVE(id)];
+    if (!reg || !reg.payload || MB_MD.vazia(reg.payload)) { pendentesServidor.delete(id); continue; }
+    if (Date.now() < servidorForaAte) { lembrarPendente(id); return; }
+    try {
+      const r = await salvarNoServidor(reg.payload); // sempre o texto mais recente da biblioteca
+      if (r && r.ok) pendentesServidor.delete(id);
+      else if (r && r.status && r.status < 500) pendentesServidor.delete(id); // erro definido (não pareado...): o aviso normal cuida
+      else if (n >= 12) pendentesServidor.delete(id);
+      else { pendentesServidor.set(id, n); lembrarPendente(id); }
+    } catch (e) {
+      servidorForaAte = Date.now() + 20000;
+      if (n >= 12) pendentesServidor.delete(id);
+      else { pendentesServidor.set(id, n); lembrarPendente(id); }
+    }
+  }
+}
+
 async function guardarNaBiblioteca(payload) {
   const chave = CHAVE(payload.id);
   const atual = (await chrome.storage.local.get(chave))[chave] || {};
@@ -137,7 +166,11 @@ async function salvarReuniao(payload) {
       servidorForaAte = Date.now() + 20000;
     }
   }
-  if (r && r.ok) return { ok: true, status: 200, modo: 'pasta', data: r.data };
+  if (r && r.ok) { pendentesServidor.delete(String(reg.id)); return { ok: true, status: 200, modo: 'pasta', data: r.data }; }
+  if (fora) { // o servidor não recebeu esta versão: com pareamento guardado (o servidor é esperado), tenta de novo quando ele voltar
+    const { pareamento: temServidor } = await chrome.storage.local.get('pareamento');
+    if (temServidor) lembrarPendente(reg.id);
+  }
   // Sem o servidor, mas com uma pasta escolhida no navegador: grava ao vivo nela. Sem permissão ativa, cai pro plano B
   // (Downloads, ao terminar) e marca que a pasta precisa de um clique pra ser liberada.
   const alvo = await MB_PASTA.ler().catch(() => null);
@@ -400,16 +433,32 @@ atualizarContagem().catch(() => {});
 // ---------- pautas em arquivo ----------
 // Pasta Pautas/ dentro da pasta de reuniões: um .md por reunião. Quem editou por último ganha (ver pautas-arquivo.js).
 // Usa o servidor local, se estiver pareado; senão a pasta escolhida no navegador, se a permissão estiver ativa.
+// servidor local no ar? (resposta guardada por 30 s, pra a sincronização de cada minuto não bater à toa na porta)
+let saudeServidor = { em: 0, ok: false };
+async function servidorNoAr() {
+  if (Date.now() - saudeServidor.em < 30000) return saudeServidor.ok;
+  let ok = false;
+  try { ok = (await fetch(SERVER + '/health', { cache: 'no-store' })).ok; } catch (e) { ok = false; }
+  saudeServidor = { em: Date.now(), ok };
+  return ok;
+}
+let pareamentoNegadoAte = 0; // outra extensão é a pareada: não fica insistindo a cada minuto
 async function armazemDePautas() {
   const idioma = MB_IDIOMA.en ? 'en' : 'pt'; // só decide o nome da pasta quando ela ainda não existe (Pautas/ ou Agendas/)
-  const { pareamento } = await chrome.storage.local.get('pareamento');
-  if (pareamento && Date.now() >= servidorForaAte) {
+  let { pareamento } = await chrome.storage.local.get('pareamento');
+  // sem código guardado, mas com o servidor no ar: tenta parear (é o que acontece depois de "Parear de novo" na página do servidor)
+  if (Date.now() >= servidorForaAte && (pareamento || (Date.now() >= pareamentoNegadoAte && (await servidorNoAr())))) {
     try {
       const chamar = async (caminho, corpo) => {
         const r = await fetch(SERVER + caminho, { method: 'POST', headers: await cabecalhos(pareamento), body: JSON.stringify({ idioma, ...corpo }) });
         return r.json().catch(() => ({ ok: false }));
       };
-      const l = await chamar('/pautas/listar', {});
+      let l = await chamar('/pautas/listar', {});
+      if (l && !l.ok && l.parear) { // o servidor esqueceu (ou nunca teve) o pareamento desta extensão: pareia uma vez e tenta de novo
+        const p = await parear();
+        if (p.token) { pareamento = p.token; l = await chamar('/pautas/listar', {}); }
+        else pareamentoNegadoAte = Date.now() + 10 * 60 * 1000; // pareado com outra extensão: o dono resolve na página do servidor
+      }
       if (l && l.ok) {
         return {
           tipo: 'servidor',
