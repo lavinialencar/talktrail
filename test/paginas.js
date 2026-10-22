@@ -4,6 +4,13 @@ const path = require('path');
 let ok = 0, ruim = 0;
 const t = (nome, cond) => { console.log(`  ${cond ? 'ok  ' : 'FALHOU'} ${nome}`); cond ? ok++ : ruim++; };
 const ler = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+// a chavinha dos Ajustes tem um campo escondido (absoluto): se a linha não for o ponto de referência, marcar a chavinha rola a JANELA inteira e o painel fica vazio
+{
+  const css = ler('extension/panel.css');
+  const opc = css.match(/^\.opc \{[^}]*\}/m);
+  t('a linha da chavinha (.opc) é o ponto de referência do campo escondido (position: relative)', !!opc && /position:\s*relative/.test(opc[0]));
+  t('o painel desfaz qualquer rolagem da janela', /window\.addEventListener\('scroll'[\s\S]{0,120}scrollTo\(0, 0\)/.test(ler('extension/panel.js')));
+}
 console.log('Páginas da extensão: mesma identidade');
 for (const f of ['biblioteca.html', 'pautas.html', 'boas-vindas.html']) {
   const h = ler(`extension/${f}`);

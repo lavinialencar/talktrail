@@ -47,6 +47,8 @@ function caminhoCurto(caminho) {
   const partes = String(caminho || '').split(/[\\/]+/).filter(Boolean);
   return partes.length > 3 ? '…/' + partes.slice(-2).join('/') : String(caminho || '');
 }
+// o painel não rola como página: só as áreas internas. Se algo (foco num campo escondido, por exemplo) rolar a janela, volta pro topo.
+window.addEventListener('scroll', () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); });
 let nomePautas = MB_IDIOMA.en ? 'Agendas' : 'Pautas'; // a subpasta das pautas: a real vem de pautasSync.pasta
 let pastaNavegador = null; // pasta escolhida pelo navegador (sem o servidor): { name }
 let pastaPendente = false; // o navegador precisa de um clique pra liberar a pasta de novo

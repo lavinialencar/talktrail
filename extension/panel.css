@@ -106,7 +106,7 @@ button:focus-visible, .chip:focus-visible { outline: 2px solid var(--foco); outl
 .paleta button:hover { transform: scale(1.18); }
 .paleta button.sel { border-color: var(--texto); }
 
-.opc { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 2px 2px 0; }
+.opc { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 2px 2px 0; } /* relative: o campo escondido (absoluto) fica preso à linha; sem isso, marcar a chavinha rolava a janela inteira e o painel ficava vazio */
 .opct { display: flex; flex-direction: column; }
 .opct span { color: var(--texto); font-size: 12.5px; font-weight: 500; }
 .opct small { color: var(--fraco); font-size: 12px; }
